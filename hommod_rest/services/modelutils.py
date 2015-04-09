@@ -183,7 +183,7 @@ def hmmerscan(querySeq,  db):
 
 
 templateBlastHitPattern = \
-    re.compile(r"^pdb\|[0-9][A-Za-z0-9]{3}\|[A-Z0-9]{1, 2}$")
+    re.compile(r"^pdb\|[0-9][A-Za-z0-9]{3}\|[A-Z0-9]{1,2}$")
 
 
 def getChainCAsSeqSecStr(yasara,  obj,  chain):
@@ -455,26 +455,6 @@ def filterMinLength(minlength, sequenceDictionary):
             r[key] = sequenceDictionary[key]
 
     return r
-
-
-def selectHighestSeqID(seq, fromd):
-    qid = 'query'
-
-    bestID = 0
-    best = None
-
-    for homolog in fromd.keys():
-
-        # Aligning them all in one run can be very time consuming !
-
-        aligned = aligner.clustalAlign({qid: seq, homolog: fromd[homolog]})
-        pid = getSequenceIdentity(aligned[qid], aligned[homolog])
-
-        if pid > bestID:
-            bestID = pid
-            best = homolog
-
-    return best
 
 
 def seqWithoutGaps(seq):

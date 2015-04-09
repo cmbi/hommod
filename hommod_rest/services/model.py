@@ -11,8 +11,7 @@ from suds import client
 from modelutils import (getChainCAsSeqSecStr, getNalignIdentity,
                         getCoverageIdentity, YasaraChain,
                         identifyDeletedRegions, getPercentageIdentity,
-                        selectHighestSeqID, filterMinLength,
-                        minIdentity,
+                        filterMinLength, minIdentity,
                         getUniprotSeq, idForSeq)
 
 from interaction import listInteractingChains, InteractionPicker
@@ -33,6 +32,26 @@ formatter = logging.Formatter(
 sh.setFormatter(formatter)
 _log.addHandler(sh)
 _log.setLevel(logging.DEBUG)
+
+
+def selectHighestSeqID(seq, fromd):
+    qid = 'query'
+
+    bestID = 0
+    best = None
+
+    for homolog in fromd.keys():
+
+        # Aligning them all in one run can be very time consuming !
+
+        aligned = aligner.clustalAlign({qid: seq, homolog: fromd[homolog]})
+        pid = getPercentageIdentity(aligned[qid], aligned[homolog])
+
+        if pid > bestID:
+            bestID = pid
+            best = homolog
+
+    return best
 
 
 def onlyX(seq):
@@ -246,31 +265,31 @@ class Modeler(object):
         except Exception as e:
             _log.error('Cannot execute BuildSymRes on {}: {}' % (tempac, e))
 
-            # Make sure there's only one chain for each chain identifier:
-            chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
-            for i in range(len(chainOrder)):
-                if i > 0 and chainOrder[i - 1] == chainOrder[i]:
-                    residues = self.yasara.ListRes(
-                        'mol %s Protein' % chainOrder[i],
-                        "RESNUM")
-                    self.yasara.JoinMol(
-                        '%s res %s obj %i Protein' %
-                        (chainOrder[i], residues[-1], tempobj))
+        # Make sure there's only one chain for each chain identifier:
+        chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
+        for i in range(len(chainOrder)):
+            if i > 0 and chainOrder[i - 1] == chainOrder[i]:
+                residues = self.yasara.ListRes(
+                    'mol %s Protein' % chainOrder[i],
+                    "RESNUM")
+                self.yasara.JoinMol(
+                    '%s res %s obj %i Protein' %
+                    (chainOrder[i], residues[-1], tempobj))
 
-            self.yasara.CleanObj(tempobj)
+        self.yasara.CleanObj(tempobj)
 
-            # Make sure there are no chains with sequence XXXXXXXXXXXXXXXXXX,
-            # Otherwise, yasara would remove the entire chain.
-            self.yasara.SwapRes(
-                'Protein and UNK and atom CA and atom CB', 'ALA')
-            self.yasara.SwapRes(
-                'Protein and UNK and atom CA and not atom CB', 'GLY')
+        # Make sure there are no chains with sequence XXXXXXXXXXXXXXXXXX,
+        # Otherwise, yasara would remove the entire chain.
+        self.yasara.SwapRes(
+            'Protein and UNK and atom CA and atom CB', 'ALA')
+        self.yasara.SwapRes(
+            'Protein and UNK and atom CA and not atom CB', 'GLY')
 
-            self.yasara.DelRes('HOH H2O DOD D2O TIP WAT SOL ACT ACM ACY ' +
-                               'EDO EOH FLC FMT GOL I3M IPA MLI MOH PEO ' +
-                               'PO4 SO3 SO4 _TE UNX ACE')
+        self.yasara.DelRes('HOH H2O DOD D2O TIP WAT SOL ACT ACM ACY ' +
+                           'EDO EOH FLC FMT GOL I3M IPA MLI MOH PEO ' +
+                           'PO4 SO3 SO4 _TE UNX ACE')
 
-            return [tempobj, nMolsOligomerized / nMolsUnoligomerized]
+        return [tempobj, nMolsOligomerized / nMolsUnoligomerized]
 
     def separateChains(self, obj, chainsToSeparate):
         self._check_init()

@@ -1,31 +1,35 @@
 from hommod_rest.services.domainalign import getAlignments
-from hommod_rest.services.modelutils import getInterproDomainLocations
-from hommod_rest.factory import create_app, create_celery_app
 from nose.tools import ok_, with_setup
 
 from hommod_rest.services.interpro import interpro
+from hommod_rest.services.blast import blaster
+from hommod_rest.services.secstr import secstr
+
+import hommod_rest.default_settings as config
 
 
 def setupApps():
-    app = create_app({'TESTING': True, 'DEBUG':True, \
-                      'CELERY_ALWAYS_EAGER': True, 'RETRY_FAILURE' : True,
-                      'YASARADIR': '/home/cbaakman/Yasara/yasara'})
-    celery_app = create_celery_app(app)
+    interpro.interproExe = config.INTERPROSCAN
+    interpro.storageDir = config.INTERPRODIR
+    blaster.templatesDB = config.TEMPLATESDB
+    blaster.blastpExe = config.BLASTP
+    secstr.dssp_dir = config.DSSPDIR
+    secstr.yasara_dir = config.YASARADIR
 
 
 def tearDown():
     pass
 
 
-@with_setup(setupApps,tearDown)
+@with_setup(setupApps, tearDown)
 def test_COX41_BOVIN():
-    seq="""
+    seq = """
     MLATRVFSLIGRRAISTSVCVRAHGSVVKSEDYALPSYVDRRDYPLPDVAHVKNLSASQK
     ALKEKEKASWSSLSIDEKVELYRLKFKESFAEMNRSTNEWKTVVGAAMFFIGFTALLLIW
     EKHYVYGPIPHTFEEEWVAKQTKRMLDMKVAPIQGFSAKWDYDKNEWKK
-    """.replace("\n",'')
+    """.replace("\n", '')
 
-    domainranges=interpro.getInterproDomainLocations(seq)
+    domainranges = interpro.getInterproDomainLocations(seq)
 
     alignments = getAlignments(domainranges, seq)
 
