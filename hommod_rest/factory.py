@@ -97,4 +97,6 @@ def create_celery_app(app):  # pragma: no cover
 
     celery.Task = ContextTask
 
+    import hommod_rest.tasks
+
     return celery
