@@ -26,6 +26,9 @@ class InterproService(object):
         if not self.interproExe or not self.storageDir:
             raise Exception("interproExe and storageDir must be set")
 
+        if not os.path.isdir(self.storageDir):
+            os.mkdir(self.storageDir)
+
         ID = idForSeq(sequence)
 
         lockfilepath = os.path.join(self.storageDir, 'lock_%s' % ID)
