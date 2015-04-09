@@ -318,6 +318,12 @@ class Modeler(object):
         modelRoot = os.path.abspath(flask_app.config['MODELDIR'])
         executionRoot = os.path.abspath(flask_app.config['EXECUTIONDIR'])
 
+        if not os.path.isdir(modelRoot):
+            os.mkdir(modelRoot)
+
+        if not os.path.isdir(executionRoot):
+            os.mkdir(executionRoot)
+
         mainTargetID = idForSeq(mainTargetSeq)
 
         ranges = interpro.getInterproDomainLocations(mainTargetSeq)
@@ -409,7 +415,7 @@ class Modeler(object):
                 # belonging to the input target protein
                 mainDomainSeq = \
                     mainTargetSeq[mainDomainRange.start: mainDomainRange.end]
-                for chainID in self.pickTemplateChainsFor(
+                for chainID in pickTemplateChainsFor(
                         templateChainSequences, mainTargetSeq):
 
                     tempCAs, templateChainSeq, templateChainSecStr = \
@@ -586,7 +592,8 @@ class Modeler(object):
 
         if len(failedModels) > 0:
 
-            raise Exception("the following models have failed: " + failedModels)
+            raise Exception("the following models have failed: " +
+                            str(failedModels))
         else:
             return tarPaths
 
