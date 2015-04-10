@@ -1,12 +1,14 @@
 from kombu import Exchange, Queue
 
 # Celery
+CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 CELERY_BROKER_URL = 'amqp://guest@localhost'
 CELERY_DEFAULT_QUEUE = 'hommod'
 CELERY_QUEUES = (
     Queue('hommod', Exchange('hommod'), routing_key='hommod'),
 )
-CELERY_RESULT_BACKEND = 'amqp'
+CELERY_TRACK_STARTED = True
+CELERY_RESULT_BACKEND = 'redis://localhost/1'
 
 MAX_MODEL_DAYS = 100
 
