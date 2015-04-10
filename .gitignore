@@ -50,3 +50,6 @@ celerybeat-schedule
 
 # Log files
 *.log
+
+# ??
+tests/requests
