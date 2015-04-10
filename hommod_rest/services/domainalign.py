@@ -6,7 +6,7 @@ from hommod_rest.services.blast import blaster
 from hommod_rest.services.secstr import secstr
 from hommod_rest.services.align import aligner
 
-from modelutils import (aa321, getNalignIdentity, filterGoodHits,
+from modelutils import (get_aa321, getNalignIdentity, filterGoodHits,
                         parseDSSP,
                         minIdentity,
                         TemplateID, getTemplatePDBIDandChain)
@@ -335,10 +335,10 @@ def makeYasaraAlignment(yasara, domainSeq, yasaraObject, yasaraChainID):
     pdbSeq = ''
     pdbSecStr = ''
     for ca in cas:
-        pdbSeq += aa321(yasara.ListRes('atom %i' % ca, 'RESNAME')[0])
+        pdbSeq += get_aa321(yasara.ListRes('atom %i' % ca, 'RESNAME')[0])
         pdbSecStr += yasara.SecStrRes('atom %i' % ca)[0]
 
-    aligned = aligner.alignMSA(pdbSeq, pdbSecStr, domainSeq)
+    aligned = aligner.msaAlign(pdbSeq, pdbSecStr, domainSeq)
     aligned['secstr'] = _map_gaps(aligned['template'], pdbSecStr)
     aligned['midline'] = _get_midline(aligned['template'], aligned['target'])
 
@@ -360,7 +360,7 @@ def makeDSSPAlignment(domainSeq, template):
         raise Exception('No chain %s in %s' % (template.chainID, dssppath))
     pdbSeq, pdbSecStr, pdbDisulfid = d[template.chainID]
 
-    aligned = aligner.alignMSA(pdbSeq, pdbSecStr, domainSeq)
+    aligned = aligner.msaAlign(pdbSeq, pdbSecStr, domainSeq)
     aligned['secstr'] = _map_gaps(aligned['template'], pdbSecStr)
     aligned['midline'] = _get_midline(aligned['template'], aligned['target'])
 
@@ -577,12 +577,12 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                         bestPID = pid
                         bestPCOVER = pcover
 
-                    _log.debug("passing alignment with %s:\n%s"
+                    _log.debug("domainalign: passing alignment with %s:\n%s"
                                % (templateSelected, alignmentRepr(
                                   aligned, ['target', 'midline', 'template'])))
 
                 else:
-                    _log.debug("rejecting alignment with %s:\n%s"
+                    _log.debug("domainalign: rejecting alignment with %s:\n%s"
                                % (templateSelected, alignmentRepr(
                                   aligned, ['target', 'midline', 'template'])))
 
@@ -597,10 +597,11 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                     template = TemplateID(pdbid, pdbchain)
                     if not secstr.hasSecStr(template):
 
-                        _log.warn("no secondary structure for %s" % template)
+                        _log.warn("domainalign: no secondary structure for %s"
+                                  % template)
                         continue
 
-                    _log.debug("got blast hit %s" % template)
+                    _log.debug("domainalign: got blast hit %s" % template)
 
                     for alignment in hits[hitID]:
 
@@ -629,12 +630,12 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                             aligned['midline'] = \
                                 _get_midline(aligned['target'],
                                              aligned['template'])
-                            _log.debug("passing alignment with %s:\n%s"
-                                       % (template,
-                                          alignmentRepr(
-                                              aligned,
-                                              ['target', 'midline',
-                                               'template'])))
+                            _log.debug(
+                                "domainalign: passing alignment with %s:\n%s"
+                                % (template,
+                                   alignmentRepr(aligned,
+                                                 ['target', 'midline',
+                                                  'template'])))
 
                             # is this one better than previous hits?
                             if pcover >= 80.0 and \
@@ -648,8 +649,9 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                             break  # we're done with this template
 
                         else:
-                            _log.debug("rejecting blast hit with %s:" %
-                                       template)
+                            _log.debug(
+                                "domainalign: rejecting blast hit with %s:"
+                                % template)
 
             if bestTemplate:  # we have a best hit for this range
 
@@ -716,7 +718,7 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                             alignment2 = alignmentDAO.getAlignment(
                                 ranges[j], template)
                             alignmentM = alignmentDAO.getAlignment(
-                                merge, template)
+                                merged, template)
 
                         intersected = intersection(ranges[i], ranges[j])
                         isectTempSeq1 = getTemplateSeqAtTargetPositions(
@@ -743,7 +745,7 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
         if pid >= minIdentity(nalign):
             returnAlignments.append((r, r.template, r.alignment))
 
-    _log.debug("returning %i alignments" % len(returnAlignments))
+    _log.debug("domainalign: returning %i alignments" % len(returnAlignments))
 
     return returnAlignments
 

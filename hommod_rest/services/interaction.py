@@ -4,6 +4,10 @@ from modelutils import YasaraChain
 
 import domainalign
 
+import logging
+
+_log = logging.getLogger(__name__)
+
 
 def getTargetCoveredRange(alignment, templateseq):
 
@@ -69,7 +73,7 @@ class InteractionPicker(domainalign.Picker):
                 self.subjectYasaraChain.yasaramodule,
                 self.subjectYasaraChain.obj, chainID
             )
-#           iCAs = interactionYasaraChain.CAs
+            iCAs = interactionYasaraChain.CAs
             iseq = interactionYasaraChain.seq
 
             sstart, send = getTargetCoveredRange(subjectChainAlignment, sseq)
@@ -79,12 +83,21 @@ class InteractionPicker(domainalign.Picker):
 
             for i in range(sstart, send):
                 sca = sCAs[i]
-                if 0 < len(
-                    interactionYasaraChain.yasaramodule.ListAtom(
-                        'CA and atom %i-%i and obj %i and ' +
-                        'mol %s with distance<6 from %i' %
-                        (istart, iend, interactionYasaraChain.obj,
-                         interactionYasaraChain.chainID, sca))):
+
+                search_cmd = ('CA and atom {}-{} and obj {} and ' +
+                              'mol {} with distance<6 from {}') \
+                    .format(iCAs[istart], iCAs[iend - 1],
+                            interactionYasaraChain.obj,
+                            interactionYasaraChain.chainID, sca)
+
+                interactingCAs =\
+                    interactionYasaraChain.yasaramodule.ListAtom(search_cmd)
+
+                if 0 < len(interactingCAs):
+
+                    _log.debug("found interaction between chains {} and {}"
+                               .format(interactionYasaraChain.chainID,
+                                       self.subjectYasaraChain.chainID))
 
                     return True
             # Two atoms, covered in the two alignments, are close to each other

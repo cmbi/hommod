@@ -4,25 +4,21 @@ from hashlib import md5
 
 from flask import current_app as flask_app
 
+from hommod_rest.services.modelutils import parseFasta
 from time import time
 
 import os
 import tarfile
 from glob import glob
 
+import logging
 
-def parseFasta(text):
-
-    d = {}
-    currentID = None
-    for line in text.split('\n'):
-        if line.startswith('>'):
-            currentID = line.split()[0]
-            d[currentID] = ''
-        else:
-            d[currentID] += line.strip()
-
-    return d
+_log = logging.getLogger(__name__)
+sh = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+sh.setFormatter(formatter)
+_log.addHandler(sh)
+_log.setLevel(logging.DEBUG)
 
 
 def extract_info(tar_path):
@@ -53,6 +49,8 @@ def extract_alignment(tar_path):
                              'align.fasta')
     if fastapath in tf.getnames():
         alignment = parseFasta(tf.extractfile(fastapath).read())
+
+        _log.debug("fasta alignment {}".format(alignment))
 
     tf.close()
 

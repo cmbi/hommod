@@ -21,7 +21,7 @@ def tearDown():
 
 @with_setup(setupApps, tearDown)
 def test_1OCO_BOVIN():
-    tempobj, oligomerisation = modeler.setTemplate('1OCO')
+    tempobj, oligomerisation = modeler._set_template('1OCO')
     chainOrder, templateChainSequences = modeler.getChainOrderAndSeqs(tempobj)
 
     for chain in chainOrder:

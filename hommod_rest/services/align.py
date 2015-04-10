@@ -44,7 +44,7 @@ class alignService(object):
             os.remove(_in)
 
         try:
-            d = parseFasta(out)
+            d = parseFasta(open(out, 'r').read())
         finally:
             os.remove(out)
 
@@ -93,7 +93,7 @@ class alignService(object):
         if not os.path.isfile(alignedpath):
             raise Exception('no such file: ' + alignedpath)
 
-        aligned = parseFasta(alignedpath)
+        aligned = parseFasta(open(alignedpath, 'r').read())
 
         os.remove(alignedpath)
         os.remove(toalignpath)

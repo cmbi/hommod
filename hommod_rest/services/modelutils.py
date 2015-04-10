@@ -24,10 +24,10 @@ aa123 = {
 
 aa321 = {}
 for onelettercode in aa123.keys():
-    aa123[aa123[onelettercode]] = onelettercode
+    aa321[aa123[onelettercode]] = onelettercode
 
 
-def _get_aa321(aa):
+def get_aa321(aa):
 
     aa = aa.upper()
     if aa in aa321:
@@ -46,19 +46,19 @@ def overlap(list1,  list2):
 
 def parseFirstFastaSequence(filename):
 
-    fasta = parseFasta(filename)
+    fasta = parseFasta(open(filename, 'r').read())
 
     ID = fasta.keys()[0]
 
     return [ID,  fasta[ID]]
 
 
-def parseFasta(filename):
+def parseFasta(contents):
 
     cid = None
     d = {}
 
-    for line in open(filename,  'r').readlines():
+    for line in contents.split('\n'):
         if line.startswith('>'):
             cid = line[1:].split()[0]
             d[cid] = ''
@@ -197,7 +197,7 @@ def getChainCAsSeqSecStr(yasara,  obj,  chain):
             'ATOMNUM RESNAME'):
         ss = s.split()
         CAs.append(int(ss[0]))
-        seq += _get_aa321(ss[1])
+        seq += get_aa321(ss[1])
         secStr += yasara.SecStrRes('atom %s' % ss[0])[0]
 
     return [CAs,  seq,  secStr]
