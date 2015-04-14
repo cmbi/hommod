@@ -46,7 +46,7 @@ def overlap(list1,  list2):
 
 def parseFirstFastaSequence(filename):
 
-    fasta = parseFasta(open(filename, 'r').read())
+    fasta = parseFasta(open(filename, 'r'))
 
     ID = fasta.keys()[0]
 
@@ -58,7 +58,7 @@ def parseFasta(contents):
     cid = None
     d = {}
 
-    for line in contents.split('\n'):
+    for line in contents:
         if line.startswith('>'):
             cid = line[1:].split()[0]
             d[cid] = ''
