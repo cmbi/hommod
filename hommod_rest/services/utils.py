@@ -48,7 +48,7 @@ def extract_alignment(tar_path):
     fastapath = os.path.join(os.path.splitext(os.path.basename(tar_path))[0],
                              'align.fasta')
     if fastapath in tf.getnames():
-        alignment = parseFasta(tf.extractfile(fastapath).read())
+        alignment = parseFasta(tf.extractfile(fastapath))
 
         _log.debug("fasta alignment {}".format(alignment))
 

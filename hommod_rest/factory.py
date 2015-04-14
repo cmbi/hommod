@@ -57,6 +57,8 @@ def create_app(settings=None):
     # Initialise services
     from hommod_rest.services.model import modeler
     modeler.yasara_dir = app.config['YASARADIR']
+    modeler.execution_root_dir = app.config['EXECUTIONDIR']
+    modeler.model_root_dir = app.config['MODELDIR']
 
     from hommod_rest.services.secstr import secstr
     secstr.dssp_dir = app.config['DSSPDIR']

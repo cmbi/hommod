@@ -164,6 +164,8 @@ def writeAlignmentFasta(chainOrder, alignmentsByChain, templateAC, path):
 class Modeler(object):
     def __init__(self, yasara_dir=None):
         self._yasara_dir = yasara_dir
+        self.execution_root_dir = None
+        self.model_root_dir = None
 
     @property
     def yasara_dir(self):
@@ -186,6 +188,12 @@ class Modeler(object):
     def _check_init(self):
         if self._yasara_dir is None:
             raise Exception("yasara_dir has not been set")
+
+        if self.execution_root_dir is None:
+            raise Exception("execution root not set")
+
+        if self.model_root_dir is None:
+            raise Exception("model root not set")
 
     def getChainOrderAndSeqs(self, tempobj):
 
@@ -545,15 +553,11 @@ class Modeler(object):
                   overwrite=False):
         self._check_init()
 
-        # convert root paths to absolute, before we change directories
-        modelRoot = os.path.abspath(flask_app.config['MODELDIR'])
-        executionRoot = os.path.abspath(flask_app.config['EXECUTIONDIR'])
+        if not os.path.isdir(self.model_root_dir):
+            os.mkdir(self.model_root_dir)
 
-        if not os.path.isdir(modelRoot):
-            os.mkdir(modelRoot)
-
-        if not os.path.isdir(executionRoot):
-            os.mkdir(executionRoot)
+        if not os.path.isdir(self.execution_root_dir):
+            os.mkdir(self.execution_root_dir)
 
         mainTargetID = idForSeq(mainTargetSeq)
 
@@ -562,7 +566,7 @@ class Modeler(object):
         # yasara sticks to the directory where it was started,
         # so make a special directory for yasara to run in and
         # let it store all its output files there:
-        runDir = os.path.join(executionRoot,
+        runDir = os.path.join(self.execution_root_dir,
                               'run-yasara-%i' % (os.getpid()))
         if os.path.isdir(runDir):
             shutil.rmtree(runDir)
@@ -590,7 +594,7 @@ class Modeler(object):
                 (mainTargetID, uniprotSpeciesName,
                  mainDomainRange.start + 1, mainDomainRange.end)
 
-            modelDir = os.path.join(modelRoot, modelname)
+            modelDir = os.path.join(self.model_root_dir, modelname)
             modelArchive = modelDir + '.tgz'
 
             if os.path.isfile(modelArchive) and not overwrite:
@@ -615,7 +619,7 @@ class Modeler(object):
             if os.path.isfile(modelPath) and not overwrite:
 
                 # archive and clean up:
-                os.chdir(modelRoot)
+                os.chdir(self.model_root_dir)
                 tf = tarfile.open(modelname + '.tgz', 'w:gz')
                 tf.add(modelname)  # refers to modelDir
                 tf.close()
@@ -657,7 +661,7 @@ class Modeler(object):
 
             # end of this iteration, move over to next range ...
 
-        os.chdir(executionRoot)
+        os.chdir(self.execution_root_dir)
         shutil.rmtree(runDir)
 
         if len(failedModels) > 0:

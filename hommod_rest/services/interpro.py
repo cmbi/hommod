@@ -76,7 +76,7 @@ class InterproService(object):
             elif child.tag == 'protein' and child.attrib['id'] == ID:
                 protein = child
 
-        if not protein:
+        if protein is None:
             raise Exception('Protein not found: '+ID)
 
         matches = []
