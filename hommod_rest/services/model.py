@@ -16,6 +16,7 @@ from modelutils import (getChainCAsSeqSecStr, getNalignIdentity,
 
 from interaction import listInteractingChains, InteractionPicker
 
+from filelock import FileLock
 from hommod_rest.services.interpro import interpro
 from hommod_rest.services.blast import blaster
 from hommod_rest.services.align import aligner
@@ -595,67 +596,74 @@ class Modeler(object):
             modelDir = os.path.join(self.model_root_dir, modelname)
             modelArchive = modelDir + '.tgz'
 
-            if os.path.isfile(modelArchive) and not overwrite:
+            lockfile_path = modelDir + '_lock'
 
-                members = tarfile.open(modelArchive, mode='r:gz').getnames()
-                pdbpath = os.path.join(modelname, 'target.pdb')
-                if pdbpath in members:
+            # we dont want two threads building the same model, so lock:
+            lock = FileLock(lockfile_path)
+
+            with lock:
+                if os.path.isfile(modelArchive) and not overwrite:
+
+                    members = tarfile.open(modelArchive, mode='r:gz').getnames()
+                    pdbpath = os.path.join(modelname, 'target.pdb')
+                    if pdbpath in members:
+
+                        modelPaths.append(modelArchive)
+
+                        _log.info('%s exists, skipping..' % modelArchive)
+                        continue
+
+                # the model directory is going to be turned into an archive,
+                # All created files will be sent there eventually,
+                # but it's not yasara's working directory.
+                if not os.path.isdir(modelDir):
+                    os.mkdir(modelDir)
+
+                modelPath = os.path.join(modelDir, 'target.pdb')
+
+                if os.path.isfile(modelPath) and not overwrite:
+
+                    # archive and clean up:
+                    os.chdir(self.model_root_dir)
+                    tf = tarfile.open(modelname + '.tgz', 'w:gz')
+                    tf.add(modelname)  # refers to modelDir
+                    tf.close()
+                    shutil.rmtree(modelDir)
 
                     modelPaths.append(modelArchive)
-
-                    _log.info('%s exists, skipping..' % modelArchive)
+                    _log.info('%s already exists, skipping..' % modelArchive)
                     continue
 
-            # the model directory is going to be turned into an archive,
-            # All created files will be sent there eventually,
-            # but it's not yasara's working directory.
-            if not os.path.isdir(modelDir):
-                os.mkdir(modelDir)
+                try:
+                    self._build_for_domain(modelDir, mainTargetID,
+                                           uniprotSpeciesName, mainTemplateID,
+                                           mainTargetSeq, mainDomainRange)
+                except:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    stacktrace = ''.join(traceback.format_exception(
+                        exc_type, exc_value, exc_traceback))
 
-            modelPath = os.path.join(modelDir, 'target.pdb')
+                    _log.error('an exception occured for {}:\n{}'
+                               .format(modelname, stacktrace))
+                    failedModels.append(modelname)
 
-            if os.path.isfile(modelPath) and not overwrite:
+                    open(os.path.join(modelDir, 'errorexit.txt'), 'w') \
+                        .write(stacktrace)
+                    self.yasara.SaveSce(os.path.join(modelDir, 'errorexit.sce'))
 
-                # archive and clean up:
-                os.chdir(self.model_root_dir)
+                # Move all the files that yasara created:
+                for f in os.listdir(runDir):
+                    os.rename(os.path.join(runDir, f),
+                              os.path.join(modelDir, f))
+
+                parent = os.path.dirname(modelDir)
+                os.chdir(parent)
                 tf = tarfile.open(modelname + '.tgz', 'w:gz')
                 tf.add(modelname)  # refers to modelDir
                 tf.close()
                 shutil.rmtree(modelDir)
-
                 modelPaths.append(modelArchive)
-                _log.info('%s already exists, skipping..' % modelArchive)
-                continue
-
-            try:
-                self._build_for_domain(modelDir, mainTargetID,
-                                       uniprotSpeciesName, mainTemplateID,
-                                       mainTargetSeq, mainDomainRange)
-            except:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                stacktrace = ''.join(traceback.format_exception(
-                    exc_type, exc_value, exc_traceback))
-
-                _log.error('an exception occured for {}:\n{}'
-                           .format(modelname, stacktrace))
-                failedModels.append(modelname)
-
-                open(os.path.join(modelDir, 'errorexit.txt'), 'w') \
-                    .write(stacktrace)
-                self.yasara.SaveSce(os.path.join(modelDir, 'errorexit.sce'))
-
-            # Move all the files that yasara created:
-            for f in os.listdir(runDir):
-                os.rename(os.path.join(runDir, f), os.path.join(modelDir, f))
-
-            parent = os.path.dirname(modelDir)
-            os.chdir(parent)
-            tf = tarfile.open(modelname + '.tgz', 'w:gz')
-            tf.add(modelname)  # refers to modelDir
-            tf.close()
-            shutil.rmtree(modelDir)
-            modelPaths.append(modelArchive)
-            os.chdir(runDir)
+                os.chdir(runDir)
 
             # end of this iteration, move over to next range ...
 
