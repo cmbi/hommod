@@ -22,8 +22,6 @@ from hommod_rest.services.align import aligner
 
 import domainalign
 
-from flask import current_app as flask_app
-
 _log = logging.getLogger(__name__)
 
 sh = logging.StreamHandler()
@@ -579,7 +577,7 @@ class Modeler(object):
         if len(mainTargetAlignments) <= 0:
             _log.info('no alignments found for sequence:\n' + mainTargetSeq)
 
-        tarPaths = []
+        modelPaths = []
         failedModels = []
 
         for mainDomainRange, mainTemplateID, mainDomainAlignment in \
@@ -603,7 +601,7 @@ class Modeler(object):
                 pdbpath = os.path.join(modelname, 'target.pdb')
                 if pdbpath in members:
 
-                    tarPaths.append(modelArchive)
+                    modelPaths.append(modelArchive)
 
                     _log.info('%s exists, skipping..' % modelArchive)
                     continue
@@ -625,7 +623,7 @@ class Modeler(object):
                 tf.close()
                 shutil.rmtree(modelDir)
 
-                tarPaths.append(modelArchive)
+                modelPaths.append(modelArchive)
                 _log.info('%s already exists, skipping..' % modelArchive)
                 continue
 
@@ -656,7 +654,7 @@ class Modeler(object):
             tf.add(modelname)  # refers to modelDir
             tf.close()
             shutil.rmtree(modelDir)
-            tarPaths.append(os.path.join(parent, modelname + '.tgz'))
+            modelPaths.append(modelArchive)
             os.chdir(runDir)
 
             # end of this iteration, move over to next range ...
@@ -669,7 +667,7 @@ class Modeler(object):
             raise Exception("the following models have failed: " +
                             str(failedModels))
         else:
-            return tarPaths
+            return modelPaths
 
     def checkmodel(self, modelobj, templateAC, expectedChains, targetAlignment,
                    templateAlignment):
@@ -749,8 +747,9 @@ class Modeler(object):
 
         self.yasara.Processors(1)
 
-        self.yasara.Clear()
+        # self.yasara.Clear()
         self.yasara.ExperimentHomologyModeling(
+            templateobj=tempobj,
             alignfile=alignmentFastaPath,
             templates="1, sameseq = 1",
             alignments=1,
