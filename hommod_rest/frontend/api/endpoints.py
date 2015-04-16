@@ -1,6 +1,6 @@
 import logging
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 
 from hommod_rest.managejobs import create_model
 from hommod_rest.services.utils import (extract_info, extract_alignment,
@@ -41,28 +41,38 @@ def status(jobid):
     return jsonify({'status': result.status})
 
 
-@bp.route('/results/<jobid>/', methods=['GET'])
-def results(jobid):
+@bp.route('/get_model_file/<jobid>.pdb', methods=['GET'])
+def get_model_file(jobid):
+
     from hommod_rest.application import celery
     result = celery.AsyncResult(jobid)
+    path = result.result
+    if not path:  # no model could be created
+        return '', 404
 
-    if result.ready():
+    try:
+        contents = extract_model(path)
+    except:
+        _log.warn('failed to get all data from %s' % path)
+        return '', 500
 
-        paths = result.result
-        results = []
-        for path in paths:
+    return Response(contents, mimetype='chemical/x-pdb')
 
-            try:
-                info = extract_info(path)
-                alignment = extract_alignment(path)
-                contents = extract_model(path)
-            except:
-                _log.warn('failed to get all data from %s' % path)
-                continue
 
-            results.append({
-                'model': contents, 'alignment': alignment, 'info': info})
+@bp.route('/get_metadata/<jobid>/', methods=['GET'])
+def get_metadata(jobid):
 
-        return jsonify({'results': results})
-    else:
-        return jsonify({'error': 'not ready yet'}), 400
+    from hommod_rest.application import celery
+    result = celery.AsyncResult(jobid)
+    path = result.result
+    if not path:
+        return {'error': 'no model could be created'}, 404
+
+    try:
+        data = extract_info(path)
+        data['alignment'] = extract_alignment(path)
+    except:
+        _log.warn('failed to get all data from %s' % path)
+        return 'data not available', 500
+
+    return jsonify(data)
