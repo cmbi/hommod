@@ -29,7 +29,7 @@
 * copy all cmbi dssp files from ftp://ftp.cmbi.ru.nl/pub/molbio/data/dssp/
   and set the path to the dssp directory to DSSPDIR in the config file
 
-* compile joanna lange's secondary structure-dependent alignment tool
+* compile Joanna Lange's secondary structure-dependent alignment tool
   and set its path to MSA in the config file
 
 * set MODELDIR, INTERPRODIR and EXECUTIONDIR to the directories to store
