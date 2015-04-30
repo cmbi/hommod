@@ -8,6 +8,14 @@ from hommod_rest.services.utils import list_models_of, select_best_model
 _log = logging.getLogger(__name__)
 
 
+
+@celery_app.task()
+def create_models_seq(sequence, species_id):
+
+    _log.info("creating models for {} {}".format(sequence, species_id))
+
+    modeler.modelProc(sequence, species_id)
+
 @celery_app.task()
 def create_model(sequence, species_id, residue_number):
 
