@@ -38,7 +38,7 @@ def init():
 
 
 if len(sys.argv) != 3 or not os.path.isfile(sys.argv[2]):
-    print 'usage: %s [species id] [fasta filepath]'
+    print 'usage: %s [species id] [fasta filepath]' % sys.argv[0]
     sys.exit(1)
 
 init()
