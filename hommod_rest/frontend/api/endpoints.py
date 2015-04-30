@@ -2,7 +2,6 @@ import logging
 
 from flask import Blueprint, jsonify, request, Response
 
-from hommod_rest.managejobs import create_model
 from hommod_rest.services.utils import (extract_info, extract_alignment,
                                         extract_model)
 
@@ -11,6 +10,23 @@ _log = logging.getLogger(__name__)
 
 bp = Blueprint('hommod', __name__, url_prefix='/api')
 
+
+@bp.route('/update_cache/', methods=['POST'])
+def update_cache():
+
+    sequence = request.form.get('sequence', None)
+    species_id = request.form.get('species_id', None)
+
+    if not (sequence and species_id):
+        return jsonify({'error': 'invalid input'}), 400
+
+    _log.debug("update resquest for ( sequence: %s, species: %s )"
+               % (sequence, species_id))
+
+    from hommod_rest.tasks import create_models_seq
+    result = create_models_seq.apply_async((sequence, species_id))
+
+    return jsonify({'jobid': result.task_id})
 
 @bp.route('/submit/', methods=['POST'])
 def submit():
@@ -28,10 +44,10 @@ def submit():
     _log.debug("submitted ( sequence: %s, species: %s, position: %i )"
                % (sequence, species_id, position))
 
-    jobid = create_model(sequence, species_id, position)
-    print jobid
+    from hommod_rest.tasks import create_model
+    result = create_model.apply_async((sequence, species, position))
 
-    return jsonify({'jobid': jobid})
+    return jsonify({'jobid': result.task_id})
 
 
 @bp.route('/status/<jobid>/', methods=['GET'])
