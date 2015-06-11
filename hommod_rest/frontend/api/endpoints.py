@@ -45,7 +45,7 @@ def submit():
                % (sequence, species_id, position))
 
     from hommod_rest.tasks import create_model
-    result = create_model.apply_async((sequence, species, position))
+    result = create_model.apply_async((sequence, species_id, position))
 
     return jsonify({'jobid': result.task_id})
 
