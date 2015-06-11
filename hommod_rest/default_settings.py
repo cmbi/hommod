@@ -4,6 +4,7 @@ from kombu import Exchange, Queue
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 CELERY_BROKER_URL = 'amqp://guest@localhost'
 CELERY_DEFAULT_QUEUE = 'hommod'
+CELERYD_CONCURRENCY = 20
 CELERY_QUEUES = (
     Queue('hommod', Exchange('hommod'), routing_key='hommod'),
 )
@@ -22,13 +23,13 @@ MAIL_TO = ["Coos.Baakman@radboudumc.nl"]
 
 DSSPDIR = '/mnt/cmbi4/dssp/'
 MODELDIR = '/data/models/'
-EXECUTIONDIR = '/tmp/'
+EXECUTIONDIR = '/data/tmp/'
 INTERPRODIR = '/data/interpro/'
 
 MSA = '/data/prog/pairwiseUBUNTU/MSA'
 BLASTP = '/usr/bin/blastp'
 CLUSTAL = '/usr/bin/clustalw'
-INTERPROSCAN = '/data/prog/interproscan-5.10-50.0/interproscan.sh'
+INTERPROSCAN = '/data/prog/interproscan-5.8-49.0/interproscan.sh'
 YASARADIR = '/data/prog/Yasara/yasara/'
 SPECIESDBDIR = '/data/blast/uniprot-species/'
 TEMPLATESDB = '/data/blast/templates/templates'
