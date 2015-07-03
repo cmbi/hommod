@@ -771,34 +771,12 @@ class Modeler(object):
             oligostate=32,
             looplenmax=10,
             animation='fast',
-            speed='slow',
+            speed='fast',
             loopsamples=20,
             resultfile='target'
         )
         self.yasara.Experiment("On")
         self.yasara.Wait("Expend")
-
-    def modelWithSequence(self, targetFastaName, tempobj):
-        self._check_init()
-
-        self.yasara.Processors(1)
-
-        self.yasara.Clear()
-        self.yasara.ExperimentHomologyModeling(
-            sequencefile=targetFastaName,
-            templates="1, sameseq = 1",
-            alignments=1,
-            termextension=0,
-            oligostate=32,
-            looplenmax=10,
-            animation='fast',
-            speed='slow',
-            loopsamples=20,
-            resultfile='target'
-        )
-        self.yasara.Experiment("On")
-        self.yasara.Wait("Expend")
-
 
 modeler = Modeler()
 
