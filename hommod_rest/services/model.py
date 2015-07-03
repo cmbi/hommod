@@ -6,6 +6,7 @@ import sys
 import tarfile
 import traceback
 
+from time import time
 from suds import client
 
 from modelutils import (getChainCAsSeqSecStr, getNalignIdentity,
@@ -33,6 +34,12 @@ _log.addHandler(sh)
 _log.setLevel(logging.DEBUG)
 
 
+def time_log (text):
+
+    logfile = 'time.txt'
+    open (logfile, 'a').write (text)
+
+        
 def selectHighestSeqID(seq, fromd):
     qid = 'query'
 
@@ -42,6 +49,7 @@ def selectHighestSeqID(seq, fromd):
     for homolog in fromd.keys():
 
         # Aligning them all in one run can be very time consuming !
+        # So align in pairs
 
         aligned = aligner.clustalAlign({qid: seq, homolog: fromd[homolog]})
         pid = getPercentageIdentity(aligned[qid], aligned[homolog])
@@ -298,25 +306,6 @@ class Modeler(object):
 
         return [tempobj, nMolsOligomerized / nMolsUnoligomerized]
 
-    def separateChains(self, obj, chainsToSeparate):
-        self._check_init()
-
-        chains = self.yasara.ListMol("obj %i and protein" % obj)
-        chainsToKeep = []
-        for chain in chains:
-            if chain not in chainsToSeparate:
-                chainsToKeep.append(chain)
-
-        newobj = self.yasara.DuplicateObj(obj)[0]
-
-        for chain in chainsToKeep:
-            self.yasara.DelMol('obj %i and %s' % (newobj, chain))
-
-        for chain in chainsToSeparate:
-            self.yasara.DelMol('obj %i and %s' % (obj, chain))
-
-        return newobj
-
     def _build_for_domain(self, modelDir, mainTargetID, uniprotSpeciesName,
                           mainTemplateID, mainTargetSeq, mainDomainRange):
 
@@ -340,6 +329,8 @@ class Modeler(object):
 
             _log.debug("template sequences after _set_template:\n " +
                        str(templateChainSequences))
+
+            time_start = time()
 
             # Add the first alignments,
             # belonging to the input target protein
@@ -516,6 +507,10 @@ class Modeler(object):
                         .write('\tmodeling target %s on chain %s\n'
                                % (selectedTarget, chainID))
 
+            time_targets = time()
+
+            time_log ("took %d seconds to pick targets for template\n" % (time_targets - time_start))
+
             # < end of interaction finding iter
 
             # Delete chains that weren't aligned, assuming there's no
@@ -546,9 +541,14 @@ class Modeler(object):
             # Save the model in PDB format:
             self.yasara.SavePDB(tempobj, modelPath)
 
-            _log.info("sucessfully created " + modelPath)
+            time_model = time()
 
-    def modelProc(self, mainTargetSeq, uniprotSpeciesName, requireRes=None,
+            time_log ("yasara modeling run took %d seconds\n" % (time_model - time_targets))
+
+            _log.info ("sucessfully created " + modelPath)
+
+
+    def modelProc (self, mainTargetSeq, uniprotSpeciesName, requireRes=None,
                   overwrite=False):
         self._check_init()
 
@@ -572,8 +572,14 @@ class Modeler(object):
         os.mkdir(runDir)
         os.chdir(runDir)
 
+        time_start = time()
+
         mainTargetAlignments = \
             domainalign.getAlignments(ranges, mainTargetSeq)
+
+        time_after_alignments = time()
+
+        time_log ("took %i seconds to compute and filter alignments\n" % (time_after_alignments - time_start))
 
         if len(mainTargetAlignments) <= 0:
             _log.info('no alignments found for sequence:\n' + mainTargetSeq)
