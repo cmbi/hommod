@@ -2,7 +2,8 @@ import os
 import sys
 from hommod_rest.services.modelutils import parseDSSP
 
-
+# Secondary structure can either be taken from dssp or yasara.
+# Use yasara when dssp is not available.
 class SecStrProvider(object):
 
     def __init__(self):

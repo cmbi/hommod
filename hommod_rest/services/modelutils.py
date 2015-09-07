@@ -86,7 +86,8 @@ def writeFasta(d,  filename):
             i = j
     f.close()
 
-
+# parseDSSP returns:
+#
 #     data
 #      |
 #      +--chain A
@@ -186,7 +187,7 @@ templateBlastHitPattern = \
     re.compile(r"^pdb\|[0-9][A-Za-z0-9]{3}\|[A-Z0-9]{1,2}$")
 
 
-def getChainCAsSeqSecStr(yasara,  obj,  chain):
+def getChainCAsSeqSecStr (yasara, obj, chain):
 
     CAs = []
     seq = ''
@@ -203,6 +204,10 @@ def getChainCAsSeqSecStr(yasara,  obj,  chain):
     return [CAs,  seq,  secStr]
 
 
+# A chain in yasara is identified by:
+# * the yasara object
+# * the yasara module that loaded the object
+# * the chain identifier
 class YasaraChain(object):
 
     def __init__(self,  yasaramodule,  yasaraobj,  chainID):
@@ -299,12 +304,16 @@ def parseStockholmAlignment(filename):
     return d
 
 
-def replaceCharAt(string,  index,  newChar):
+def replaceCharAt (string, index, newChar):
 
     return string[: index] + newChar + string[index + 1:]
 
-
-def removeBulges(secstr,  elementType,  elementLength):
+# Extends secondary structure (secstr) where two ranges of
+# 'elementType' (example: helix/strand) of length 'elementLength' or longer
+# are interrupted by one occurence of a different type (mostly random coil)
+# by replacing this single occurence by 'elementType', thus
+# making the helix/strand considered uninterrupted in python.
+def removeBulges (secstr, elementType, elementLength):
 
     surrounding = elementType * elementLength
     i = elementLength
@@ -527,7 +536,8 @@ def getUniprotSeq(ac):
         return getRCSBSeqs(ac)
 
 
-def filterGoodHits(hits):
+# Keeps only blast hits that lie above the output of minIdentity.
+def filterGoodHits (hits):
 
     filtered = {}
     for hitID in hits.keys():
@@ -544,15 +554,17 @@ def filterGoodHits(hits):
 
 
 # http://dx.doi.org/10.1093/protein/12.2.85
-def minIdentity(nalign):
+# Rost curve.
+def minIdentity (nalign):
     if nalign <= 0:
         return float('inf')
 
-    n = float(nalign)
+    n = float (nalign)
 
     return 480 * pow(n, -0.32 * (1 + exp(-n / 1000)))
 
 
+# Object to represent the alignment output by blast.
 class BlastAlignment(object):
     def __init__(self, querystart, queryend, queryalignment, subjectstart,
                  subjectend, subjectalignment):
@@ -650,7 +662,16 @@ class BlastAlignment(object):
 
         return '-'
 
-
+# Parses the xml output of blastp and converts it to
+# BlastAlignment objects, output like so:
+# hits:
+#   hit_id1:
+#       alignment1
+#       alignment2
+#
+#   hit_id2:
+#       alignment3
+#       alignment4
 def parseBlastXML(xmlstring):
     if len(xmlstring) == 0:
         raise Exception('empty xml string')
@@ -685,7 +706,7 @@ def parseBlastXML(xmlstring):
 queryp = re.compile(r'Query\s*\ = \s*[0-9a-z\-]+')
 lengthp = re.compile(r'Length\s*\ = \s*\d+')
 
-
+# Parses plain text output of blastp, not used anymore.
 def parseBlastResults(lines):
     if len(lines) <= 0:
         return {}
