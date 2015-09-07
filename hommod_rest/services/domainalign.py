@@ -514,10 +514,11 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
         # merging must reduce the number of blasts/alignments:
         mergedSampleRanges = mergeSimilar(sampleRanges)
 
-        for r in sortLargestFirst(mergedSampleRanges):
+        for r in sortLargestFirst (mergedSampleRanges):
 
             if r in checkedRanges:
-                continue
+                continue # Already passed this one
+
             checkedRanges.append(r)
 
             # Check to see if this range is part of a larger range that also
@@ -537,7 +538,7 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
 
             _log.debug('trying range: %s' % r)
 
-            if yasaraChain:
+            if yasaraChain: # template already chosen outside this function
 
                 templateSelected = \
                     TemplateID(yasaraChain.objname, yasaraChain.chainID)
@@ -564,7 +565,6 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                         m = getCoveredTargetRange(aligned)
                     else:
                         m = TargetRange(r.start, r.end)
-                        checkedRanges.append(m)
 
                     m.template = templateSelected
                     m.pid = pid
@@ -586,7 +586,7 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                                % (templateSelected, alignmentRepr(
                                   aligned, ['target', 'midline', 'template'])))
 
-            else:
+            else: # No chosen template, check all
 
                 # iterate over blast hits:
                 hits = filterGoodHits(
@@ -621,7 +621,7 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                                 m = getCoveredTargetRange(aligned)
                             else:
                                 m = TargetRange(r.start, r.end)
-                                checkedRanges.append(m)
+
                             m.template = template
                             m.pid = pid
                             m.pcover = pcover
