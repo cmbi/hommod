@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+# The code in this script was added to account for interactions
+# between protein chains in the template. When making an alignment,
+# We'd like to preserve as much interaction as possible...
+
 from modelutils import YasaraChain
 
 import domainalign
@@ -9,52 +13,71 @@ import logging
 _log = logging.getLogger(__name__)
 
 
-def getTargetCoveredRange(alignment, templateseq):
+# This functino must return the start and end position of the range
+# in the target sequence, covered by the given template.
+# Assumes that the alignment has the sequence ids 'target' and 'template'
+# Alignment target sequence is assumed to be the full target sequence.
+def getTargetCoveredRange (alignment, templateseq):
 
-    if templateseq != alignment['template'].replace('-', ''):
+    # templateseq must match its alignment ['template'],
+    # but alignment ['template'] may be a substring of templateseq:
+    if templateseq != alignment ['template'].replace('-', ''):
         raise Exception(
-            'mismatch between alignment and template sequence\nseg:' +
+            'mismatch between alignment and template sequence\nseq:' +
             templateseq+'\nali:'+alignment['template']
         )
 
-    coveredRangeStart = 0
-    while not alignment['target'][coveredRangeStart].isalpha():
-        coveredRangeStart += 1
-    coveredRangeEnd = coveredRangeStart
-    while (coveredRangeEnd < len(alignment['target']) and
-           alignment['target'][coveredRangeEnd].isalpha()):
+    # Determine alignment['target']'s start and end positions in alignment:
+    targetStart = 0
+    while not alignment['target'][targetStart].isalpha():
 
-        coveredRangeEnd += 1
+        targetStart += 1
 
-    coveredRangeStart = len(alignment['template'][:coveredRangeStart]
+    targetEnd = targetStart
+    while (targetEnd < len(alignment['target']) and
+           alignment['target'][targetEnd].isalpha()):
+
+        targetEnd += 1
+
+
+    # Determine where alignment['template'] starts, relative to alignment['target']:
+    coveredRangeStart = len(alignment['template'][:targetStart]
                             .replace('-', ''))
+
     coveredRangeEnd = (len(templateseq) -
-                       len(alignment['template'][coveredRangeEnd:]
+                       len(alignment['template'][targetEnd:]
                            .replace('-', '')))
 
-    return [coveredRangeStart, coveredRangeEnd]
+    return (coveredRangeStart, coveredRangeEnd)
 
 
-def listInteractingChains(yasaraChain):
+# This function must tell which tell which other template chains
+# interact with the given one.
+def listInteractingChains (yasaraChain):
 
+    # Take everything that's close enough:
     return yasaraChain.yasaramodule.ListMol(
         'protein and obj %i and not mol %s with distance<4.5 from obj %i mol %s'
         % (yasaraChain.obj, yasaraChain.chainID,
            yasaraChain.obj, yasaraChain.chainID), 'MOL')
 
-    chains = []
+#    chains = []
+#
+#    for ca in yasaraChain.CAs:
+#        for chain2 in (yasaraChain.yasaramodule.ListAtom(
+#                       'CA and obj %i with distance<6 from %i' %
+#                       (yasaraChain.obj, ca), 'MOL')):
+#            if chain2 != yasaraChain.chainID and chain2 not in chains:
+#                chains.append(chain2)
+#
+#    return chains
 
-    for ca in yasaraChain.CAs:
-        for chain2 in (yasaraChain.yasaramodule.ListAtom(
-                       'CA and obj %i with distance<6 from %i' %
-                       (yasaraChain.obj, ca), 'MOL')):
-            if chain2 != yasaraChain.chainID and chain2 not in chains:
-                chains.append(chain2)
 
-    return chains
-
-
-class InteractionPicker(domainalign.Picker):
+# This class accepts/rejects alignments, based on interaction preservation.
+# On the basis of two template chains: the subject chain and interacting chain.
+# Takes alignments for both chains and checks whether the target-covered parts
+# are interacting in those alignments.
+class InteractionPicker (domainalign.Picker):
 
     def __init__(self, subjectYasaraChain, interactionChainAlignments):
         # Alignments tell which regions are covered
@@ -64,8 +87,10 @@ class InteractionPicker(domainalign.Picker):
 
     def accepts(self, targetID, subjectChainAlignment):
 
+        # Check all interacting chain alignments for interactions:
         for chainID in self.interactionChainAlignments.keys():
 
+            # Determine which residues in the chains are covered by a target sequence:
             sCAs = self.subjectYasaraChain.CAs
             sseq = self.subjectYasaraChain.seq
 
@@ -81,9 +106,13 @@ class InteractionPicker(domainalign.Picker):
                 self.interactionChainAlignments[chainID], iseq
             )
 
-            for i in range(sstart, send):
-                sca = sCAs[i]
+            # Check every target-covered residue in the subject chain:
+            for i in range (sstart, send):
 
+                # Subject chain C-alpha:
+                sca = sCAs [i]
+
+                # Search for close C-alphas in the other chain:
                 search_cmd = ('CA and atom {}-{} and obj {} and ' +
                               'mol {} with distance<6 from {}') \
                     .format(iCAs[istart], iCAs[iend - 1],
@@ -93,7 +122,8 @@ class InteractionPicker(domainalign.Picker):
                 interactingCAs =\
                     interactionYasaraChain.yasaramodule.ListAtom(search_cmd)
 
-                if 0 < len(interactingCAs):
+                # Return True if a single interacting C-alpha pair is found:
+                if 0 < len (interactingCAs):
 
                     _log.debug("found interaction between chains {} and {}"
                                .format(interactionYasaraChain.chainID,
