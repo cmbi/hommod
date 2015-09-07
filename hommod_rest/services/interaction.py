@@ -74,7 +74,7 @@ def listInteractingChains (yasaraChain):
 
 
 # This class accepts/rejects alignments, based on interaction preservation.
-# On the basis of two template chains: the subject chain and interacting chain.
+# On the basis of the subject chain and other chains that interact with it.
 # Takes alignments for both chains and checks whether the target-covered parts
 # are interacting in those alignments.
 class InteractionPicker (domainalign.Picker):
@@ -87,8 +87,8 @@ class InteractionPicker (domainalign.Picker):
 
     def accepts(self, targetID, subjectChainAlignment):
 
-        # Check all interacting chain alignments for interactions:
-        for chainID in self.interactionChainAlignments.keys():
+        # Check all interacting chains' alignments for interactions:
+        for chainID in self.interactionChainAlignments:
 
             # Determine which residues in the chains are covered by a target sequence:
             sCAs = self.subjectYasaraChain.CAs

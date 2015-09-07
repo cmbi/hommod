@@ -61,21 +61,26 @@ def selectHighestSeqID(seq, fromd):
     return best
 
 
-def onlyX(seq):
+# Returns true if a sequence is only X's
+def onlyX (seq):
     return (len(seq) == seq.count('X'))
 
 
-def withoutHomomerDuplicates(chainOrder, chainSequences):
+# Many templates contain duplicate chains. This function reduces
+# The set of sequences to a smaller set with only unique sequences.
+def withoutHomomerDuplicates (chainOrder, chainSequences):
+
     count = {}
     seq2chains = {}
 
+    # Order chain ids by sequence:
     for chain in chainOrder:
-        seq = chainSequences[chain]
+        seq = chainSequences [chain]
         if seq not in count:
-            count[seq] = 0
-            seq2chains[seq] = []
-        count[seq] += 1
-        seq2chains[seq].append(chain)
+            count [seq] = 0
+            seq2chains [seq] = []
+        count [seq] += 1
+        seq2chains [seq].append (chain)
 
     # Check that every sequence occurs the same number of times:
     sameNum = True
@@ -84,15 +89,17 @@ def withoutHomomerDuplicates(chainOrder, chainSequences):
             sameNum = False
             break
 
-    if sameNum:
+    if sameNum: # If all sequences occur twice for example:
+
+        # Return only the first of every set of duplicates:
         newChainSequences = {}
         newChainOrder = []
-        for seq in count.keys():
-            newChainSequences[seq2chains[seq][0]] = seq
+        for seq in count.keys ():
+            newChainSequences [seq2chains [seq][0]] = seq
 
         for chain in chainOrder:
             if chain in newChainSequences:
-                newChainOrder.append(chain)
+                newChainOrder.append (chain)
 
         return [newChainOrder, newChainSequences]
     else:
@@ -169,6 +176,12 @@ def writeAlignmentFasta(chainOrder, alignmentsByChain, templateAC, path):
 
 
 class Modeler(object):
+
+    # must be set before building models:
+    # * yasara dir: where yasara is installed
+    # * execution root: where the modeler can run and create temporary files
+    # * model root: where finished models should be placed
+
     def __init__(self, yasara_dir=None):
         self._yasara_dir = yasara_dir
         self.execution_root_dir = None
@@ -190,9 +203,10 @@ class Modeler(object):
 
         import yasaramodule
         self.yasara = yasaramodule
-        self.yasara.info.mode = 'txt'
+        self.yasara.info.mode = 'txt' # Don't use graphic, it fails without graphical interface
 
     def _check_init(self):
+
         if self._yasara_dir is None:
             raise Exception("yasara_dir has not been set")
 
@@ -202,9 +216,12 @@ class Modeler(object):
         if self.model_root_dir is None:
             raise Exception("model root not set")
 
+    # Use this function to get the template sequences:
     def getChainOrderAndSeqs(self, tempobj):
 
         self._check_init()
+
+        # chainOrder is the order that yasara maintains.
 
         chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
         s = self.yasara.SequenceMol('obj %i protein' % tempobj)
@@ -221,7 +238,7 @@ class Modeler(object):
 
             # Some templates have two protein chains with the same ID:
             if chain not in tempChainSeqs:
-                uniqueChainOrder.append(chain)
+                uniqueChainOrder.append (chain)
 
             tempChainSeqs[chain] = seq
 
@@ -233,6 +250,15 @@ class Modeler(object):
         return self.yasara.SequenceMol('%s obj %i protein' %
                                        (chain, tempobj))[0]
 
+    # This function loads the template into yasara and also
+    # takes some other actions:
+    #    * oligomerization (can be switched off)
+    #    * symmetry residues: fills in missing residues
+    #    * deleting buffer molecules
+    #    * replacing residues of type X by alanine or glycine
+    #
+    # returns the number of the yasara object and the
+    # oligomerization factor. (1 if no oligomerization) 
     def _set_template(self, tempac, oligomerize=True):
         self._check_init()
 
@@ -278,7 +304,7 @@ class Modeler(object):
         try:
             self.yasara.BuildSymRes('obj %i' % tempobj)
         except Exception as e:
-            _log.error('Cannot execute BuildSymRes on {}: {}' % (tempac, e))
+            _log.error('Cannot execute BuildSymRes on {}: {}'.format (tempac, e.args [0]))
 
         # Make sure there's only one chain for each chain identifier:
         chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
@@ -300,12 +326,18 @@ class Modeler(object):
         self.yasara.SwapRes(
             'Protein and UNK and atom CA and not atom CB', 'GLY')
 
+        # Delete buffer molecules:
         self.yasara.DelRes('HOH H2O DOD D2O TIP WAT SOL ACT ACM ACY ' +
                            'EDO EOH FLC FMT GOL I3M IPA MLI MOH PEO ' +
                            'PO4 SO3 SO4 _TE UNX ACE')
 
         return [tempobj, nMolsOligomerized / nMolsUnoligomerized]
 
+
+    # This function builds a model for one alignment.
+    # It must be given a directory to work in,
+    # the main target's id, sequence and domain range object,
+    # a uniprot species id, a template ID (pdbid and chain)
     def _build_for_domain(self, modelDir, mainTargetID, uniprotSpeciesName,
                           mainTemplateID, mainTargetSeq, mainDomainRange):
 
@@ -317,58 +349,85 @@ class Modeler(object):
             open(selectedTargetsPath, 'w') \
                 .write('template: %s\n' % mainTemplateID.pdbac)
 
-            # Load template:
+            # Load template and perform all necessary modifications:
             tempobj, oligomerisation = \
-                self._set_template(mainTemplateID.pdbac)
+                self._set_template (mainTemplateID.pdbac)
 
+            # One alignment per chain id:
             alignments = {}
 
             # Get the template's sequences:
             chainOrder, templateChainSequences = \
                 self.getChainOrderAndSeqs(tempobj)
 
+            # Remove funny insertions/deletions from main target:
+            mainTargetSeq = adjustTargetSequence (mainTargetSeq, templateChainSequences [mainTemplateID.chainID], uniprotSpeciesName)
+
             _log.debug("template sequences after _set_template:\n " +
                        str(templateChainSequences))
 
+
+            # A template can have more than one chain, but the main target is
+            # not necessarily homologous to all of these chains. So we must make
+            # sure that we find other targets for those other template chains.
+            # However, we only need to do this for chains that actually interact
+            # with the main target's template chain...
+
             time_start = time()
 
-            # Add the first alignments,
-            # belonging to the input target protein
+           
+            # Part of the main target sequence that's in the domain range:
             mainDomainSeq = \
-                mainTargetSeq[mainDomainRange.start: mainDomainRange.end]
-            for chainID in pickTemplateChainsFor(
+                mainTargetSeq [mainDomainRange.start: mainDomainRange.end]
+
+            # Add the first alignments,
+            # involving the main target sequence:
+            # (the main target might be selected for more than one template sequence)
+            for chainID in pickTemplateChainsFor (
                     templateChainSequences, mainTargetSeq):
 
+                # Of coarse, we've already made an alignment previously
+                # while determining the covered domain. However, we want
+                # to make a new final alignment here, using a fine-tuned
+                # program.
+
+                # It's based on secondary structure, so we get that
+                # information first:
                 tempCAs, templateChainSeq, templateChainSecStr = \
                     getChainCAsSeqSecStr(self.yasara, tempobj, chainID)
 
-                _log.debug("aligning input target sequence \n{}"
-                           .format(mainDomainSeq)
-                           + "\nto template {} {}"
-                           .format(mainTemplateID.pdbac, chainID)
-                           + " sequence\n{}\n{}"
-                           .format(templateChainSeq, templateChainSecStr))
+                _log.debug ("aligning input target sequence \n{}"
+                            .format(mainDomainSeq)
+                            + "\nto template {} {}"
+                            .format(mainTemplateID.pdbac, chainID)
+                            + " sequence\n{}\n{}"
+                            .format(templateChainSeq, templateChainSecStr))
 
-                alignments[chainID] = aligner \
+                alignments [chainID] = aligner \
                     .msaAlign(templateChainSeq,
                               templateChainSecStr, mainDomainSeq)
-                open(selectedTargetsPath, 'a') \
+                open (selectedTargetsPath, 'a') \
                     .write('\tmodeling main target %s on chain %s\n' %
                            (mainTargetID, chainID))
 
-            # Try to find and align targets for
-            # interacting chains in the template:
-            while len(alignments) < \
-                    len(self.yasara.ListMol(
+            # Try to find and align target sequences for
+            # interacting chains in the template, while keeping
+            # in mind which residues interact and must thus be
+            # covered by the alignment.
+            # We expand the set of involved template
+            # chains with every iteration, until all template
+            # chains have been added.
+            while len (alignments) < \
+                    len (self.yasara.ListMol (
                         'obj %i and protein' % tempobj)):
 
-                # Make python remember to which
-                # chains the candidate chains interact
+                # First, make python remember to which
+                # chains the candidate chains interact:
                 candidateChainInteractsWith = {}
-                for c in alignments.keys():
+                for c in alignments:
                     for chainID in \
                             listInteractingChains(
-                                YasaraChain(self.yasara, tempobj, c)):
+                                YasaraChain (self.yasara, tempobj, c)):
 
                         # Skip those, that we've already aligned
                         # to prevent infinite loops:
@@ -378,32 +437,43 @@ class Modeler(object):
                         if chainID not in candidateChainInteractsWith:
                             candidateChainInteractsWith[chainID] = []
 
-                        candidateChainInteractsWith[chainID].append(c)
+                        candidateChainInteractsWith [chainID].append(c)
+
+                if len (candidateChainInteractsWith) <= 0:
+
+                    # No more interacting chains to add.
+                    break
 
                 # iterate over chains that might interact with the chains
-                # already aligned
-                for chainID in candidateChainInteractsWith.keys():
+                # that are already in the set:
+                for chainID in candidateChainInteractsWith:
 
                     # Gather the alignments of
-                    # the interaction partner chains
+                    # the interaction partner chains.
+                    # These are chains that we've already added to the set,
+                    # so their alignments are already there.
                     interactingChainAlignments = {}
                     for interactingChainID in \
                             candidateChainInteractsWith[chainID]:
-                        interactingChainAlignments[interactingChainID] = \
-                            alignments[interactingChainID]
+
+                        interactingChainAlignments [interactingChainID] = \
+                            alignments [interactingChainID]
 
                     tempCAs, templateChainSeq, templateChainSecStr = \
-                        getChainCAsSeqSecStr(self.yasara, tempobj, chainID)
+                        getChainCAsSeqSecStr (self.yasara, tempobj, chainID)
 
-                    potentialTargetSeqs = findTargets(templateChainSeq,
-                                                      uniprotSpeciesName)
+                    # Find targets from the target species, homologous to this template chain:
+                    potentialTargetSeqs = findTargets (templateChainSeq,
+                                                       uniprotSpeciesName)
 
-                    _log.debug("found {} potential target sequences for {} {}"
-                               .format(len(potentialTargetSeqs),
+                    _log.debug ("found {} potential target sequences for {} {}"
+                               .format (len (potentialTargetSeqs),
                                        mainTemplateID.pdbac, chainID))
 
-                    yasaraChain = YasaraChain(self.yasara, tempobj, chainID)
+                    yasaraChain = YasaraChain (self.yasara, tempobj, chainID)
 
+                    # Pick the target with the hightest sequence identity,
+                    # and domain coverage.
                     targetsInterproRanges = {}
                     bestPID = 0.0
                     selectedTarget = None
@@ -423,24 +493,29 @@ class Modeler(object):
                             yasaraChain.seq,
                             yasaraChain.secstr,
                             potentialTargetSeqs[targetID])
+
                         pcov, pid = getCoverageIdentity(
                             alignment['template'], alignment['target'])
-                        if pcov > 90.0:
+
+                        if pcov > 90.0: # Coverage is large enough, take the whole sequence:
 
                             if chainID not in alignments or pid > bestPID:
                                 alignments[chainID] = alignment
                                 bestPID = pid
                                 selectedTarget = targetID
 
-                        else:
-                            targetsInterproRanges[targetID] = interpro \
-                                .getInterproDomainLocations(mainTargetSeq)
+                        else: # no luck, bother interpro:
+                            targetsInterproRanges [targetID] = interpro \
+                                .getInterproDomainLocations (mainTargetSeq)
 
-                    if chainID not in alignments:
+                    if chainID not in alignments: # Not been added yet at this point
 
-                        _log.debug("no 90 percent coverage target for {} {}"
+                        _log.debug ("no 90 percent coverage target for {} {}"
                                    .format(mainTemplateID.pdbac, chainID))
 
+                        # Find out which targets, given their domain ranges,
+                        # preserve the interaction with the other chains when
+                        # aligned to the template chain:
                         picker = InteractionPicker(
                             yasaraChain, interactingChainAlignments)
                         alignmentTriplesPerTarget = \
@@ -453,17 +528,21 @@ class Modeler(object):
                                    + " interacton picker for {} {}"
                                    .format(mainTemplateID.pdbac, chainID))
 
-                        for targetID in alignmentTriplesPerTarget.keys():
+                        # Iterate over targets that passed:
+                        for targetID in alignmentTriplesPerTarget:
 
-                            nrange = len(alignmentTriplesPerTarget[targetID])
+                            nrange = len(alignmentTriplesPerTarget [targetID])
                             _log.debug("got {} interpro ranges for {} on {} {}"
                                        .format(nrange, targetID,
                                                mainTemplateID.pdbac, chainID))
 
+                            # Join the alignments for this one target into one,
+                            # maximizing the coverage of the template chain:
                             domain_alignment = domainalign \
                                 .joinAlignmentsToBestTemplateCoverage(
-                                    alignmentTriplesPerTarget[targetID])
+                                    alignmentTriplesPerTarget [targetID])
 
+                            # Remove gaps from aligned target sequence:
                             domain_target_seq = \
                                 domain_alignment['target'].replace('-', '')
 
@@ -476,33 +555,40 @@ class Modeler(object):
                                 .format(templateChainSeq, templateChainSecStr))
 
                             # Realign once more using the complete target
-                            # range that we found:
+                            # range that we found by joining the alignments:
                             alignment = aligner.msaAlign(
                                 templateChainSeq, templateChainSecStr,
                                 domain_target_seq)
 
+                            # Determine the best target for this chain id:
+                            # (highest identity)
                             nalign, pid = getNalignIdentity(
-                                alignment['target'], alignment['template'])
+                                alignment ['target'], alignment ['template'])
                             if chainID not in alignments or pid > bestPID:
-                                alignments[chainID] = alignment
+                                alignments [chainID] = alignment
                                 bestPID = pid
                                 selectedTarget = targetID
 
                     _log.debug("selected target for interacting {} {} is {}"
-                               .format(mainTemplateID.pdbac, chainID,
+                               .format (mainTemplateID.pdbac, chainID,
                                        selectedTarget))
 
+                    # Occasionally, we don't find any target for a template chain.
+                    # It's solved here:
                     if chainID not in alignments:
 
-                        _log.debug("putting poly-A on chain {} of {}"
-                                   .format(chainID, mainTemplateID.pdbac))
+                        _log.debug ("putting poly-A on chain {} of {}"
+                                   .format (chainID, mainTemplateID.pdbac))
 
-                        alignments[chainID] = {
+                        # Place alanines in the target sequence, with same
+                        # length as templare chain:
+                        alignments [chainID] = {
                             'template': yasaraChain.seq,
                             'target': 'A' * len(yasaraChain.seq)}
                         selectedTarget = 'poly-A'
                         self.yasara.OccupMol(chainID, 0.0)
 
+                    # We document in a file which targets we used for this model:
                     open(selectedTargetsPath, 'a') \
                         .write('\tmodeling target %s on chain %s\n'
                                % (selectedTarget, chainID))
@@ -514,7 +600,7 @@ class Modeler(object):
             # < end of interaction finding iter
 
             # Delete chains that weren't aligned, assuming there's no
-            # interaction
+            # interaction with the main target's homologs:
             for chainID in chainOrder:
                 if chainID not in alignments:
 
@@ -548,6 +634,13 @@ class Modeler(object):
             _log.info ("sucessfully created " + modelPath)
 
 
+    # This is the main function for building a set of models.
+    # Input is a target sequence and a uniprot species id.
+    # The function seqrches its own templates. 
+    #
+    # Optional:
+    #   requireRes: a residue number in target sequence (1,2,3,..) that must be covered by the model.
+    #   overwrite: true if old models must be rebuilt, false if they must be skipped
     def modelProc (self, mainTargetSeq, uniprotSpeciesName, requireRes=None,
                   overwrite=False):
         self._check_init()
@@ -558,9 +651,17 @@ class Modeler(object):
         if not os.path.isdir(self.execution_root_dir):
             os.mkdir(self.execution_root_dir)
 
-        mainTargetID = idForSeq(mainTargetSeq)
+        # A model can have multiple target sequences, since the template
+        # can have multiple chains.
+        # The target sequence, that the model was built for, will be
+        # called the 'main' target sequence.
 
-        ranges = interpro.getInterproDomainLocations(mainTargetSeq)
+        # Unique ID for this sequence:
+        mainTargetID = idForSeq (mainTargetSeq)
+
+        # Determine all domain ranges within our main target sequence.
+        # (source: interpro)
+        ranges = interpro.getInterproDomainLocations (mainTargetSeq)
 
         # yasara sticks to the directory where it was started,
         # so make a special directory for yasara to run in and
@@ -574,8 +675,10 @@ class Modeler(object):
 
         time_start = time()
 
+        # Blast and filter alignments that satisfy the given set of
+        # domain ranges. No halfway cut domains are alowed!
         mainTargetAlignments = \
-            domainalign.getAlignments(ranges, mainTargetSeq)
+            domainalign.getAlignments (ranges, mainTargetSeq)
 
         time_after_alignments = time()
 
@@ -587,9 +690,12 @@ class Modeler(object):
         modelPaths = []
         failedModels = []
 
+        # Iterate over all alignments that we've got. Any alignment
+        # is a potential model.
         for mainDomainRange, mainTemplateID, mainDomainAlignment in \
                 mainTargetAlignments:
-            # skip ranges that don't cover
+
+            # skip ranges that don't cover the requireRes (if given)
             if requireRes and \
                     ((requireRes - 1) < mainDomainRange.start or
                      (requireRes - 1) >= mainDomainRange.end):
@@ -599,22 +705,25 @@ class Modeler(object):
                 (mainTargetID, uniprotSpeciesName,
                  mainDomainRange.start + 1, mainDomainRange.end)
 
-            modelDir = os.path.join(self.model_root_dir, modelname)
+            modelDir = os.path.join (self.model_root_dir, modelname)
             modelArchive = modelDir + '.tgz'
 
+            # A unique lockfile name, based on the model name:
             lockfile_path = modelDir + '_lock'
 
             # we dont want two threads building the same model, so lock:
-            lock = FileLock(lockfile_path)
+            lock = FileLock (lockfile_path)
 
             with lock:
-                if os.path.isfile(modelArchive) and not overwrite:
+                if os.path.isfile (modelArchive) and not overwrite:
 
-                    members = tarfile.open(modelArchive, mode='r:gz').getnames()
-                    pdbpath = os.path.join(modelname, 'target.pdb')
+                # Found the archive for this model before starting, see if it's populated:
+
+                    members = tarfile.open (modelArchive, mode='r:gz').getnames()
+                    pdbpath = os.path.join (modelname, 'target.pdb')
                     if pdbpath in members:
 
-                        modelPaths.append(modelArchive)
+                        modelPaths.append (modelArchive)
 
                         _log.info('%s exists, skipping..' % modelArchive)
                         continue
@@ -627,7 +736,9 @@ class Modeler(object):
 
                 modelPath = os.path.join(modelDir, 'target.pdb')
 
-                if os.path.isfile(modelPath) and not overwrite:
+                if os.path.isfile (modelPath) and not overwrite:
+                # Found the output directory for this model already before we started.
+                # (just not yet archived)
 
                     # archive and clean up:
                     os.chdir(self.model_root_dir)
@@ -640,11 +751,18 @@ class Modeler(object):
                     _log.info('%s already exists, skipping..' % modelArchive)
                     continue
 
+                # We're now sure that the model doesn't exist yet.
+                # At this point we start the actual model building.
                 try:
-                    self._build_for_domain(modelDir, mainTargetID,
-                                           uniprotSpeciesName, mainTemplateID,
-                                           mainTargetSeq, mainDomainRange)
-                except:
+                    self._build_for_domain (modelDir, mainTargetID,
+                                            uniprotSpeciesName, mainTemplateID,
+                                            mainTargetSeq, mainDomainRange)
+
+                except: # An error ocurred during modeling.
+
+                    # Don't exit, just print error to log and
+                    # move on to the next alignment.
+
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     stacktrace = ''.join(traceback.format_exception(
                         exc_type, exc_value, exc_traceback))
@@ -653,28 +771,35 @@ class Modeler(object):
                                .format(modelname, stacktrace))
                     failedModels.append(modelname)
 
-                    open(os.path.join(modelDir, 'errorexit.txt'), 'w') \
+                    # Also include error and yasara scene in the model dir,
+                    # for debugging and yasara bug reports.
+                    open (os.path.join (modelDir, 'errorexit.txt'), 'w') \
                         .write(stacktrace)
-                    self.yasara.SaveSce(os.path.join(modelDir, 'errorexit.sce'))
+                    self.yasara.SaveSce (os.path.join (modelDir, 'errorexit.sce'))
+
+                # At this point the model building has finished.
+                # Move files from temporary run directory to their final destination..
 
                 # Move all the files that yasara created:
-                for f in os.listdir(runDir):
-                    os.rename(os.path.join(runDir, f),
-                              os.path.join(modelDir, f))
+                for f in os.listdir (runDir):
+                    os.rename (os.path.join (runDir, f),
+                               os.path.join (modelDir, f))
 
-                parent = os.path.dirname(modelDir)
-                os.chdir(parent)
-                tf = tarfile.open(modelname + '.tgz', 'w:gz')
-                tf.add(modelname)  # refers to modelDir
-                tf.close()
-                shutil.rmtree(modelDir)
-                modelPaths.append(modelArchive)
-                os.chdir(runDir)
+                # Create archive:
+                parent = os.path.dirname (modelDir)
+                os.chdir (parent)
+                tf = tarfile.open (modelname + '.tgz', 'w:gz')
+                tf.add (modelname)  # refers to modelDir
+                tf.close ()
+                shutil.rmtree (modelDir)
+                modelPaths.append (modelArchive)
+                os.chdir (runDir)
 
             # end of this iteration, move over to next range ...
 
-        os.chdir(self.execution_root_dir)
-        shutil.rmtree(runDir)
+        # Clean up all runtime files:
+        os.chdir (self.execution_root_dir)
+        shutil.rmtree (runDir)
 
         if len(failedModels) > 0:
 
@@ -683,14 +808,19 @@ class Modeler(object):
         else:
             return modelPaths
 
+
+    # This function is called after yasara has finished builing the model.
+    # It must perform the final checks to be sure that the model is not too bad.
+    # If everything is OK, it must return nothing.
+    # If something is wrong, it returns a string telling what's wrong.
     def checkmodel(self, modelobj, templateAC, expectedChains, targetAlignment,
                    templateAlignment):
         self._check_init()
 
         # Check that all chains are there:
-        chainOrder, templateChainSequences = self.getChainOrderAndSeqs(modelobj)
-        if len(chainOrder) < len(expectedChains):
-            return "missing %i chains" % (len(expectedChains) - len(chainOrder))
+        chainOrder, templateChainSequences = self.getChainOrderAndSeqs (modelobj)
+        if len (chainOrder) < len (expectedChains):
+            return "missing %i chains" % (len (expectedChains) - len (chainOrder))
 
         # Verify that the alignment is good enough:
         # include one extra iteration to finalize the last chain
@@ -698,7 +828,7 @@ class Modeler(object):
         nid = 0
         nseq = 1
         # include one extra iteration to finalize the last chain
-        for i in range(len(targetAlignment) + 1):
+        for i in range (len (targetAlignment) + 1):
 
             if i >= len(targetAlignment) or targetAlignment[i] == '|':
                 # end of chain
@@ -729,6 +859,8 @@ class Modeler(object):
         whatifClient = client.Client('http://wiws.cmbi.ru.nl/wsdl',
                                      timeout=60 * 60)
 
+        # Get packing qualities from whatif and determine how much
+        # worse the model is than the template:
         modelWhatifID = whatifClient.service.UploadPDB(
             open(pdbname, 'r').read())
 
@@ -756,7 +888,9 @@ class Modeler(object):
                     ", compared to %.3f from template") % \
                 (modelPackingQuality, templatePackingQuality)
 
-    def modelWithAlignment(self, alignmentFastaPath, tempobj):
+    # This function starts the model building process by calling
+    # yasara. 
+    def modelWithAlignment (self, alignmentFastaPath, tempobj):
         self._check_init()
 
         self.yasara.Processors(1)
@@ -789,7 +923,7 @@ def selectMostIdentical(targetSeq, seqs):
     for key in seqs.keys():
 
         d = {key: seqs[key], 'target': targetSeq}
-        aligned = aligner.alignClustal(d)
+        aligned = aligner.clustalAlign(d)
 
         nid = 0
         naligns[key] = 0
@@ -832,7 +966,10 @@ def selectLongestAligned(hits, minLen=0):
     return [bestHitID, bestHitAlignment]
 
 
-def getIsoforms(seq, uniprotSpeciesName):
+# This function finds uniprot isoforms for a given sequence.
+# (a sequence that looks almost like it, except for some deletions)
+# It makes sure the isoform comes from the given species.
+def getIsoforms (seq, uniprotSpeciesName):
     hits = blaster.speciesBlast(seq, uniprotSpeciesName)
 
     selected = {}
@@ -847,9 +984,11 @@ def getIsoforms(seq, uniprotSpeciesName):
 
     return selected
 
+# This function fills in deletions with pieces from isoforms in uniprot.
+# It's necessary sometimes, because deletions might destroy the
+# hydrofobic core of a model.
+def adjustTargetSequence (targetseq, templateseq, uniprotSpeciesName):
 
-def adjustTargetSequence(targetseq, templateseq, uniprotSpeciesName):
-    # This function fills in deletions with pieces from isoforms in uniprot.
     seqs = {}
     tarkey = 'target'
     seqs[tarkey] = targetseq
@@ -860,15 +999,15 @@ def adjustTargetSequence(targetseq, templateseq, uniprotSpeciesName):
     isoformHits = getIsoforms(targetseq, uniprotSpeciesName)
     for ac in isoformHits.keys():
         hit = isoformHits[ac]
-        seqs[ac] = hit.subjectalignment.replace('-', '').upper()
+        seqs[ac] = hit.subjectalignment.replace ('-', '').upper()
         if len(seqs[ac]) < 10000:  # avoid titin
             isoformkeys.append(ac)
 
-    aligned = aligner.alignClustal({
+    aligned = aligner.clustalAlign({
         tempkey: seqs[tempkey], tarkey: seqs[tarkey]})
     deletionRanges = identifyDeletedRegions(aligned[tarkey])
 
-    if len(deletionRanges) <= 0:
+    if len (deletionRanges) <= 0:
         return targetseq
 
     adjusted = aligned[tarkey]
@@ -904,7 +1043,7 @@ def adjustTargetSequence(targetseq, templateseq, uniprotSpeciesName):
             # to see if pieces can be added:
 
             alignedisoform = \
-                aligner.alignClustal({tarkey: seqs[tarkey], key: seqs[key]})
+                aligner.clustalAlign({tarkey: seqs[tarkey], key: seqs[key]})
 
             # identify the location of the deletion in the isoform
             ai = 0
@@ -923,7 +1062,7 @@ def adjustTargetSequence(targetseq, templateseq, uniprotSpeciesName):
             if len(alignedisoform[key][ai:af].replace('-', '')) > 0:
 
                 # Align to template fragment:
-                ali = aligner.alignClustal({
+                ali = aligner.clustalAlign({
                     key: alignedisoform[key][ai:af].replace('-', ''),
                     tempkey: aligned[tempkey][i:f].replace('-', '')
                 })
@@ -953,7 +1092,8 @@ def adjustTargetSequence(targetseq, templateseq, uniprotSpeciesName):
     return adjusted.replace('-', '')
 
 
-def findOrthologsToSeq(seq, uniprotSpeciesName):
+# For a given sequence, finds an ortholog in the requested species:
+def findOrthologsToSeq (seq, uniprotSpeciesName):
     orthologs = {}
 
     hits = blaster.speciesBlast(seq, uniprotSpeciesName)

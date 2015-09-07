@@ -25,7 +25,7 @@ def _get_midline(alignedseq1, alignedseq2):
     return m
 
 
-def alignmentRepr(aligned, order=[]):
+def alignmentRepr (aligned, order=[]):
 
     s = ''
 
@@ -34,8 +34,8 @@ def alignmentRepr(aligned, order=[]):
     k = order[0]
     for i in range(0, len(aligned[k]), 100):
         f = i + 100
-        if f > len(aligned[k]):
-            f = len(aligned[k])
+        if f > len (aligned[k]):
+            f = len (aligned[k])
         for key in order:
             s += aligned[key][i:f] + '\n'
         s += '\n'
@@ -43,19 +43,28 @@ def alignmentRepr(aligned, order=[]):
     return s
 
 
-def _map_gaps(gapped, gapless):
+# maps the sequence of 'gapless' onto
+# 'gapped', keeping the gaps, but replacing the
+# amino acids in sequential order.
+def _map_gaps (gapped, gapless):
+
     s = ''
     i = 0
-    while len(s) < len(gapped):
-        if gapped[len(s)].isalpha():
-            s += gapless[i]
+    while len (s) < len (gapped):
+
+        if gapped [len (s)].isalpha():
+            s += gapless [i]
             i += 1
         else:
-            s += gapped[len(s)]
+            s += gapped [len (s)]
     return s
 
 
-def _get_relative_span(alignfrom, alignTo):
+# Assumes that 'alignfrom' and 'alignto' are both
+# sequences (strings) in the same alignment.
+# It tells the starting position of 'alignfrom'
+# relative to 'the starting position of 'alignTo'
+def _get_relative_span (alignfrom, alignTo):
 
     i = 0
     while not alignfrom[i].isalpha():
@@ -66,9 +75,13 @@ def _get_relative_span(alignfrom, alignTo):
         i -= 1
     end = len(alignTo[:i].replace('-', ''))
 
-    return TargetRange(start, end)
+    return TargetRange (start, end)
 
 
+# The following class represents a range on a target
+# sequence. Most important fields are the start and end
+# positions. These are assumed to be ranging from 0 to
+# the length of the sequence.
 class TargetRange(object):
 
     def __init__(self, start, end):
@@ -134,14 +147,16 @@ class TargetRange(object):
         return indices
 
 
-class Picker(object):
+# A picker object can filter alignments, when inserted
+# into the pickAlignment function.
+class Picker (object):
 
-    def accepts(self, hitID, alignment):
+    def accepts (self, hitID, alignment):
 
         return True
 
 
-def distance(range1, range2):  # in AA
+def distance (range1, range2):  # in AA
 
     if range1.start < range2.start:
 
@@ -181,6 +196,7 @@ def overlapStats(range1, range2):
     return poverlap, plendiff
 
 
+# Merges ranges of significant overlap.
 def mergeSimilar(ranges):
 
     ranges.sort()
@@ -199,7 +215,7 @@ def mergeSimilar(ranges):
             if j == i:
                 continue  # don't merge with itself
 
-            poverlap, plendiff = overlapStats(ranges[i], ranges[j])
+            poverlap, plendiff = overlapStats (ranges[i], ranges[j])
 
             merged = merge(ranges[i], ranges[j])
 
@@ -226,7 +242,7 @@ def removeFromList(subj, toremove):
     return r
 
 
-def removeDoubles(ranges):
+def removeDoubles (ranges):
 
     i = 0
     while i < len(ranges):
@@ -244,7 +260,7 @@ def removeDoubles(ranges):
     return ranges
 
 
-def sortSmallestFirst(ranges):
+def sortSmallestFirst (ranges):
 
     sized = []
     for r in ranges:
@@ -256,13 +272,14 @@ def sortSmallestFirst(ranges):
     return sorted
 
 
-def sortLargestFirst(ranges):
+def sortLargestFirst (ranges):
+
     sorted = sortSmallestFirst(ranges)
     sorted.reverse()
     return sorted
 
 
-def findSharedHits(ranges):
+def findSharedHits (ranges):
 
     # sort by template id
     d = {}
@@ -281,12 +298,15 @@ def findSharedHits(ranges):
     return r
 
 
-class _AlignmentPool(object):  # stores alignments for easy access
+# stores alignments for easy access.
+# Lookup alignment by range object and template (structure + chain id)
+class _AlignmentPool(object):
 
     def __init__(self, targetSequence):
         self.pool = {}
         self.targetSequence = targetSequence
 
+    # For lookup by pdbid:
     def getAlignment(self, _range, template):
 
         templateID = str(template)
@@ -300,6 +320,7 @@ class _AlignmentPool(object):  # stores alignments for easy access
 
         return self.pool[_range][templateID]
 
+    # For lookup by yasara object:
     def getAlignmentFromYasara(self, yasara, _range, yasaraObj, yasaraChain):
 
         templateID = 'y-' + \
@@ -320,12 +341,13 @@ class _AlignmentPool(object):  # stores alignments for easy access
         return self.pool[_range][templateID]
 
 
-def hasTemplateSeq(alignment, templateSeq):
+def hasTemplateSeq (alignment, templateSeq):
 
     return alignment['template'].replace('-', '') == templateSeq
 
 
-def makeYasaraAlignment(yasara, domainSeq, yasaraObject, yasaraChainID):
+# Produces an alignment from a yasara object as template seq.
+def makeYasaraAlignment (yasara, domainSeq, yasaraObject, yasaraChainID):
 
     cas = []
     for s in yasara.ListAtom('CA and protein and obj %i and mol %s' %
@@ -426,7 +448,7 @@ def getTemplateSeqAtTargetPositions(alignment, startInTarget, endInTarget):
     return alignment['template'][start: end]
 
 
-def getTargetCoveredRange(alignment, templateseq):
+def getTargetCoveredRange (alignment, templateseq):
 
     if templateseq != alignment['template'].replace('-', ''):
         raise Exception('mismatch between alignment and template sequence')
@@ -439,14 +461,16 @@ def getTargetCoveredRange(alignment, templateseq):
         coveredRangeEnd += 1
 
     coveredRangeStart = \
-        len(alignment['template'][:coveredRangeStart].replace('-', ''))
+        len (alignment['template'][:coveredRangeStart].replace('-', ''))
     coveredRangeEnd = len(templateseq) - \
-        len(alignment['template'][coveredRangeEnd:].replace('-', ''))
+        len (alignment['template'][coveredRangeEnd:].replace('-', ''))
 
-    return [coveredRangeStart, coveredRangeEnd]
+    return (coveredRangeStart, coveredRangeEnd)
 
 
-def pickAlignments(yasaraChain, targetSeqs, targetsInterproRanges, picker):
+# Generates alignments using the 'getAlignments' function
+# and filters out those, approved by the inserted picker object.
+def pickAlignments (yasaraChain, targetSeqs, targetsInterproRanges, picker):
 
     alignmentTriples = {}
     for targetID in targetsInterproRanges.keys():
@@ -461,7 +485,7 @@ def pickAlignments(yasaraChain, targetSeqs, targetsInterproRanges, picker):
             if 'X' in yasaraChain.seq:
                 print alignment['template']
 
-            if picker.accepts(targetID, alignment):
+            if picker.accepts (targetID, alignment):
 
                 triples.append((_range, templateID, alignment))
 
@@ -481,7 +505,13 @@ def getForbiddenRanges(interproDomains):
     return rs
 
 
-def getAlignments(interproDomains, tarSeq, yasaraChain=None):
+# This function tries to find the best possible sets of alignments,
+# given the target sequence, interpro ranges and optionally, a template object.
+# * Joins overlapping ranges
+# * Removes ranges that are similar
+# * Throws out alignments, completely enclosed by a larger one.
+# * Checks for sufficient coverage and identity.
+def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
     _log.debug("get alignments on %s" % tarSeq)
 
@@ -750,50 +780,57 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
     return returnAlignments
 
 
-def alignmentsOfSameTemplateCompatible(alignment1, alignment2):
+# This function checks to be sure tha two alignments are compatible
+# i.e. they don't overlap.
+def alignmentsOfSameTemplateCompatible (alignment1, alignment2):
 
-    span1 = _get_relative_span(alignment1['target'], alignment1['template'])
-    span2 = _get_relative_span(alignment2['target'], alignment2['template'])
+    span1 = _get_relative_span (alignment1 ['target'], alignment1 ['template'])
+    span2 = _get_relative_span (alignment2 ['target'], alignment2 ['template'])
 
     # They must not occupy the same piece of template
-    return (not span1.overlapsWith(span2))
+    return (not span1.overlapsWith (span2))
 
 
-def swap(x, y):
-    return [y, x]
+def swap (x, y):
+    return (y, x)
 
 
-def mergeAlignmentsOfSameTemplate(alignment1, alignment2):
+# This function merges two alignments that involve the same
+# target and template, but different pieces of them.
+def mergeAlignmentsOfSameTemplate (alignment1, alignment2):
 
-    span1 = _get_relative_span(alignment1['target'], alignment1['template'])
-    span2 = _get_relative_span(alignment2['target'], alignment2['template'])
+    span1 = _get_relative_span (alignment1 ['target'], alignment1 ['template'])
+    span2 = _get_relative_span (alignment2 ['target'], alignment2 ['template'])
 
     # make sure span1 is the left sided:
     if span2 < span1:
-        span1, span2 = swap(span2, span1)
-        alignment1, alignment2 = swap(alignment2, alignment1)
+        span1, span2 = swap (span1, span2)
+        alignment1, alignment2 = swap (alignment1, alignment2)
 
+    # Determine alignment positions of span1 and span2:
     i1 = 0
     naa = 0
     while naa < span1.end:
-        if alignment1['template'][i1].isalpha():
+        if alignment1 ['template'][i1].isalpha():
             naa += 1
         i1 += 1
 
     i2 = 0
     naa = 0
     while naa < span2.start:
-        if alignment2['template'][i2].isalpha():
+        if alignment2 ['template'][i2].isalpha():
             naa += 1
         i2 += 1
 
+    # Merge alignments:
     return {'target': alignment1['target'][: i1] +
-            alignment2['target'][: i2],
+            alignment2 ['target'][: i2],
             'template': alignment1['template'][: i1] +
-            alignment2['template'][: i2]}
+            alignment2 ['template'][: i2]}
 
 
-def joinAlignmentsToBestTemplateCoverage(alignmentTriples):
+# 'alignmentTriples' is the output from 'getAlignments'
+def joinAlignmentsToBestTemplateCoverage (alignmentTriples):
 
     # First determine which alignment has the largest cover
     bestAlignment = None
