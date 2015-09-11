@@ -8,6 +8,7 @@ from glob import glob
 _log = logging.getLogger(__name__)
 
 
+# Uses ncbi blast executables: ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
 class BlastService(object):
 
     def __init__(self):
@@ -16,14 +17,16 @@ class BlastService(object):
         self.templatesDB = None
         self.uniprotspeciesDir = None
 
-    def templateBlast(self, seq):
+    # Blast against a database of templates:
+    def templateBlast (self, seq):
 
         if not self.templatesDB:
             raise Exception("templates blast database not set")
 
         return _blast(seq, self.templatesDB)
 
-    def speciesBlast(self, seq, species):
+    # Blast against a proteome of a given species:
+    def speciesBlast (self, seq, species):
 
         if not self.uniprotspeciesDir:
             raise Exception("Species database directory not set")
@@ -45,18 +48,19 @@ def _blast(querySeq, db):
 
     outFile = '/tmp/results%i.xml' % (os.getpid())
 
+    # Runt blastp and make sure it gives xml output format:
     cs = [blaster.blastpExe, '-query', queryFile, '-db', db,
           '-outfmt', '5', '-out', outFile]
     _log.debug(str(cs))
     subprocess.call(cs)
 
-    if not os.path.isfile(outFile):
-        raise Exception("blast failed")
+    if not os.path.isfile (outFile):
+        raise Exception ("blast failed")
 
-    hits = parseBlastXML(open(outFile, 'r').read())
+    hits = parseBlastXML (open(outFile, 'r').read())
 
-    os.remove(queryFile)
-    os.remove(outFile)
+    os.remove (queryFile)
+    os.remove (outFile)
 
     return hits
 

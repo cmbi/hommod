@@ -13,7 +13,7 @@ class InterproDomain(object):
                 self.end = end
                 self.ac = ac
 
-
+# Uses interproscan to obtain data: https://code.google.com/p/interproscan/wiki/HowToDownload
 class InterproService(object):
 
     def __init__(self):
@@ -59,6 +59,8 @@ class InterproService(object):
             os.system('bzip2 -f %s' % out)
             return out + '.bz2'
 
+
+    # Creates data file if it doesn't exist yet.
     def getInterproDomainLocations(self, sequence):
 
         filepath = self._create_data_file(sequence)

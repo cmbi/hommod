@@ -12,6 +12,8 @@ class alignService(object):
         self.clustalExe = None
         self.msaExe = None
 
+    # Use Clustalw2 for alignment: http://www.clustal.org/clustal2/
+    # Simply uses dictionaries for input and output
     def clustalAlign(self, d):
 
         if not self.clustalExe:
@@ -50,6 +52,8 @@ class alignService(object):
 
         return d
 
+    # Use Joanna Lange's alignment program, requires secondary structure information.
+    # Output is a dictionary with: 'template' and 'target' as ids, pointing to sequences.
     def msaAlign(self, pdbSeq, pdbSecStr, tarSeq,
                  gapOpen=-13.0, gapExt=-0.4, modifier=3.0):
 
@@ -59,8 +63,8 @@ class alignService(object):
         # Prevent MSA from adding insertions in bulges.
         # Fool the program by making
         # it think they're helix/strand residues:
-        pdbSecStr = removeBulges(pdbSecStr, 'H', 3)
-        pdbSecStr = removeBulges(pdbSecStr, 'E', 3)
+        pdbSecStr = removeBulges (pdbSecStr, 'H', 3)
+        pdbSecStr = removeBulges (pdbSecStr, 'E', 3)
 
         if len(pdbSeq) == 0:
             raise Exception('empty pdb seq')
