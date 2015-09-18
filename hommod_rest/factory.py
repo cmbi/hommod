@@ -56,26 +56,27 @@ def create_app(settings=None):
 
     # Initialise services
     from hommod_rest.services.model import modeler
-    modeler.yasara_dir = app.config['YASARADIR']
-    modeler.execution_root_dir = app.config['EXECUTIONDIR']
-    modeler.model_root_dir = app.config['MODELDIR']
+    modeler.yasara_dir = app.config ['YASARADIR']
+    modeler.execution_root_dir = app.config ['EXECUTIONDIR']
+    modeler.model_root_dir = app.config ['MODELDIR']
+    modeler.template_blacklist = app.config ['TEMPLATE_BLACKLIST']
 
     from hommod_rest.services.secstr import secstr
-    secstr.dssp_dir = app.config['DSSPDIR']
-    secstr.yasara_dir = app.config['YASARADIR']
+    secstr.dssp_dir = app.config ['DSSPDIR']
+    secstr.yasara_dir = app.config ['YASARADIR']
 
     from hommod_rest.services.interpro import interpro
-    interpro.interproExe = app.config['INTERPROSCAN']
-    interpro.storageDir = app.config['INTERPRODIR']
+    interpro.interproExe = app.config ['INTERPROSCAN']
+    interpro.storageDir = app.config ['INTERPRODIR']
 
     from hommod_rest.services.blast import blaster
-    blaster.templatesDB = app.config['TEMPLATESDB']
-    blaster.uniprotspeciesDir = app.config['SPECIESDBDIR']
-    blaster.blastpExe = app.config['BLASTP']
+    blaster.templatesDB = app.config ['TEMPLATESDB']
+    blaster.uniprotspeciesDir = app.config ['SPECIESDBDIR']
+    blaster.blastpExe = app.config ['BLASTP']
 
     from hommod_rest.services.align import aligner
-    aligner.clustalExe = app.config['CLUSTAL']
-    aligner.msaExe = app.config['MSA']
+    aligner.clustalExe = app.config ['CLUSTAL']
+    aligner.msaExe = app.config ['MSA']
 
     return app
 

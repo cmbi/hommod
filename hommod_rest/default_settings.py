@@ -23,6 +23,7 @@ MAIL_SMTP_PORT = 25
 MAIL_FROM = "hommod-rest@cmbi.umcn.nl"
 MAIL_TO = ["Coos.Baakman@radboudumc.nl"]
 
+TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
 
 # Directory where dssp files are stored:
 DSSPDIR = '/mnt/cmbi4/dssp/'

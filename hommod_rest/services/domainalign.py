@@ -14,6 +14,11 @@ from modelutils import (get_aa321, getNalignIdentity, filterGoodHits,
 _log = logging.getLogger(__name__)
 
 
+def _template_in_blacklist (pdbid):
+
+    from hommod_rest.services.model import modeler
+    return modeler._template_in_blacklist (pdbid)
+
 def _get_midline(alignedseq1, alignedseq2):
 
     m = ''
@@ -624,6 +629,12 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                 for hitID in hits.keys():
 
                     pdbid, pdbchain = getTemplatePDBIDandChain(hitID)
+                    if _template_in_blacklist (pdbid):
+
+                        _log.debug ("not using %s as template" % pdbid + 
+                                    ", because it's blacklisted")
+                        continue
+
                     template = TemplateID(pdbid, pdbchain)
                     if not secstr.hasSecStr(template):
 

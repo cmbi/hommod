@@ -186,6 +186,7 @@ class Modeler(object):
         self._yasara_dir = yasara_dir
         self.execution_root_dir = None
         self.model_root_dir = None
+        self.template_blacklist = None
 
     @property
     def yasara_dir(self):
@@ -215,6 +216,17 @@ class Modeler(object):
 
         if self.model_root_dir is None:
             raise Exception("model root not set")
+
+        if self.template_blacklist is None:
+            raise Exception("blacklist not set")
+
+    def _add_template_to_blacklist (self, pdbid):
+
+        open (self.template_blacklist, 'a').write ('%s\n' % pdbid.lower ())
+
+    def _template_in_blacklist (self, pdbid):
+
+        return (open (self.template_blacklist, 'r').read ().find (pdbid.lower ()) != -1)
 
     # Use this function to get the template sequences:
     def getChainOrderAndSeqs(self, tempobj):
@@ -308,35 +320,36 @@ class Modeler(object):
 
         # Make sure there's only one chain for each chain identifier:
         chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
-        for i in range(len(chainOrder)):
-            if i > 0 and chainOrder[i - 1] == chainOrder[i]:
-                self.yasara.JoinMol(
+        for i in range (len (chainOrder)):
+            if i > 0 and chainOrder [i - 1] == chainOrder [i]:
+                self.yasara.JoinMol (
                     '%s and obj %i and Protein' %
                     (chainOrder[i], tempobj))
                 
 
-        self.yasara.CleanObj(tempobj)
+        self.yasara.CleanObj (tempobj)
 
         # Make sure there are no chains with sequence XXXXXXXXXXXXXXXXXX,
         # Otherwise, yasara would remove the entire chain.
-        self.yasara.SwapRes(
+        self.yasara.SwapRes (
             'Protein and UNK and atom CA and atom CB', 'ALA')
-        self.yasara.SwapRes(
+        self.yasara.SwapRes (
             'Protein and UNK and atom CA and not atom CB', 'GLY')
 
         # Delete buffer molecules:
-        self.yasara.DelRes('HOH H2O DOD D2O TIP WAT SOL ACT ACM ACY ' +
-                           'EDO EOH FLC FMT GOL I3M IPA MLI MOH PEO ' +
-                           'PO4 SO3 SO4 _TE UNX ACE')
+        self.yasara.DelRes ('HOH H2O DOD D2O TIP WAT SOL ACT ACM ACY ' +
+                            'EDO EOH FLC FMT GOL I3M IPA MLI MOH PEO ' +
+                            'PO4 SO3 SO4 _TE UNX ACE')
 
         # Final checks for unfixable errors:
-        chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
+        chainOrder = self.yasara.ListMol ('obj %i protein' % tempobj, 'MOL')
         for chain in chainOrder:
             nocc = 0
             for c in chainOrder:
                 if c == chain:
                     nocc += 1
             if nocc > 1:
+                self._add_template_to_blacklist (tempac)
                 raise Exception ("chain %s occurs more than once after cleaning" % chain)
 
         return [tempobj, nMolsOligomerized / nMolsUnoligomerized]
@@ -346,8 +359,8 @@ class Modeler(object):
     # It must be given a directory to work in,
     # the main target's id, sequence and domain range object,
     # a uniprot species id, a template ID (pdbid and chain)
-    def _build_for_domain(self, modelDir, mainTargetID, uniprotSpeciesName,
-                          mainTemplateID, mainTargetSeq, mainDomainRange):
+    def _build_for_domain (self, modelDir, mainTargetID, uniprotSpeciesName,
+                           mainTemplateID, mainTargetSeq, mainDomainRange):
 
             modelPath = os.path.join(modelDir, 'target.pdb')
             alignmentFastaPath = os.path.join(modelDir, 'align.fasta')
@@ -703,6 +716,8 @@ class Modeler(object):
         modelPaths = []
         failedModels = []
 
+        realign = False
+
         # Iterate over all alignments that we've got. Any alignment
         # is a potential model.
         for mainDomainRange, mainTemplateID, mainDomainAlignment in \
@@ -782,7 +797,14 @@ class Modeler(object):
 
                     _log.error('an exception occured for {}:\n{}'
                                .format(modelname, stacktrace))
-                    failedModels.append(modelname)
+
+
+                    if self._template_in_blacklist (mainTemplateID.pdbac):
+
+                        # The template has just been blacklisted, need to find a new one
+                        realign = True
+                    else:
+                        failedModels.append (modelname)
 
                     # Also include error and yasara scene in the model dir,
                     # for debugging and yasara bug reports.
@@ -814,10 +836,16 @@ class Modeler(object):
         os.chdir (self.execution_root_dir)
         shutil.rmtree (runDir)
 
-        if len(failedModels) > 0:
+        if realign:
 
-            raise Exception("the following models have failed: " +
-                            str(failedModels))
+            # Repeat once more with different templates:
+            return self.modelProc (mainTargetSeq, uniprotSpeciesName,
+                                   requireRes, overwrite)
+
+        elif len (failedModels) > 0:
+
+            raise Exception ("the following models have failed: " +
+                             str(failedModels))
         else:
             return modelPaths
 

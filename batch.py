@@ -24,6 +24,7 @@ def init():
     modeler.yasara_dir = config.YASARADIR
     modeler.execution_root_dir = config.EXECUTIONDIR
     modeler.model_root_dir = config.MODELDIR
+    modeler.template_blacklist = config.TEMPLATE_BLACKLIST
 
     from hommod_rest.services.secstr import secstr
     secstr.dssp_dir = config.DSSPDIR
