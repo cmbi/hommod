@@ -43,8 +43,8 @@ def init():
     aligner.msaExe = config.MSA
 
 
-if len (sys.argv) != 3 or not os.path.isfile (sys.argv[2]):
-    print 'usage: %s [species id] [fasta filepath]' % sys.argv[0]
+if len (sys.argv) not in [3, 4] or not os.path.isfile (sys.argv[2]):
+    print 'usage: %s [species id] [fasta filepath] <optionally a resnum>' % sys.argv[0]
     sys.exit(1)
 
 init()
@@ -62,7 +62,13 @@ for ID in seqs:
 
     try:
 
-        modeler.modelProc (seqs[ID], species)
+        if len (sys.argv) == 3:
+
+            modeler.modelProc (seqs[ID], species)
+
+        elif len (sys.argv) == 4:
+
+            modeler.modelProc (seqs[ID], species, requireRes=int (sys.argv [3]))
 
     except:
         # Print the error to stdout, but don't quit.
