@@ -79,25 +79,25 @@ def listInteractingChains (yasaraChain):
 # are interacting in those alignments.
 class InteractionPicker (domainalign.Picker):
 
-    def __init__(self, subjectYasaraChain, interactionChainAlignments):
+    def __init__ (self, subjectChainID, yasaraChains, interactionChainAlignments):
         # Alignments tell which regions are covered
 
-        self.subjectYasaraChain = subjectYasaraChain
+        self.yasaraChains = yasaraChains
+        self.subjectChainID = subjectChainID
         self.interactionChainAlignments = interactionChainAlignments
 
-    def accepts(self, targetID, subjectChainAlignment):
+    def accepts (self, targetID, subjectChainAlignment):
 
         # Check all interacting chains' alignments for interactions:
         for chainID in self.interactionChainAlignments:
 
             # Determine which residues in the chains are covered by a target sequence:
-            sCAs = self.subjectYasaraChain.CAs
-            sseq = self.subjectYasaraChain.seq
+            subjectYasaraChain = self.yasaraChains [self.subjectChainID]
+            sCAs = subjectYasaraChain.CAs
+            sseq = subjectYasaraChain.seq
 
-            interactionYasaraChain = YasaraChain(
-                self.subjectYasaraChain.yasaramodule,
-                self.subjectYasaraChain.obj, chainID
-            )
+            interactionYasaraChain = self.yasaraChains [chainID]
+
             iCAs = interactionYasaraChain.CAs
             iseq = interactionYasaraChain.seq
 
@@ -127,7 +127,7 @@ class InteractionPicker (domainalign.Picker):
 
                     _log.debug("found interaction between chains {} and {}"
                                .format(interactionYasaraChain.chainID,
-                                       self.subjectYasaraChain.chainID))
+                                       subjectYasaraChain.chainID))
 
                     return True
             # Two atoms, covered in the two alignments, are close to each other

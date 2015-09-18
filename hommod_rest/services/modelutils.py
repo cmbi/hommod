@@ -215,13 +215,18 @@ def getChainCAsSeqSecStr (yasara, obj, chain):
     seq = ''
     secStr = ''
 
+    atomstring = "atom"
     for s in yasara.ListAtom(
             'CA and obj %i and mol %s and protein' % (obj,  chain),
             'ATOMNUM RESNAME'):
         ss = s.split()
         CAs.append(int(ss[0]))
         seq += get_aa321(ss[1])
-        secStr += yasara.SecStrRes('atom %s' % ss[0])[0]
+
+        atomstring += ' ' + ss[0]
+
+    for s in yasara.SecStrRes (atomstring):
+        secStr += s
 
     return (CAs,  seq,  secStr)
 
@@ -241,7 +246,7 @@ class YasaraChain(object):
         self.objname = yasaramodule.ListObj(yasaraobj,  'OBJNAME')[0]
 
         self.CAs,  self.seq,  self.secstr = \
-            getChainCAsSeqSecStr(yasaramodule,  yasaraobj,  chainID)
+            getChainCAsSeqSecStr (yasaramodule, yasaraobj, chainID)
 
     def getTemplateID(self):
 

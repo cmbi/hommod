@@ -310,12 +310,10 @@ class Modeler(object):
         chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
         for i in range(len(chainOrder)):
             if i > 0 and chainOrder[i - 1] == chainOrder[i]:
-                residues = self.yasara.ListRes(
-                    'mol %s Protein' % chainOrder[i],
-                    "RESNUM")
                 self.yasara.JoinMol(
-                    '%s res %s obj %i Protein' %
-                    (chainOrder[i], residues[-1], tempobj))
+                    '%s and obj %i and Protein' %
+                    (chainOrder[i], tempobj))
+                
 
         self.yasara.CleanObj(tempobj)
 
@@ -330,6 +328,16 @@ class Modeler(object):
         self.yasara.DelRes('HOH H2O DOD D2O TIP WAT SOL ACT ACM ACY ' +
                            'EDO EOH FLC FMT GOL I3M IPA MLI MOH PEO ' +
                            'PO4 SO3 SO4 _TE UNX ACE')
+
+        # Final checks for unfixable errors:
+        chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
+        for chain in chainOrder:
+            nocc = 0
+            for c in chainOrder:
+                if c == chain:
+                    nocc += 1
+            if nocc > 1:
+                raise Exception ("chain %s occurs more than once after cleaning" % chain)
 
         return [tempobj, nMolsOligomerized / nMolsUnoligomerized]
 
@@ -417,6 +425,9 @@ class Modeler(object):
             # We expand the set of involved template
             # chains with every iteration, until all template
             # chains have been added.
+            yasaraChains = {}
+            for c in self.yasara.ListMol ("obj %i and protein" % tempobj, "MOL"):
+                yasaraChains [c] = YasaraChain (self.yasara, tempobj, c)
             while len (alignments) < \
                     len (self.yasara.ListMol (
                         'obj %i and protein' % tempobj)):
@@ -426,8 +437,7 @@ class Modeler(object):
                 candidateChainInteractsWith = {}
                 for c in alignments:
                     for chainID in \
-                            listInteractingChains(
-                                YasaraChain (self.yasara, tempobj, c)):
+                            listInteractingChains (yasaraChains [c]):
 
                         # Skip those, that we've already aligned
                         # to prevent infinite loops:
@@ -470,7 +480,7 @@ class Modeler(object):
                                .format (len (potentialTargetSeqs),
                                        mainTemplateID.pdbac, chainID))
 
-                    yasaraChain = YasaraChain (self.yasara, tempobj, chainID)
+                    yasaraChain = yasaraChains [chainID]
 
                     # Pick the target with the hightest sequence identity,
                     # and domain coverage.
@@ -516,8 +526,8 @@ class Modeler(object):
                         # Find out which targets, given their domain ranges,
                         # preserve the interaction with the other chains when
                         # aligned to the template chain:
-                        picker = InteractionPicker(
-                            yasaraChain, interactingChainAlignments)
+                        picker = InteractionPicker (chainID,
+                            yasaraChains, interactingChainAlignments)
                         alignmentTriplesPerTarget = \
                             domainalign.pickAlignments(
                                 yasaraChain, potentialTargetSeqs,
@@ -614,7 +624,7 @@ class Modeler(object):
 
             # The set of chains might have changed:
             chainOrder, templateChainSequences = \
-                self.getChainOrderAndSeqs(tempobj)
+                self.getChainOrderAndSeqs (tempobj)
 
             # Make the alignment file for yasara:
             writeAlignmentFasta(
@@ -624,14 +634,17 @@ class Modeler(object):
             # Start the modeling run:
             self.modelWithAlignment(alignmentFastaPath, tempobj)
 
+            if not os.path.isfile ("target.yob"):
+                raise Exception ("yasara did not build")
+
             # Save the model in PDB format:
-            self.yasara.SavePDB(tempobj, modelPath)
+            self.yasara.SavePDB (tempobj, modelPath)
+
+            _log.info ("sucessfully created " + modelPath)
 
             time_model = time()
 
             time_log ("yasara modeling run took %d seconds\n" % (time_model - time_targets))
-
-            _log.info ("sucessfully created " + modelPath)
 
 
     # This is the main function for building a set of models.
@@ -684,8 +697,8 @@ class Modeler(object):
 
         time_log ("took %i seconds to compute and filter alignments\n" % (time_after_alignments - time_start))
 
-        if len(mainTargetAlignments) <= 0:
-            _log.info('no alignments found for sequence:\n' + mainTargetSeq)
+        if len (mainTargetAlignments) <= 0:
+            _log.info ('no alignments found for sequence:\n' + mainTargetSeq)
 
         modelPaths = []
         failedModels = []
