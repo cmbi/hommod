@@ -77,6 +77,7 @@ def status (jobid):
 
 
 @bp.route('/get_model_file/<jobid>.pdb', methods=['GET'])
+@bp.route('/get_model_file/<jobid>.PDB', methods=['GET'])
 def get_model_file (jobid):
 
     """
@@ -102,7 +103,7 @@ def get_model_file (jobid):
 
 
 @bp.route('/get_metadata/<jobid>/', methods=['GET'])
-def get_metadata (jobid):
+def get_metadata(jobid):
 
     """
     Get the metadata of the model, created by the modeling job.
@@ -129,7 +130,6 @@ def get_metadata (jobid):
 
 @bp.route ('/')
 def docs ():
-
     p = re.compile (r"\@bp\.route\s*\(\'([\w\/\<\>]*)\'\)")
 
     fs = [annotations, entries]
@@ -142,4 +142,3 @@ def docs ():
             continue
 
         url = m.group(1)
-                                                                                                                                                              55,1          Top
