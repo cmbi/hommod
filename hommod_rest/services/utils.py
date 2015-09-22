@@ -4,6 +4,7 @@ from flask import current_app as flask_app
 
 from hommod_rest.services.modelutils import (parseFasta, getCoverageIdentity,
                                              idForSeq)
+from hommod_rest.services.align import aligner
 from time import time
 
 import re
@@ -102,7 +103,13 @@ def select_best_model(sequence, species, position):
         targetseqs = alignment['target'].split('|')
         templateseqs = alignment[templateID].split('|')
         for i in range(len(targetseqs)):
-            if targetseqs[i].replace('-', '') in sequence:
+
+            # target sequence might have been slightly altered during the procedure
+            # That's why we must align here.
+            aligned = aligner.clustalAlign ({'t':targetseqs[i].replace('-', ''),'m':sequence})
+            pcov, pid = getCoverageIdentity (aligned ['t'], aligned ['m'])
+            if pid > 95.0:
+
                 main_i = i
                 break
 
