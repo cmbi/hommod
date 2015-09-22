@@ -713,7 +713,9 @@ class Modeler(object):
         time_log ("took %i seconds to compute and filter alignments\n" % (time_after_alignments - time_start))
 
         if len (mainTargetAlignments) <= 0:
-            _log.info ('no alignments found for sequence:\n' + mainTargetSeq)
+            _log.warn ('no alignments found for sequence:\n' + mainTargetSeq)
+
+	_log.info ('got %d alignments for sequence:\n%s' %(len (mainTargetAlignments), mainTargetSeq))
 
         modelPaths = []
         failedModels = []
@@ -725,15 +727,23 @@ class Modeler(object):
         for mainDomainRange, mainTemplateID, mainDomainAlignment in \
                 mainTargetAlignments:
 
+
+
             # skip ranges that don't cover the requireRes (if given)
             if requireRes and \
                     ((requireRes - 1) < mainDomainRange.start or
                      (requireRes - 1) >= mainDomainRange.end):
+
+		_log.debug ("skipping range %d - %d on %s, bause it does not cover residue %d\n%s\n%s"
+			    % (mainDomainRange.start, mainDomainRange.end, mainTemplateID, requireRes,
+			       mainDomainAlignment ['target'], mainDomainAlignment ['template']))
                 continue
 
             modelname = '%s_%s_%i-%i' % \
                 (mainTargetID, uniprotSpeciesName,
                  mainDomainRange.start + 1, mainDomainRange.end)
+
+	    _log.debug ("locking " + modelname)
 
             modelDir = os.path.join (self.model_root_dir, modelname)
             modelArchive = modelDir + '.tgz'
@@ -784,6 +794,11 @@ class Modeler(object):
                 # We're now sure that the model doesn't exist yet.
                 # At this point we start the actual model building.
                 try:
+		    _log.debug ("starting to build %s %s (%d - %d)\n%s"
+				% (uniprotSpeciesName, mainTemplateID,
+				  mainDomainRange.start, mainDomainRange.end,
+				  mainTargetSeq))
+
                     self._build_for_domain (modelDir, mainTargetID,
                                             uniprotSpeciesName, mainTemplateID,
                                             mainTargetSeq, mainDomainRange)
@@ -797,8 +812,8 @@ class Modeler(object):
                     stacktrace = ''.join(traceback.format_exception(
                         exc_type, exc_value, exc_traceback))
 
-                    _log.error('an exception occured for {}:\n{}'
-                               .format(modelname, stacktrace))
+                    _log.error ('an exception occured for {}:\n{}'
+                                .format(modelname, stacktrace))
 
 
                     if self._template_in_blacklist (mainTemplateID.pdbac):
