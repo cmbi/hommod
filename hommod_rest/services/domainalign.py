@@ -547,7 +547,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
         _log.debug("iter with %i sample ranges" % len(sampleRanges))
 
         # merging must reduce the number of blasts/alignments:
-        mergedSampleRanges = mergeSimilar(sampleRanges)
+        mergedSampleRanges = mergeSimilar (sampleRanges)
 
         for r in sortLargestFirst (mergedSampleRanges):
 
@@ -566,12 +566,17 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
             if hasLarger:
                 continue
 
+	    # Template to pick when there are good choices
             bestTemplate = None
             bestAlignment = None
             bestPID = 0.0
             bestPCOVER = 0.0
 
-            _log.debug('trying range: %s' % r)
+	    # Template to pick when there's only a highly homologous one, with low coverage
+	    lastResortTemplate = None
+	    lastResortAlignment = None
+
+            _log.debug ('trying range: %s' % r)
 
             if yasaraChain: # template already chosen outside this function
 
@@ -588,13 +593,13 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                 pcover = (nalign * 100.0) / (r.end - r.start)
 
                 # bHH: highly homologous to the whole target sequence
-                bHH = pid >= 80.0 and r.length() == len(tarSeq)
+                bHH = pid >= 80.0 and r.length() == len (tarSeq)
 
 #               print r
 #               print aligned['target']
 #               print aligned['template']
 #               print 'pid:',pid,'minimum:',minIdentity(nalign),'pcover:',pcover
-                if pid >= minIdentity(nalign) and pcover >= 80.0 or bHH:
+                if pid >= minIdentity(nalign) and (pcover >= 80.0 or bHH):
 
                     if pcover < 80.0:
                         m = getCoveredTargetRange(aligned)
@@ -607,19 +612,25 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                     okRanges.append(m)
 
                     if pcover >= 80.0:
+
                         bestTemplate = templateSelected
                         bestAlignment = aligned
                         bestPID = pid
                         bestPCOVER = pcover
+		    else:
+			lastResortTemplate = templateSelected
+			lastResortAlignment = aligned
 
-                    _log.debug("domainalign: passing alignment with %s:\n%s"
-                               % (templateSelected, alignmentRepr(
-                                  aligned, ['target', 'midline', 'template'])))
+                    _log.debug ("domainalign: passing %d - %d alignment with %s:\n%s"
+                                % (r.start, r.end, templateSelected, alignmentRepr(
+                                   	aligned, ['target', 'midline', 'template'])))
 
                 else:
-                    _log.debug("domainalign: rejecting alignment with %s:\n%s"
-                               % (templateSelected, alignmentRepr(
-                                  aligned, ['target', 'midline', 'template'])))
+                    _log.debug (("domainalign: rejecting %d - %d alignment with %s:\n"
+				 + "%s\ncover: %.1f %%, identity: %.1f %%\n")
+                                 % (r.start, r.end, templateSelected, alignmentRepr (
+                                    	aligned, ['target', 'midline', 'template']).strip (), 
+				    pcover, pid))
 
             else: # No chosen template, check all
 
@@ -646,6 +657,12 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
                     for alignment in hits[hitID]:
 
+			aligned = {'target': alignment.queryalignment,
+                                   'template': alignment.subjectalignment}
+
+                        aligned ['midline'] = _get_midline (aligned ['target'],
+	                                                    aligned ['template'])
+
                         nalign = alignment.getNumberResiduesAligned()
                         pid = alignment.getIdentity()
                         pcover = (nalign*100.0)/(r.end-r.start)
@@ -654,10 +671,8 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                         bHH = pid >= 80.0 and r.length() == len(tarSeq)
 
                         # minimal criteria to make a model:
-                        if pid >= minIdentity(nalign) and pcover >= 80.0 or bHH:
+                        if pid >= minIdentity(nalign) and (pcover >= 80.0 or bHH):
 
-                            aligned = {'target': alignment.queryalignment,
-                                       'template': alignment.subjectalignment}
                             if pcover < 80.0:
                                 m = getCoveredTargetRange(aligned)
                             else:
@@ -668,15 +683,12 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                             m.pcover = pcover
                             okRanges.append(m)
 
-                            aligned['midline'] = \
-                                _get_midline(aligned['target'],
-                                             aligned['template'])
-                            _log.debug(
-                                "domainalign: passing alignment with %s:\n%s"
-                                % (template,
-                                   alignmentRepr(aligned,
-                                                 ['target', 'midline',
-                                                  'template'])))
+                            _log.debug (
+                                "domainalign: passing %d - %d alignment with %s:\n%s"
+                                % (r.start, r.end, template,
+                                   alignmentRepr (aligned,
+                                                  ['target', 'midline',
+                                                   'template'])))
 
                             # is this one better than previous hits?
                             if pcover >= 80.0 and \
@@ -686,20 +698,45 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                                 bestTemplate = m.template
                                 bestAlignment = aligned
                                 bestPCOVER = m.pcover
+			    else:
+				lastResortTemplate = m.template
+				lastResortAlignment = aligned
 
                             break  # we're done with this template
 
                         else:
                             _log.debug(
-                                "domainalign: rejecting blast hit with %s:"
-                                % template)
+                                ("domainalign: rejecting %d - %d blast hit with %s:\n"
+				 + "%s\ncover: %.1f %%, identity: %.1f %%\n")
+                                 % (r.start, r.end, template,
+				    	alignmentRepr (aligned,
+						       ['target', 'midline',
+						        'template']).strip (),
+				    pcover, pid))
+
+
+	    if not bestTemplate and lastResortTemplate:
+
+		bestTemplate = lastResortTemplate
+		bestAlignment = lastResortAlignment
+		
 
             if bestTemplate:  # we have a best hit for this range
 
+		_log.debug ("pick %d - %d best hit %s:\n%s"
+			    % (r.start, r.end, template,
+                               alignmentRepr (bestAlignment,
+                                              ['target', 'midline',
+                                               'template'])))
+
                 # Remove any smaller ranges that this one encloses:
                 i = 0
-                while i < len(bestRanges):
-                    if r.encloses(bestRanges[i]):
+                while i < len (bestRanges):
+                    if r.encloses (bestRanges[i]):
+
+			_log.debug ("removing smaller best %d - %d, enclosed by larger %d - %d" % 
+				    (bestRanges [i].start, bestRanges [i].end, r.start, r.end))
+
                         # this one should replace the smaller one
                         bestRanges = bestRanges[: i] + bestRanges[i + 1:]
                     else:
