@@ -648,7 +648,9 @@ class Modeler(object):
             self.modelWithAlignment(alignmentFastaPath, tempobj)
 
             if not os.path.isfile ("target.yob"):
-                raise Exception ("yasara did not build")
+                raise Exception ("yasara modeling run did not complete for %s %s (%d - %d)\n%s"
+				 % (uniprotSpeciesName, mainTemplateID,
+				    mainDomainRange.start, mainDomainRange.end, mainTargetSeq))
 
             # Save the model in PDB format:
             self.yasara.SavePDB (tempobj, modelPath)
