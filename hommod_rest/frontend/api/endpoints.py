@@ -73,7 +73,12 @@ def status (jobid):
 
     from hommod_rest.application import celery
     result = celery.AsyncResult(jobid)
-    return jsonify({'status': result.status})
+
+    response = {'status': result.status}
+    if result.failed ():
+        response ['message'] = result.traceback
+
+    return jsonify (response)
 
 
 @bp.route('/get_model_file/<jobid>.pdb', methods=['GET'])
