@@ -316,7 +316,7 @@ class Modeler(object):
         try:
             self.yasara.BuildSymRes('obj %i' % tempobj)
         except Exception as e:
-            _log.error('Cannot execute BuildSymRes on {}: {}'.format (tempac, e.args [0]))
+            _log.warn('Cannot execute BuildSymRes on {}: {}'.format (tempac, e.args [0]))
 
         # Make sure there's only one chain for each chain identifier:
         chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
