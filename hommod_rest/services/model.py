@@ -648,9 +648,10 @@ class Modeler(object):
             self.modelWithAlignment(alignmentFastaPath, tempobj)
 
             if not os.path.isfile ("target.yob"):
-                raise Exception ("yasara modeling run did not complete for %s %s (%d - %d)\n%s"
-				 % (uniprotSpeciesName, mainTemplateID,
-				    mainDomainRange.start, mainDomainRange.end, mainTargetSeq))
+                raise Exception ("yasara modeling run did not complete for %s %s (%d - %d)\n%s\n\n"
+                                 % (uniprotSpeciesName, mainTemplateID,
+                                    mainDomainRange.start, mainDomainRange.end, mainTargetSeq)
+                                 + "Please check yasara's output for further details")
 
             # Save the model in PDB format:
             self.yasara.SavePDB (tempobj, modelPath)
@@ -715,10 +716,10 @@ class Modeler(object):
         if len (mainTargetAlignments) <= 0:
             _log.warn ('no alignments found for sequence:\n' + mainTargetSeq)
 
-	_log.info ('got %d alignments for sequence:\n%s' %(len (mainTargetAlignments), mainTargetSeq))
+        _log.info ('got %d alignments for sequence:\n%s' %(len (mainTargetAlignments), mainTargetSeq))
 
         modelPaths = []
-        failedModels = []
+        failedModels = {}
 
         realign = False
 
@@ -727,23 +728,21 @@ class Modeler(object):
         for mainDomainRange, mainTemplateID, mainDomainAlignment in \
                 mainTargetAlignments:
 
-
-
             # skip ranges that don't cover the requireRes (if given)
             if requireRes and \
                     ((requireRes - 1) < mainDomainRange.start or
                      (requireRes - 1) >= mainDomainRange.end):
 
-		_log.debug ("skipping range %d - %d on %s, bause it does not cover residue %d\n%s\n%s"
-			    % (mainDomainRange.start, mainDomainRange.end, mainTemplateID, requireRes,
-			       mainDomainAlignment ['target'], mainDomainAlignment ['template']))
+                _log.debug ("skipping range %d - %d on %s, bause it does not cover residue %d\n%s\n%s"
+                            % (mainDomainRange.start, mainDomainRange.end, mainTemplateID, requireRes,
+                               mainDomainAlignment ['target'], mainDomainAlignment ['template']))
                 continue
 
             modelname = '%s_%s_%i-%i' % \
                 (mainTargetID, uniprotSpeciesName,
                  mainDomainRange.start + 1, mainDomainRange.end)
 
-	    _log.debug ("locking " + modelname)
+            _log.debug ("locking " + modelname)
 
             modelDir = os.path.join (self.model_root_dir, modelname)
             modelArchive = modelDir + '.tgz'
@@ -794,16 +793,16 @@ class Modeler(object):
                 # We're now sure that the model doesn't exist yet.
                 # At this point we start the actual model building.
                 try:
-		    _log.debug ("starting to build %s %s (%d - %d)\n%s"
-				% (uniprotSpeciesName, mainTemplateID,
-				  mainDomainRange.start, mainDomainRange.end,
-				  mainTargetSeq))
+                    _log.debug ("starting to build %s %s (%d - %d)\n%s"
+                                % (uniprotSpeciesName, mainTemplateID,
+                                   mainDomainRange.start, mainDomainRange.end,
+                                   mainTargetSeq))
 
                     self._build_for_domain (modelDir, mainTargetID,
                                             uniprotSpeciesName, mainTemplateID,
                                             mainTargetSeq, mainDomainRange)
 
-                except: # An error ocurred during modeling.
+                except Exception as ex: # An error ocurred during modeling.
 
                     # Don't exit, just print error to log and
                     # move on to the next alignment.
@@ -821,13 +820,17 @@ class Modeler(object):
                         # The template has just been blacklisted, need to find a new one
                         realign = True
                     else:
-                        failedModels.append (modelname)
+                        failedModels [modelname] = stacktrace
 
                     # Also include error and yasara scene in the model dir,
                     # for debugging and yasara bug reports.
                     open (os.path.join (modelDir, 'errorexit.txt'), 'w') \
                         .write(stacktrace)
-                    self.yasara.SaveSce (os.path.join (modelDir, 'errorexit.sce'))
+                    try:
+                        self.yasara.SaveSce (os.path.join (modelDir, 'errorexit.sce'))
+                    except:
+                        # connection with yasara isn't alive anymore !
+                        raise ex
 
                 # At this point the model building has finished.
                 # Move files from temporary run directory to their final destination..
@@ -861,8 +864,11 @@ class Modeler(object):
 
         elif len (failedModels) > 0:
 
-            raise Exception ("the following models have failed: " +
-                             str(failedModels))
+            s = ''
+            for name in failedModels:
+                s += "%s:\n%s\n" % (name, failedModels [name])
+
+            raise Exception ("the following models have failed:\n" + s)
         else:
             return modelPaths
 
@@ -949,6 +955,12 @@ class Modeler(object):
     # This function starts the model building process by calling
     # yasara. 
     def modelWithAlignment (self, alignmentFastaPath, tempobj):
+
+        _log.debug ("running yasara homology modeling experiment from " + os.getcwd())
+
+        if not os.path.isdir (os.getcwd ()):
+            raise Exception ("current work dir has been deleted")
+
         self._check_init()
 
         self.yasara.Processors(1)
