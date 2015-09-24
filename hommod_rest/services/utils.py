@@ -86,7 +86,7 @@ def select_best_model(sequence, species, position):
 
     bestID = 0.0
     best = None
-    for path in list_models_of(sequence, species, position):
+    for path in list_models_of (sequence, species, position):
 
         alignment = extract_alignment(path)
 
@@ -97,7 +97,7 @@ def select_best_model(sequence, species, position):
                 break
 
         if templateID is None:
-            raise Exception("no template found in alignment")
+            raise Exception ("no template found in alignment")
 
         main_i = -1
         targetseqs = alignment['target'].split('|')
@@ -114,7 +114,7 @@ def select_best_model(sequence, species, position):
                 break
 
         if main_i == -1:
-            raise Exception("main target sequence not found in alignment:\n" +
+            raise Exception ("main target sequence not found in alignment:\n" +
                             sequence + " should match one of " +
                             str(targetseqs))
 
@@ -125,6 +125,7 @@ def select_best_model(sequence, species, position):
             best = path
             bestID = pid
 
+    _log.debug ("best model for %s %s %i is %s" % (idForSeq(sequence), species, position, best))
     return best
 
 
@@ -150,6 +151,9 @@ def list_models_of(sequence, species, position):
         end = int(ran[1])
 
         if position >= start and position <= end:
+
+            _log.debug ("add %s to list of models for %s %s %i" % (f, h, species, position))
             l.append(f)
 
+    _log.debug ("found %i models for %s %s %i" % (len (l), h, species, position))
     return l
