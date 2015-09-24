@@ -693,14 +693,24 @@ class Modeler(object):
         ranges = interpro.getInterproDomainLocations (mainTargetSeq)
 
         # yasara sticks to the directory where it was started,
-        # so make a special directory for yasara to run in and
+        # so make a unique directory for yasara to run in and
         # let it store all its output files there:
-        runDir = os.path.join(self.execution_root_dir,
-                              'run-yasara-%i' % (os.getpid()))
-        if os.path.isdir(runDir):
-            shutil.rmtree(runDir)
-        os.mkdir(runDir)
-        os.chdir(runDir)
+        runDir = os.path.join (self.execution_root_dir,
+                               'run-yasara-%s-%s-%i' % (uniprotSpeciesName, mainTargetID, os.getpid ()))
+        if os.path.isdir (runDir):
+            _log.debug ("removing old verion of %s" % runDir)
+            shutil.rmtree (runDir)
+        os.mkdir (runDir)
+        os.chdir (runDir)
+
+        # Restart yasara, in case if it was already running.
+        # We don't want it running in a different directory,
+        # could cause errors.
+        if self.yasara.com:
+
+            _log.debug ("restarting yasara for %s %s" % (uniprotSpeciesName, mainTargetSeq))
+            self.yasara.Exit ()
+            self.yasara.start ()
 
         time_start = time()
 
@@ -728,6 +738,9 @@ class Modeler(object):
         for mainDomainRange, mainTemplateID, mainDomainAlignment in \
                 mainTargetAlignments:
 
+            # Make sure that we're still in the run directory after the previous iteration:
+            os.chdir (runDir)
+
             # skip ranges that don't cover the requireRes (if given)
             if requireRes and \
                     ((requireRes - 1) < mainDomainRange.start or
@@ -742,7 +755,7 @@ class Modeler(object):
                 (mainTargetID, uniprotSpeciesName,
                  mainDomainRange.start + 1, mainDomainRange.end)
 
-            _log.debug ("locking " + modelname)
+            _log.debug ("locking %s, running from %s" % (modelname, runDir))
 
             modelDir = os.path.join (self.model_root_dir, modelname)
             modelArchive = modelDir + '.tgz'
@@ -770,30 +783,30 @@ class Modeler(object):
                 # the model directory is going to be turned into an archive,
                 # All created files will be sent there eventually,
                 # but it's not yasara's working directory.
-                if not os.path.isdir(modelDir):
-                    os.mkdir(modelDir)
+                if not os.path.isdir (modelDir):
+                    os.mkdir (modelDir)
 
-                modelPath = os.path.join(modelDir, 'target.pdb')
+                modelPath = os.path.join (modelDir, 'target.pdb')
 
                 if os.path.isfile (modelPath) and not overwrite:
                 # Found the output directory for this model already before we started.
                 # (just not yet archived)
 
                     # archive and clean up:
-                    os.chdir(self.model_root_dir)
-                    tf = tarfile.open(modelname + '.tgz', 'w:gz')
-                    tf.add(modelname)  # refers to modelDir
-                    tf.close()
-                    shutil.rmtree(modelDir)
+                    os.chdir (self.model_root_dir)
+                    tf = tarfile.open (modelname + '.tgz', 'w:gz')
+                    tf.add (modelname)  # refers to modelDir
+                    tf.close ()
+                    shutil.rmtree (modelDir)
 
-                    modelPaths.append(modelArchive)
+                    modelPaths.append (modelArchive)
                     _log.info('%s already exists, skipping..' % modelArchive)
                     continue
 
                 # We're now sure that the model doesn't exist yet.
                 # At this point we start the actual model building.
                 try:
-                    _log.debug ("starting to build %s %s (%d - %d)\n%s"
+                    _log.debug ("now calling _build_for_domain for %s %s (%d - %d)\n%s"
                                 % (uniprotSpeciesName, mainTemplateID,
                                    mainDomainRange.start, mainDomainRange.end,
                                    mainTargetSeq))
@@ -853,6 +866,7 @@ class Modeler(object):
             # end of this iteration, move over to next range ...
 
         # Clean up all runtime files:
+        _log.debug ("modeling done, cleaning up %s" % runDir)
         os.chdir (self.execution_root_dir)
         shutil.rmtree (runDir)
 
