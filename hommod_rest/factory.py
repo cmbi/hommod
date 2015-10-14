@@ -47,8 +47,16 @@ def create_app(settings=None):
         root_logger.setLevel(logging.DEBUG)
 
     # Use ProxyFix to correct URL's when redirecting.
-    from werkzeug.contrib.fixers import ProxyFix
-    app.wsgi_app = ProxyFix(app.wsgi_app)
+#    from werkzeug.contrib.fixers import ProxyFix
+#    app.wsgi_app = ProxyFix(app.wsgi_app)
+
+    # Use ProxyFix to correct URL's when redirecting.
+    from hommod_rest.middleware import ReverseProxied
+    app.wsgi_app = ReverseProxied(app.wsgi_app)
+
+    # Register jinja2 filters
+    from hommod_rest.frontend.filters import beautify_docstring
+    app.jinja_env.filters['beautify_docstring'] = beautify_docstring
 
     # Register blueprints
     from hommod_rest.frontend.api.endpoints import bp as api_bp

@@ -706,7 +706,7 @@ class Modeler(object):
         # Restart yasara, in case if it was already running.
         # We don't want it running in a different directory,
         # could cause errors.
-        if self.yasara.com:
+        if self.yasara.pid:
 
             _log.debug ("restarting yasara for %s %s" % (uniprotSpeciesName, mainTargetSeq))
             self.yasara.Exit ()

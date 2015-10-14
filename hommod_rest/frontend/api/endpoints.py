@@ -2,10 +2,10 @@ import logging
 import inspect
 import re
 
-from flask import Blueprint, jsonify, request, Response
+from flask import Blueprint, jsonify, request, Response, render_template
 
 from hommod_rest.services.utils import (extract_info, extract_alignment,
-                                        extract_model)
+                                        extract_model, list_models_of)
 
 _log = logging.getLogger(__name__)
 
@@ -39,8 +39,44 @@ def update_cache ():
 
     return jsonify({'jobid': result.task_id})
 
+@bp.route('/has_model/', methods=['POST'])
+def has_model ():
+
+    """
+    Ask whether the given model already exists or not.
+
+    :param sequence: target sequence for the model
+    :param position: position of the required residue in the sequence, starting 1
+    :param species_id: uniprot species id for the model
+    :return: True if the model is already there, false otherwise
+    """
+
+    sequence = request.form.get('sequence', None)
+    position = request.form.get('position', None)
+    species_id = request.form.get('species_id', None)
+
+    paths = list_models_of (sequence, species_id, position)
+
+    if len (paths) > 0:
+
+        _log.debug ("has_model: returning true for %s" % str (paths))
+        return True
+    else:
+        return False
+
 @bp.route('/submit/', methods=['POST'])
 def submit ():
+
+    """
+    Request a model for the given target 'sequence', residue position
+    and 'species_id'.
+
+    :param sequence: target sequence for the model
+    :param position: position of the required residue in the sequence, starting 1
+    :param species_id: uniprot species id for the model
+    :return: a json object, containing the field 'jobid'
+    """
+
     sequence = request.form.get('sequence', None)
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
@@ -96,7 +132,8 @@ def get_model_file (jobid):
     result = celery.AsyncResult(jobid)
     path = result.result
     if not path:  # no model could be created
-        return '', 404
+#        return '', 404
+        return ''
 
     try:
         contents = extract_model(path)
@@ -121,7 +158,8 @@ def get_metadata(jobid):
     result = celery.AsyncResult(jobid)
     path = result.result
     if not path:
-        return {'error': 'no model could be created'}, 404
+#        return {'error': 'no model could be created'}, 404
+	    return {}
 
     try:
         data = extract_info(path)
@@ -135,15 +173,23 @@ def get_metadata(jobid):
 
 @bp.route ('/')
 def docs ():
-    p = re.compile (r"\@bp\.route\s*\(\'([\w\/\<\>]*)\'\)")
 
-    fs = [annotations, entries]
+    fs = [update_cache, submit, has_model, status, get_model_file, get_metadata]
     docs = {}
     for f in fs:
         src = inspect.getsourcelines (f)
-        m = p.search (src[0][0])
+        m = re.search(r"@bp\.route\('([\w\/\<\>\.]*)', methods=\['([A-Z]*)']\)",
+                      src[0][0])
+
         if not m:  # pragma: no cover
+
             _log.debug("Unable to document function '{}'".format(f))
             continue
 
         url = m.group(1)
+        method = m.group(2)
+        docstring = inspect.getdoc(f)
+        docs[url] = (method, docstring)
+
+    return render_template('api/docs.html', docs=docs)
+

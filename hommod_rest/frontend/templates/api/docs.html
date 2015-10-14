@@ -1,0 +1,11 @@
+<html>
+<body>
+
+{% for url, (method, doc) in docs.iteritems()|sort %}
+  <h3><samp>/api{{ url }}</samp> <small>({{ method }})</small></h3>
+  {{ doc|beautify_docstring }}
+  <hr>
+{% endfor %}
+
+</body>
+</html>

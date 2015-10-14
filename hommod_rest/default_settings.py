@@ -1,5 +1,7 @@
 from kombu import Exchange, Queue
 
+DEBUG = True
+TESTING = False
 
 # Celery
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
@@ -21,7 +23,7 @@ MAX_MODEL_DAYS = 100
 MAIL_SERVER = "131.174.165.22"
 MAIL_SMTP_PORT = 25
 MAIL_FROM = "hommod-rest@cmbi.umcn.nl"
-MAIL_TO = ["Coos.Baakman@radboudumc.nl"]
+MAIL_TO = ["Coos.Baakman@radboudumc.nl", "Jon.Black@radboudumc.nl"]
 
 TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
 

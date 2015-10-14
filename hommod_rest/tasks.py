@@ -28,12 +28,11 @@ def create_model(sequence, species_id, residue_number):
                .format(len(paths), sequence, species_id, residue_number))
 
     if len(paths) <= 0:
-        paths = modeler.modelProc(sequence, species_id, residue_number, False)
+        paths = modeler.modelProc (sequence, species_id, residue_number, False)
 
     if len(paths) > 0:
-        return select_best_model(sequence, species_id, residue_number)
+        return select_best_model (sequence, species_id, residue_number)
     else:
-        _log.warn("failed a model: {} {} {}"
+        _log.warn("0 models created for  {} {} {}"
                   .format(sequence, species_id, residue_number))
-        raise Exception("unable to create model for {} {} {}"
-                        .format(sequence, species_id, residue_number))
+	return ''

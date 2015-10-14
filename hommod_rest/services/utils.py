@@ -152,6 +152,22 @@ def list_models_of(sequence, species, position):
 
         if position >= start and position <= end:
 
+            try:
+                model = extract_model (f)
+                alignment = extract_alignment (f)
+            except:
+                _log.error ("couldn't get model or alignment from %s" % f)
+                continue
+
+            if len (model) == 0:
+                _log.error ("empty model in %s" % f)
+                continue
+
+            inputtargetseq = sequence [start - 1, end]
+            modeltargetseq = alignment ['target'].replace ('-', '').replace ('.', '')
+            if modeltargetseq != inputtargetseq:
+                _log.error ("sequence mismatch in %s:\ninput: %s\nalign: %s" % (f, inputtargetseq, modeltargetseq))
+
             _log.debug ("add %s to list of models for %s %s %i" % (f, h, species, position))
             l.append(f)
 
