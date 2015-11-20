@@ -97,7 +97,7 @@ def select_best_model(sequence, species, position):
                 break
 
         if templateID is None:
-            raise Exception ("no template found in alignment")
+            raise Exception ("no template found in alignment of %s" % path)
 
         main_i = -1
         targetseqs = alignment['target'].split('|')
@@ -163,7 +163,7 @@ def list_models_of(sequence, species, position):
                 _log.error ("empty model in %s" % f)
                 continue
 
-            inputtargetseq = sequence [start - 1, end]
+            inputtargetseq = sequence [start - 1: end]
             modeltargetseq = alignment ['target'].replace ('-', '').replace ('.', '')
             if modeltargetseq != inputtargetseq:
                 _log.error ("sequence mismatch in %s:\ninput: %s\nalign: %s" % (f, inputtargetseq, modeltargetseq))
