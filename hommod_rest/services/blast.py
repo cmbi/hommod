@@ -31,7 +31,7 @@ class BlastService(object):
         if not self.uniprotspeciesDir:
             raise Exception("Species database directory not set")
 
-        dbpath = os.path.join(self.uniprotspeciesDir, 'uniprot-%s' % species)
+        dbpath = os.path.join(self.uniprotspeciesDir, 'uniprot-%s' % species.upper ())
         if len(glob('%s.*' % dbpath)) <= 0:
                     raise Exception('Species database not found: '+dbpath)
 
