@@ -51,3 +51,6 @@ YASARADIR = '/data/prog/Yasara/yasara/'
 # Blast databases:
 SPECIESDBDIR = '/data/blast/uniprot-species/'
 TEMPLATESDB = '/data/blast/templates/templates'
+
+
+TEMPLATESFASTA = '/data/fasta/templates.fa'

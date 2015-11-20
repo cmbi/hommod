@@ -317,6 +317,40 @@ def getTemplatePDBIDandChain (blastHitID):
     return pdbid, pdbchain
 
 
+def getTemplateSequence (pdbac, chain):
+
+    from flask import current_app as app
+    
+    if 'TEMPLATESFASTA' in app.config and \
+            os.path.isfile (app.config ['TEMPLATESFASTA']):
+
+        source = open (app.config ['TEMPLATESFASTA'], 'r')
+        searchID = "pdb|%s|%s" % (pdbac.upper (), chain)
+    else:
+        source = urlopen ('ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt')
+        searchID = '%s_%s' % (pdbac.lower (), chain)
+
+    currentID = None
+    currentSeq = ''
+    for line in source:
+
+        if line.startswith ('>'):
+
+            if currentID == searchID:
+                return currentSeq
+
+            currentID = line [1:].split () [0]
+            currentSeq = ''
+
+        elif len (line.strip ()) > 0:
+
+            currentSeq += line.strip ()                
+
+    if currentID == searchID:
+        return currentSeq
+    else:
+        return ''
+
 # Returns aligned sequences in a dictionary:
 def parseStockholmAlignment(filename):
 
@@ -358,28 +392,6 @@ def removeBulges (secstr, elementType, elementLength):
         i += 1
 
     return secstr
-
-
-# Gets all seqres sequences for a psb entry.
-def getSeqresSeqs(pdbac,  moltype):  # moltype is 'na' or 'protein'
-
-    pdbac = pdbac.lower()
-    d = {}
-    from flask import current_app as app
-
-    for f in os.listdir(os.path.join(app.config['SEQRESDIR'],  '%s/' % pdbac)):
-        if f.startswith(pdbac + '_'):
-            path = os.path.join(app.config['SEQRESDIR'],  pdbac,  f)
-            header = open(path,  'r').readlines()[0].split()
-
-            if header[1] == 'mol:%s' % moltype:
-
-                chainID = os.path.splitext(f.split('_')[1])[0]
-                _id,  seq = parseFirstFastaSequence(path)
-
-                d[chainID] = seq
-
-    return d
 
 # returns a list of ranges, telling where deletions start and end.
 def identifyDeletedRegions(alignedseq):
