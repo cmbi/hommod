@@ -319,12 +319,10 @@ def getTemplatePDBIDandChain (blastHitID):
 
 def getTemplateSequence (pdbac, chain):
 
-    from flask import current_app as app
-    
-    if 'TEMPLATESFASTA' in app.config and \
-            os.path.isfile (app.config ['TEMPLATESFASTA']):
+    if TEMPLATESFASTA  and \
+            os.path.isfile (TEMPLATESFASTA):
 
-        source = open (app.config ['TEMPLATESFASTA'], 'r')
+        source = open (TEMPLATESFASTA, 'r')
         searchID = "pdb|%s|%s" % (pdbac.upper (), chain)
     else:
         source = urlopen ('ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt')

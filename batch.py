@@ -43,6 +43,8 @@ def init():
     aligner.clustalExe = config.CLUSTAL
     aligner.msaExe = config.MSA
 
+    import hommod_rest.services.modelutils
+    hommod_rest.services.modelutils.TEMPLATESFASTA = config.TEMPLATESFASTA
 
 if len (sys.argv) not in [3, 4] or not os.path.isfile (sys.argv[2]):
     print 'usage: %s [species id] [fasta filepath] <optionally a resnum>' % sys.argv[0]

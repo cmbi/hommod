@@ -86,6 +86,9 @@ def create_app(settings=None):
     aligner.clustalExe = app.config ['CLUSTAL']
     aligner.msaExe = app.config ['MSA']
 
+    import hommod_rest.services.modelutils
+    hommod_rest.services.modelutils.TEMPLATESFASTA = app.config ['TEMPLATESFASTA']
+
     return app
 
 
