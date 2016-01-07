@@ -89,18 +89,22 @@ class alignService(object):
         open(toalignpath, 'w').write('>template\n%s\n>target\n%s\n' %
                                      (seq1, seq2))
 
-        os.system('%s -i %s -o %s -g %.1f -e %.1f -s %.1f -c' %
-                  (self.msaExe, toalignpath, alignedpath,
-                   gapOpen, gapExt, modifier))
+	cmd = '%s -i %s -o %s -g %.1f -e %.1f -s %.1f -c' % \
+              (self.msaExe, toalignpath, alignedpath,
+              gapOpen, gapExt, modifier)
+
+	p = subprocess.Popen (cmd, shell=True, stderr=subprocess.PIPE)
+
         alignedpath += '_al'
 
-        if not os.path.isfile(alignedpath):
-            raise Exception('no such file: ' + alignedpath)
+        if not os.path.isfile (alignedpath):
+            raise Exception ('alignment file %s not created, MSA error:\n%s' %
+			     (alignedpath, p.stderr.read ()))
 
-        aligned = parseFasta(open(alignedpath, 'r'))
+        aligned = parseFasta (open(alignedpath, 'r'))
 
-        os.remove(alignedpath)
-        os.remove(toalignpath)
+        os.remove (alignedpath)
+        os.remove (toalignpath)
 
         if aligned['template'].replace('-', '') != pdbSeq:
             raise Exception('MSA output mismatch:\npdbSeq:' + pdbSeq +
