@@ -94,6 +94,7 @@ class alignService(object):
               gapOpen, gapExt, modifier)
 
 	p = subprocess.Popen (cmd, shell=True, stderr=subprocess.PIPE)
+	p.wait ()
 
         alignedpath += '_al'
 
