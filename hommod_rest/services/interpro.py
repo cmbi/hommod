@@ -3,7 +3,10 @@ from filelock import FileLock
 from modelutils import idForSeq, writeFasta
 import xml.etree.ElementTree as xmlElementTree
 import bz2
+import subprocess
 
+import logging
+_log = logging.getLogger(__name__)
 
 class InterproDomain(object):
 
@@ -22,6 +25,8 @@ class InterproService(object):
         self.storageDir = None
 
     def _create_data_file(self, sequence):
+
+        _log.info ("creating interpro file for sequence:\n%s" % sequence)
 
         if not self.interproExe or not self.storageDir:
             raise Exception("interproExe and storageDir must be set")
@@ -46,22 +51,35 @@ class InterproService(object):
 
             writeFasta({ID: sequence}, _in)
 
-            os.system(('%s --goterms --formats xml ' +
-                       '--input %s --outfile %s --seqtype p')
-                      % (self.interproExe, _in, out))
+            cmd = '%s --goterms --formats xml --input %s --outfile %s --seqtype p' % \
+                  (self.interproExe, _in, out)
+            
+            p = subprocess.Popen (cmd, shell=True, stderr=subprocess.PIPE)
+            p.wait ()
 
             os.remove(_in)
 
-            if not os.path.isfile(out):
+            if not os.path.isfile (out):
 
-                raise Exception('interprofile not created: %s' % out)
+                errstr = p.stderr.read ()
 
-            os.system('bzip2 -f %s' % out)
-            return out + '.bz2'
+                _log.error ("interpro did not create %s:\n%s" %
+                            (out, errstr))
+
+                raise Exception('interprofile %s not created:\n%s' % (out, errstr))
+
+            os.system ('bzip2 -f %s' % out)
+            out = out + '.bz2'
+
+            _log.info ("interprofile %s sucessfully created" % out)
+
+            return out
 
 
     # Creates data file if it doesn't exist yet.
     def getInterproDomainLocations(self, sequence):
+
+        _log.info ("getting interpro domains for sequence:\n%s" % sequence)
 
         filepath = self._create_data_file(sequence)
         ID = idForSeq(sequence)
@@ -120,6 +138,8 @@ class InterproService(object):
 
                 if length > 20 or bShortDomain:
                     domains.append(InterproDomain(start, end, ac))
+
+        _log.info ("successfully retrieved interpro domains for sequence:\n%s" % sequence)
 
         return domains
 

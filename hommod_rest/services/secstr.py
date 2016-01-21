@@ -14,8 +14,10 @@ class SecStrProvider(object):
     def _check_config(self):
 
         if not self.dssp_dir:
+            _log.error ("dssp dir not set")
             raise Exception("dssp dir not set")
         if not self._yasara_dir:
+            _log.error ("yasara dir not set")
             raise Exception("yasara dir not set")
 
     @property
@@ -38,20 +40,31 @@ class SecStrProvider(object):
 
     def hasSecStr(self, template):
 
+        _log.info ("checking if %s_%s has secondary structure" % (template.pdbac, template.chainID))
+
         self._check_config()
 
         dssppath = '%s/%s.dssp' % (self.dssp_dir, template.pdbac.lower())
         if os.path.isfile(dssppath):
 
             d = parseDSSP(dssppath)
+
+            _log.info ("from %s:\n%s" % (dssppath, str (d)))
+
             return template.chainID in d
         else:
             obj = self.yasara.LoadPDB(template.pdbac, download='Yes')[0]
             for ss in self.yasara.SecStrRes('obj %i' % obj):
                 if ss != 'X':
                     self.yasara.DelObj(obj)
+
+                    _log.info ("yasara reported secondary structure for %s_%s" % (template.pdbac, template.chainID))
+
                     return True
             self.yasara.DelObj(obj)
 
+            _log.info ("yasara reported no secondary structure for %s_%s" % (template.pdbac, template.chainID))
+
+            return False
 
 secstr = SecStrProvider()

@@ -200,7 +200,8 @@ class Modeler(object):
         self._yasara_dir = yasara_dir
 
         if not os.path.isdir(yasara_dir):
-            raise ValueError("{} not found".format(yasara_dir))
+            _log.error ("%s not found" % yasara_dir)
+            raise ValueError("{} not found".format (yasara_dir))
 
         sys.path.append(os.path.join(yasara_dir, 'pym'))
         sys.path.append(os.path.join(yasara_dir, 'plg'))
@@ -212,15 +213,19 @@ class Modeler(object):
     def _check_init(self):
 
         if self._yasara_dir is None:
+            _log.error ("yasara_dir has not been set")
             raise Exception("yasara_dir has not been set")
 
         if self.execution_root_dir is None:
+            _log.error ("execution root not set")
             raise Exception("execution root not set")
 
         if self.model_root_dir is None:
+            _log.error ("model root not set")
             raise Exception("model root not set")
 
         if self.template_blacklist is None:
+            _log.error ("blacklist not set")
             raise Exception("blacklist not set")
 
     def _add_template_to_blacklist (self, pdbid):
@@ -233,6 +238,8 @@ class Modeler(object):
 
     # Use this function to get the template sequences:
     def getChainOrderAndSeqs(self, tempobj):
+
+        _log.info ("indexing protein sequences present in yasara object")
 
         self._check_init()
 
@@ -257,6 +264,8 @@ class Modeler(object):
 
             tempChainSeqs[chain] = seq
 
+        _log.info ("found %d protein sequences present in yasara object" % len (uniqueChainOrder))
+
         return [uniqueChainOrder, tempChainSeqs]
 
     def getChainSeq(self, tempobj, chain):
@@ -275,6 +284,8 @@ class Modeler(object):
     # returns the number of the yasara object and the
     # oligomerization factor. (1 if no oligomerization) 
     def _set_template(self, tempac, oligomerize=True):
+
+        _log.info ("setting template %s to yasara" % tempac)
         self._check_init()
 
         self.yasara.Clear()
@@ -410,6 +421,9 @@ class Modeler(object):
     # a uniprot species id, a template ID (pdbid and chain)
     def _build_for_domain (self, modelDir, mainTargetID, uniprotSpeciesName,
                            mainTemplateID, mainTargetSeq, mainDomainRange):
+
+        _log.info ("building model %s range %s on template %s" %
+                   (mainTemplateID, str (mainDomainRange), str (mainTemplateID)))
 
         modelPath = os.path.join(modelDir, 'target.pdb')
         alignmentFastaPath = os.path.join(modelDir, 'align.fasta')
@@ -723,6 +737,8 @@ class Modeler(object):
                   overwrite=False):
         self._check_init()
 
+        _log.info ("building models for %s in %s" % (mainTargetSeq, uniprotSpeciesName))
+
         if not os.path.isdir(self.model_root_dir):
             os.mkdir(self.model_root_dir)
 
@@ -934,6 +950,9 @@ class Modeler(object):
         _log.debug ("modeling done, cleaning up %s" % runDir)
         os.chdir (self.execution_root_dir)
         shutil.rmtree (runDir)
+
+        _log.info ("finished building all models for %s in %s" %
+                   (mainTargetSeq, uniprotSpeciesName))
 
         if realign:
 

@@ -28,14 +28,16 @@ def update_cache ():
     sequence = request.form.get('sequence', None)
     species_id = request.form.get('species_id', None)
 
+    _log.info("update cache request for ( sequence: %s, species: %s )"
+               % (sequence, species_id))
+
     if not (sequence and species_id):
         return jsonify({'error': 'invalid input'}), 400
 
-    _log.debug("update resquest for ( sequence: %s, species: %s )"
-               % (sequence, species_id))
-
     from hommod_rest.tasks import create_models_seq
     result = create_models_seq.apply_async((sequence, species_id))
+
+    _log.info("cache will update in job %s" % result.task_id)
 
     return jsonify({'jobid': result.task_id})
 
@@ -55,13 +57,17 @@ def has_model ():
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
 
+    _log.info ("has_model request recieved for ( sequence: %s, species: %s, position: %s )"
+               % (sequence, species_id, position))
+
     paths = list_models_of (sequence, species_id, position)
 
     if len (paths) > 0:
 
-        _log.debug ("has_model: returning true for %s" % str (paths))
+        _log.info ("has_model: returning true for %s" % str (paths))
         return True
     else:
+        _log.info ("has_model: returning false for %s" % str (paths))
         return False
 
 @bp.route('/submit/', methods=['POST'])
@@ -81,11 +87,19 @@ def submit ():
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
 
+    _log.info ("submit request recieved for ( sequence: %s, species: %s, position: %s )"
+               % (sequence, species_id, position))
+
     if not (sequence and position and species_id):
+
+        _log.warn ("submit request did not contain all required input data");
+
         return jsonify({'error': 'invalid input'}), 400
     try:
         position = int(position)
     except:
+        _log.warn ("submit request did not contain an integer position");
+
         return jsonify({'error': 'expected integer for position'}), 400
 
     _log.debug("submitted ( sequence: %s, species: %s, position: %i )"
@@ -93,6 +107,8 @@ def submit ():
 
     from hommod_rest.tasks import create_model
     result = create_model.apply_async((sequence, species_id, position))
+
+    _log.info ("created job %s" % jobid)
 
     return jsonify({'jobid': result.task_id})
 
@@ -107,12 +123,16 @@ def status (jobid):
     :return: Either PENDING, STARTED, SUCCESS, FAILURE, RETRY, or REVOKED.
     """
 
+    _log.info ("status request for job %s" % jobid)
+
     from hommod_rest.application import celery
     result = celery.AsyncResult(jobid)
 
     response = {'status': result.status}
     if result.failed ():
         response ['message'] = result.traceback
+
+    _log.info ("found status %s for job %s" % (result.status, jobid))
 
     return jsonify (response)
 
@@ -128,10 +148,15 @@ def get_model_file (jobid):
     :return: The pdb file created by the job. If the job status is not SUCCESS, this method returns an error.
     """
 
+    _log.info ("model request for job %s" % jobid)
+
     from hommod_rest.application import celery
     result = celery.AsyncResult(jobid)
     path = result.result
     if not path:  # no model could be created
+
+        _log.warn('no model was created for job %s' % jobid)
+
 #        return '', 404
         return ''
 
@@ -141,11 +166,13 @@ def get_model_file (jobid):
         _log.warn('failed to get all data from %s' % path)
         return '', 500
 
+    _log.info ("model successfully retrieved for job %s" % jobid)
+
     return Response(contents, mimetype='chemical/x-pdb')
 
 
 @bp.route('/get_metadata/<jobid>/', methods=['GET'])
-def get_metadata(jobid):
+def get_metadata (jobid):
 
     """
     Get the metadata of the model, created by the modeling job.
@@ -153,6 +180,8 @@ def get_metadata(jobid):
     :param jobid: the jobid returned by 'submit'
     :return: The json metadata object. If the job status is not SUCCESS, this method returns an error.
     """
+
+    _log.info ("metadata request for job %s" % jobid)
 
     from hommod_rest.application import celery
     result = celery.AsyncResult(jobid)
@@ -165,14 +194,18 @@ def get_metadata(jobid):
         data = extract_info(path)
         data['alignment'] = extract_alignment(path)
     except:
-        _log.warn('failed to get all data from %s' % path)
+        _log.warn ('failed to get all data from %s' % path)
         return 'data not available', 500
+
+    _log.info ("metadata successfully retrieved for job %s" % jobid)
 
     return jsonify(data)
 
 
 @bp.route ('/')
 def docs ():
+
+    _log.info ("endpoint request for hommod docs")
 
     fs = [update_cache, submit, has_model, status, get_model_file, get_metadata]
     docs = {}
@@ -183,13 +216,15 @@ def docs ():
 
         if not m:  # pragma: no cover
 
-            _log.debug("Unable to document function '{}'".format(f))
+            _log.warn ("Unable to document function '{}'".format(f))
             continue
 
         url = m.group(1)
         method = m.group(2)
         docstring = inspect.getdoc(f)
         docs[url] = (method, docstring)
+
+    _log.info ("rendering template for hommod docs")
 
     return render_template('api/docs.html', docs=docs)
 

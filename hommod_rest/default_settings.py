@@ -24,6 +24,7 @@ MAIL_SERVER = "131.174.165.22"
 MAIL_SMTP_PORT = 25
 MAIL_FROM = "hommod-rest@cmbi.umcn.nl"
 MAIL_TO = ["Coos.Baakman@radboudumc.nl", "Jon.Black@radboudumc.nl"]
+LOG_TO = "/var/log/hommod.log"
 
 TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
 
@@ -50,7 +51,7 @@ YASARADIR = '/data/prog/Yasara/yasara/'
 
 # Blast databases:
 SPECIESDBDIR = '/data/blast/uniprot-species/'
-TEMPLATESDB = '/data/blast/templates/templates'
+TEMPLATESDB = '/data/blast/templates'
 
 
 TEMPLATESFASTA = '/data/fasta/templates.fa'

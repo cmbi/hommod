@@ -4,6 +4,8 @@ import subprocess
 from hommod_rest.services.modelutils import (
     writeFasta, parseFasta, removeBulges)
 
+import logging
+_log = logging.getLogger(__name__)
 
 class alignService(object):
 
@@ -16,15 +18,20 @@ class alignService(object):
     # Simply uses dictionaries for input and output
     def clustalAlign(self, d):
 
+        _log.info ("clustal aligning %s" % str (d))
+
         if not self.clustalExe:
-            raise Exception("clustal path not set")
+            _log.error ("clustal path not set")
+            raise Exception ("clustal path not set")
 
         wd = os.path.abspath(os.getcwd())
 
         for key in d.keys():
             if '|' in key:
+                _log.error ('Unallowed syntax for key: ' + key)
                 raise Exception('Unallowed syntax for key: ' + key)
             if len(d[key]) == 0:
+                _log.error ('empty sequence for %s' % key)
                 raise Exception('empty sequence for %s' % key)
 
         _in = os.path.join(wd, 'in%i.fasta' % os.getpid())
@@ -50,12 +57,16 @@ class alignService(object):
         finally:
             os.remove(out)
 
+        _log.info ("successfully created a clustal alignment")
+
         return d
 
     # Use Joanna Lange's alignment program, requires secondary structure information.
     # Output is a dictionary with: 'template' and 'target' as ids, pointing to sequences.
     def msaAlign(self, pdbSeq, pdbSecStr, tarSeq,
                  gapOpen=-13.0, gapExt=-0.4, modifier=3.0):
+
+        _log.info ("making pairwise MSA alignment")
 
         if not self.msaExe:
             raise Exception("msa path not set")
@@ -67,8 +78,11 @@ class alignService(object):
         pdbSecStr = removeBulges (pdbSecStr, 'E', 3)
 
         if len(pdbSeq) == 0:
+            _log.error ('empty pdb seq')
             raise Exception('empty pdb seq')
+
         if len(pdbSeq) != len(pdbSecStr):
+            _log.error ('pdb seq and pdb secstr are not of same length')
             raise Exception('pdb seq and pdb secstr are not of same length')
 
         seq1 = ''
@@ -89,18 +103,23 @@ class alignService(object):
         open(toalignpath, 'w').write('>template\n%s\n>target\n%s\n' %
                                      (seq1, seq2))
 
-	cmd = '%s -i %s -o %s -g %.1f -e %.1f -s %.1f -c' % \
+        cmd = '%s -i %s -o %s -g %.1f -e %.1f -s %.1f -c' % \
               (self.msaExe, toalignpath, alignedpath,
-              gapOpen, gapExt, modifier)
+               gapOpen, gapExt, modifier)
 
-	p = subprocess.Popen (cmd, shell=True, stderr=subprocess.PIPE)
-	p.wait ()
+        p = subprocess.Popen (cmd, shell=True, stderr=subprocess.PIPE)
+        p.wait ()
 
         alignedpath += '_al'
 
         if not os.path.isfile (alignedpath):
+
+            errstr = p.stderr.read ()
+
+            _log.error ('alignment file %s not created, MSA error:\n%s' %
+                        (alignedpath, errstr))
             raise Exception ('alignment file %s not created, MSA error:\n%s' %
-			     (alignedpath, p.stderr.read ()))
+                             (alignedpath, errstr))
 
         aligned = parseFasta (open(alignedpath, 'r'))
 
@@ -108,8 +127,12 @@ class alignService(object):
         os.remove (toalignpath)
 
         if aligned['template'].replace('-', '') != pdbSeq:
+            _log.error ('MSA output mismatch:\npdbSeq:' + pdbSeq +
+                            'aligned:' + aligned['template'])
             raise Exception('MSA output mismatch:\npdbSeq:' + pdbSeq +
                             'aligned:' + aligned['template'])
+
+        _log.info ("successfully created a pairwise MSA alignment")
 
         return aligned
 
