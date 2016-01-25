@@ -18,7 +18,8 @@ def create_app(settings=None):
     else:  # pragma: no cover
         app.config.from_envvar('HOMMOD_REST_SETTINGS')  # pragma: no cover
 
-    logging.basicConfig (filename=app.config["LOG_TO"])
+    logging.basicConfig (filename=app.config["LOG_TO"],
+                         format="%(levelname)s - %(asctime)s : %(message)s")
 
     # Ignore Flask's built-in logging
     # app.logger is accessed here so Flask tries to create it
