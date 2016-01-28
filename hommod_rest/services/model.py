@@ -82,7 +82,12 @@ def withoutHomomerDuplicates (chainOrder, chainSequences):
         if seq not in count:
             count [seq] = 0
             seq2chains [seq] = []
+
         count [seq] += 1
+        if count [seq] > 1:
+            _log.info ("sequence of %s is the same as %s" %\
+                       (chain, str (seq2chains [seq])))
+
         seq2chains [seq].append (chain)
 
     # Check that every sequence occurs the same number of times:
@@ -366,6 +371,8 @@ class Modeler(object):
                 self._add_template_to_blacklist (tempac)
                 raise Exception ("chain %s occurs more than once after cleaning" % chain)
 
+        _log.info ("initialized yasara template with %d chains" % len (chainOrder))
+
         return [tempobj, nMolsOligomerized / nMolsUnoligomerized]
 
 
@@ -373,7 +380,10 @@ class Modeler(object):
     # but instead of building a model, use the pdb structure
     def _collect_template (self, modelDir, mainTargetID, uniprotSpeciesName,
                            mainTemplateID, mainDomainAlignment, mainDomainRange):
-   
+  
+        _log.info ("collecting template %s for %s, rather than building a model" %\
+                   (str (mainTemplateID), mainTargetID))
+ 
         pdbac = mainTemplateID.pdbac.lower ()
         chainID = mainTemplateID.chainID
         part = pdbac [1:3]
@@ -979,6 +989,8 @@ class Modeler(object):
                    templateAlignment):
         self._check_init()
 
+        _log.info ("checking finished model")
+
         # Check that all chains are there:
         chainOrder, templateChainSequences = self.getChainOrderAndSeqs (modelobj)
         if len (chainOrder) < len (expectedChains):
@@ -1034,6 +1046,8 @@ class Modeler(object):
             open('packing.log', 'a') \
                 .write('model packing quality is %.3f\n' % modelPackingQuality)
         else:
+
+            _log.warn ("unexpected result from whatif:\n" + str(qr))
             return 'whatif output for model: ' + str(qr)
 
         qr = whatifClient.service.PackingQualityMolecule(templateAC)
@@ -1043,17 +1057,24 @@ class Modeler(object):
                 .write('template packing quality is %.3f\n' %
                        templatePackingQuality)
         else:
+            _log.warn ("unexpected result from whatif:\n" + str(qr))
             return 'whatif output for template: ' + str(qr)
 
         if modelPackingQuality < (templatePackingQuality - 1.0):
+
+            _log.warn ("Model packing quality %.3f too low" +
+                    ", compared to %.3f from template" %
+                (modelPackingQuality, templatePackingQuality))
+
             return ("Model packing quality %.3f too low" +
-                    ", compared to %.3f from template") % \
-                (modelPackingQuality, templatePackingQuality)
+                    ", compared to %.3f from template" %
+                (modelPackingQuality, templatePackingQuality))
 
     # This function starts the model building process by calling
     # yasara. 
     def modelWithAlignment (self, alignmentFastaPath, tempobj):
 
+        _log.info ("building a model in yasara from alignment %s" % alignmentFastaPath)
         _log.debug ("running yasara homology modeling experiment from " + os.getcwd())
 
         if not os.path.isdir (os.getcwd ()):
@@ -1079,6 +1100,8 @@ class Modeler(object):
         )
         self.yasara.Experiment("On")
         self.yasara.Wait("Expend")
+
+        _log.info ("yasara is done building the model from alignment %s" % alignmentFastaPath)
 
 modeler = Modeler()
 
@@ -1108,6 +1131,8 @@ def selectMostIdentical(targetSeq, seqs):
 
         if not best or pids[key] > pids[best]:
             best = key
+
+    _log.info ("selected most identical sequence:\ntarget:\t%s\n%s:\t%s" % (targetSeq, best, seqs [best]))
 
     return best
 
@@ -1149,6 +1174,8 @@ def getIsoforms (seq, uniprotSpeciesName):
                         selected[ac].getNumberResiduesAligned() < \
                         ali.getNumberResiduesAligned():
                     selected[ac] = ali
+
+    _log.info ("found %s isofroms %s for\n%s" % (uniprotSpeciesName, str (selected), seq))
 
     return selected
 
@@ -1257,6 +1284,8 @@ def adjustTargetSequence (targetseq, templateseq, uniprotSpeciesName):
         # Fill the deletion with the chosen replacement piece:
         adjusted = adjusted[:i] + replacement + adjusted[f:]
 
+    _log.info ("adjusted\n%s\nto\n%s" % (aligned[tarkey], adjusted))
+
     return adjusted.replace('-', '')
 
 
@@ -1279,7 +1308,7 @@ def findOrthologsToSeq (seq, uniprotSpeciesName):
                 if pcov > 90.0:
                     orthologs[ac] = oseq
 
-    _log.debug("found {} {} orthologs to\n{}"
+    _log.info ("found {} {} orthologs to\n{}"
                .format(len(orthologs), uniprotSpeciesName, seq))
 
     return orthologs
@@ -1322,6 +1351,8 @@ def groupIdenticals(d):  # arg is dictionary of sequences
                 grouped[-1].append(otherID)
                 ids.remove(otherID)
 
+    _log.info ("grouped %d sequences to %d groups" % (len (d), len (grouped)))
+
     return grouped
 
 
@@ -1334,6 +1365,9 @@ def pickTemplateChainsFor(chainSequences, targetSeq):
     for group in identicalChains:
 
         if hitChain in group:
+
+            _log.info ("selected chain %s in group %s for\n%s" % (hitChain, len (group), targetSeq))
             return group
 
+    _log.error ('no hit found for %s in template' % targetSeq)
     raise Exception('no hit found for %s in template' % targetSeq)
