@@ -46,8 +46,17 @@ def create_app(settings=None):
                               "Time: %(asctime)s\n" +
                               "Message:\n" +
                               "%(message)s"))
+
+
     else:
-        root_logger.setLevel(logging.DEBUG)
+        sh = logging.StreamHandler()
+        formatter = logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(message)s')
+        sh.setFormatter (formatter)
+        _log.addHandler (sh)
+        sh.setLevel (logging.DEBUG)
+
+        root_logger.addHandler (sh)
 
     # Use ProxyFix to correct URL's when redirecting.
 #    from werkzeug.contrib.fixers import ProxyFix
