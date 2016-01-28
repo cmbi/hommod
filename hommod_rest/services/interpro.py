@@ -10,14 +10,16 @@ _log = logging.getLogger(__name__)
 
 class InterproDomain(object):
 
-        def __init__(self, start, end, ac):
+    # Represents a range of a sequence.
 
-                self.start = start
-                self.end = end
-                self.ac = ac
+    def __init__(self, start, end, ac):
+
+        self.start = start
+        self.end = end
+        self.ac = ac
 
 # Uses interproscan to obtain data: https://code.google.com/p/interproscan/wiki/HowToDownload
-class InterproService(object):
+class InterproService (object):
 
     def __init__(self):
 
@@ -34,8 +36,10 @@ class InterproService(object):
         if not os.path.isdir(self.storageDir):
             os.mkdir(self.storageDir)
 
-        ID = idForSeq(sequence)
+        ID = idForSeq (sequence) # unique
 
+        # We don't want two processes to build the same interpro file
+        # at the same time. So use a lock file:
         lockfilepath = os.path.join(self.storageDir, 'lock_%s' % ID)
 
         lock = FileLock(lockfilepath)
@@ -46,11 +50,15 @@ class InterproService(object):
             _in = os.path.join(wd, 'in%i.fasta' % os.getpid())
             out = os.path.join(self.storageDir, '%s.xml' % ID)
 
+            # If the interpro file is already there, then don't
+            # make it anew.
             if os.path.isfile(out + '.bz2'):
                 return out + '.bz2'
 
+            # Make the input file for interpro:
             writeFasta({ID: sequence}, _in)
 
+            # Run interproscan and wait for it to finish:
             cmd = '%s --goterms --formats xml --input %s --outfile %s --seqtype p' % \
                   (self.interproExe, _in, out)
             
@@ -61,6 +69,7 @@ class InterproService(object):
 
             if not os.path.isfile (out):
 
+                # Get the console output:
                 errstr = p.stderr.read ()
 
                 _log.error ("interpro did not create %s:\n%s" %
@@ -68,6 +77,7 @@ class InterproService(object):
 
                 raise Exception('interprofile %s not created:\n%s' % (out, errstr))
 
+            # hommod assumes the interpro files to be bzip2 compressed by default:
             os.system ('bzip2 -f %s' % out)
             out = out + '.bz2'
 
@@ -76,7 +86,7 @@ class InterproService(object):
             return out
 
 
-    # Creates data file if it doesn't exist yet.
+    # Creates an interpro file for the given sequence and parses it.
     def getInterproDomainLocations(self, sequence):
 
         _log.info ("getting interpro domains for sequence:\n%s" % sequence)
@@ -84,7 +94,8 @@ class InterproService(object):
         filepath = self._create_data_file(sequence)
         ID = idForSeq(sequence)
 
-        root = xmlElementTree.fromstring(bz2.BZ2File(filepath, 'r').read())
+        # Get the xml tag of type protein and the given sequence ID:
+        root = xmlElementTree.fromstring (bz2.BZ2File (filepath, 'r').read())
         for child in root:
             if child.tag.endswith('}protein'):
                 p = child
@@ -99,6 +110,7 @@ class InterproService(object):
         if protein is None:
             raise Exception('Protein not found: '+ID)
 
+        # Look for pattern matches in the file:
         matches = []
         for child in protein:
             if child.tag.endswith('}matches'):
@@ -106,8 +118,12 @@ class InterproService(object):
             elif child.tag == 'match':
                 matches.append(child)
 
+        # Get the ranges of the matched parts of the sequence:
         domains = []
         for match in matches:
+
+            # Look at other aspects of the match as well.
+            # We have conditions, some matches aren't added.
             bShortDomain = False
             ac = None
             locations = []
@@ -132,10 +148,13 @@ class InterproService(object):
                     locations = child
 
             for location in locations:
+
                 start = int(location.attrib['start'])-1
                 end = int(location.attrib['end'])-1
                 length = end - start
 
+                # If the range is very short, it might not be an actual domain.
+                # So 'bShortDomain' must be set as an additional confirmation.
                 if length > 20 or bShortDomain:
                     domains.append(InterproDomain(start, end, ac))
 

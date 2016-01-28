@@ -14,22 +14,28 @@ from modelutils import (get_aa321, getNalignIdentity, filterGoodHits,
 _log = logging.getLogger(__name__)
 
 
+# Loads the template blacklist file and returns whether the given
+# pdb id occurs in it or not.
+# (blacklist file is set in configuration)
 def _template_in_blacklist (pdbid):
 
     from hommod_rest.services.model import modeler
     return modeler._template_in_blacklist (pdbid)
 
-def _get_midline(alignedseq1, alignedseq2):
+# This generates the midline string for an alignment.
+# It's used for debugging purposes.
+def _get_midline (alignedseq1, alignedseq2):
 
     m = ''
-    for i in range(len(alignedseq1)):
-        if alignedseq1[i] == alignedseq2[i]:
-            m += alignedseq1[i]
+    for i in range (len (alignedseq1)):
+        if alignedseq1 [i] == alignedseq2 [i]:
+            m += alignedseq1 [i]
         else:
             m += ' '
     return m
 
-
+# Represents a given alignment dictionary as a string.
+# This is used for debugging.
 def alignmentRepr (aligned, order=[]):
 
     s = ''
@@ -97,6 +103,7 @@ class TargetRange(object):
         self.start = min(start, end)
         self.end = max(start, end)
 
+    # If range 1 lies left of range 2, then range1 < range2
     def __lt__(self, other):
 
         if self.start < other.start:
@@ -124,12 +131,12 @@ class TargetRange(object):
 
     def overlapsWith(self, otherRange):
 
-        # given: r[0]>r[1]
+        # given: start <= end
         return (self.end >= otherRange.start and self.start <= otherRange.end
                 or otherRange.end >= self.start
                 and otherRange.start <= self.end)
 
-    def encloses(self, child):
+    def encloses(self, child): # all of 'child' lies in 'self'
 
         return (self.start <= child.start and self.end >= child.end)
 
@@ -189,7 +196,8 @@ def intersection(range1, range2):
     return TargetRange(max(range1.start, range2.start),
                        min(range1.end, range2.end))
 
-
+# Returns the % overlap between the two ranges and the
+# % of length difference, relative to the largest of the two ranges.
 def overlapStats(range1, range2):
 
     len1 = range1.length()
@@ -201,8 +209,9 @@ def overlapStats(range1, range2):
     return poverlap, plendiff
 
 
-# Merges ranges of significant overlap.
-def mergeSimilar(ranges):
+# Merges ranges of significant overlap, with almost the same length.
+# Returns the list of merged ranges.
+def mergeSimilar (ranges):
 
     ranges.sort()
 
@@ -237,7 +246,7 @@ def mergeSimilar(ranges):
 
     return ranges
 
-
+# Returns the given list without the elements in 'toremove'.
 def removeFromList(subj, toremove):
 
     r = []
@@ -246,7 +255,7 @@ def removeFromList(subj, toremove):
             r.append(x)
     return r
 
-
+# Returns the given list, with doubles removed.
 def removeDoubles (ranges):
 
     i = 0
@@ -264,7 +273,7 @@ def removeDoubles (ranges):
 
     return ranges
 
-
+# Returns the given list with smallest ranges in front.
 def sortSmallestFirst (ranges):
 
     sized = []
@@ -276,14 +285,16 @@ def sortSmallestFirst (ranges):
         sorted.append(r)
     return sorted
 
-
+# Returns the given list with largest ranges in front.
 def sortLargestFirst (ranges):
 
     sorted = sortSmallestFirst(ranges)
     sorted.reverse()
     return sorted
 
-
+# Looks for ranges that have the 'template' field set.
+# If two ranges have the same template, they are put
+# together in the returned dictionary as a list.
 def findSharedHits (ranges):
 
     # sort by template id
@@ -345,7 +356,8 @@ class _AlignmentPool(object):
 
         return self.pool[_range][templateID]
 
-
+# Returns true if the given templateSeq matches the alignment's
+# template sequence, without gaps.
 def hasTemplateSeq (alignment, templateSeq):
 
     return alignment['template'].replace('-', '') == templateSeq
@@ -377,7 +389,7 @@ def makeYasaraAlignment (yasara, domainSeq, yasaraObject, yasaraChainID):
 
     return aligned
 
-
+# Produces an alignment, using the dssp file as template.
 def makeDSSPAlignment(domainSeq, template):
 
     dssppath = '/mnt/cmbi4/dssp/%s.dssp' % template.pdbac.lower()
@@ -400,8 +412,10 @@ def makeDSSPAlignment(domainSeq, template):
 
     return aligned
 
-
-def getCoveredTargetRange(alignment):
+# Give this function an alignment with a 'target' and 'template'
+# sequence, then it will return the range, representing the
+# part of the target, that is covered by the template.
+def getCoveredTargetRange (alignment):
 
     targetStart = 0
     while not alignment['target'][targetStart].isalpha():
@@ -427,7 +441,9 @@ def getCoveredTargetRange(alignment):
 
     return TargetRange(targetStart + aaStart, targetEnd - aaEnd)
 
-
+# For the given target sequence range, this function
+# returns the corresponding sequence of the template,
+# according to the given alignment.
 def getTemplateSeqAtTargetPositions(alignment, startInTarget, endInTarget):
 
     targetStart = 0
@@ -452,7 +468,8 @@ def getTemplateSeqAtTargetPositions(alignment, startInTarget, endInTarget):
 
     return alignment['template'][start: end]
 
-
+# For a given alignment and matching template sequence, this function
+# returns the corresponding template range that is covered by the target.
 def getTargetCoveredRange (alignment, templateseq):
 
     if templateseq != alignment['template'].replace('-', ''):
@@ -475,7 +492,15 @@ def getTargetCoveredRange (alignment, templateseq):
 
 # Generates alignments using the 'getAlignments' function
 # and filters out those, approved by the inserted picker object.
-def pickAlignments (yasaraChain, targetSeqs, targetsInterproRanges, picker):
+# It runs the 'getAlignments' function on the given targets and template.
+# It's typically used when you already have a template complex, but need to find
+# targets for some template chains, other than the main target's template chain.
+#
+# The returned dictionary of triples uses the same keys as the inserted
+# 'targetSeqs' and 'targetsInterproRanges' dictionaries. (must match)
+# The returned dictionary's values are triples containing the template covered
+# range, the template ID (pdbid and chain) and the target-template alignment.
+def pickAlignments (templateYasaraChain, targetSeqs, targetsInterproRanges, picker):
 
     alignmentTriples = {}
     for targetID in targetsInterproRanges.keys():
@@ -484,11 +509,8 @@ def pickAlignments (yasaraChain, targetSeqs, targetsInterproRanges, picker):
         for _range, templateID, alignment in \
                 getAlignments(
                     targetsInterproRanges[targetID],
-                    targetSeqs[targetID], yasaraChain
+                    targetSeqs[targetID], templateYasaraChain
                 ):
-
-            if 'X' in yasaraChain.seq:
-                print alignment['template']
 
             if picker.accepts (targetID, alignment):
 
@@ -499,8 +521,10 @@ def pickAlignments (yasaraChain, targetSeqs, targetsInterproRanges, picker):
 
     return alignmentTriples
 
-
-def getForbiddenRanges(interproDomains):
+# We don't want to model Immunoglobulin variable chains.
+# So This function must point out ranges that represent those.
+# For now, we only have one interpro entry blacklisted.
+def getForbiddenRanges (interproDomains):
 
     rs = []
     for domain in interproDomains:
@@ -509,13 +533,13 @@ def getForbiddenRanges(interproDomains):
 
     return rs
 
-
 # This function tries to find the best possible sets of alignments,
 # given the target sequence, interpro ranges and optionally, a template object.
 # * Joins overlapping ranges
 # * Removes ranges that are similar
 # * Throws out alignments, completely enclosed by a larger one.
 # * Checks for sufficient coverage and identity.
+# * If a yasara chain is given, it will only make alignments with that template.
 def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
     _log.debug("get alignments on %s" % tarSeq)
@@ -595,10 +619,6 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                 # bHH: highly homologous to the whole target sequence
                 bHH = pid >= 80.0 and r.length() == len (tarSeq)
 
-#               print r
-#               print aligned['target']
-#               print aligned['template']
-#               print 'pid:',pid,'minimum:',minIdentity(nalign),'pcover:',pcover
                 if pid >= minIdentity(nalign) and (pcover >= 80.0 or bHH):
 
                     if pcover < 80.0:
@@ -876,7 +896,8 @@ def mergeAlignmentsOfSameTemplate (alignment1, alignment2):
             'template': alignment1['template'][: i1] +
             alignment2 ['template'][: i2]}
 
-
+# The following function merges alignments if 'alignmentsOfSameTemplateCompatible'
+# returns true for them. It tries to make the merged result as large as possible.
 # 'alignmentTriples' is the output from 'getAlignments'
 def joinAlignmentsToBestTemplateCoverage (alignmentTriples):
 
@@ -886,9 +907,9 @@ def joinAlignmentsToBestTemplateCoverage (alignmentTriples):
     templates = []
     for r, templateID, alignment in alignmentTriples:
         if templateID not in templates:
-            if len(templates) > 0:
+            if len (templates) > 0:
                 raise Exception('not all the same template')
-            templates.append(templateID)
+            templates.append (templateID)
         if not bestAlignment or r.pcover > bestCover:
             bestAlignment = alignment.copy()
             bestCover = r.pcover
