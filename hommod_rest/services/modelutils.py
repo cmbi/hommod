@@ -486,7 +486,7 @@ def getNalignIdentity(alignedseq1, alignedseq2):
 # Returns just the Identity
 def getPercentageIdentity (alignedseq1, alignedseq2):
 
-    nalign, pid = getNalignIdentity (alignedseq1, alignedseq2
+    nalign, pid = getNalignIdentity (alignedseq1, alignedseq2)
 
     return pid
 
