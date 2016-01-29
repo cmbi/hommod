@@ -2,6 +2,9 @@ import os
 import sys
 from hommod_rest.services.modelutils import parseDSSP
 
+import logging
+_log = logging.getLogger(__name__)
+
 # Secondary structure can either be taken from dssp or yasara.
 # Use yasara when dssp is not available.
 class SecStrProvider(object):
