@@ -744,7 +744,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
             if bestTemplate:  # we have a best hit for this range
 
 		_log.debug ("pick %d - %d best hit %s:\n%s"
-			    % (r.start, r.end, template,
+			    % (r.start, r.end, bestTemplate,
                                alignmentRepr (bestAlignment,
                                               ['target', 'midline',
                                                'template'])))
