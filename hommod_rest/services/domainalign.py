@@ -590,15 +590,15 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
             if hasLarger:
                 continue
 
-	    # Template to pick when there are good choices
+            # Template to pick when there are good choices
             bestTemplate = None
             bestAlignment = None
             bestPID = 0.0
             bestPCOVER = 0.0
 
-	    # Template to pick when there's only a highly homologous one, with low coverage
-	    lastResortTemplate = None
-	    lastResortAlignment = None
+            # Template to pick when there's only a highly homologous one, with low coverage
+            lastResortTemplate = None
+            lastResortAlignment = None
 
             _log.debug ('trying range: %s' % r)
 
@@ -637,20 +637,19 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                         bestAlignment = aligned
                         bestPID = pid
                         bestPCOVER = pcover
-		    else:
-			lastResortTemplate = templateSelected
-			lastResortAlignment = aligned
+                    else:
+                        lastResortTemplate = templateSelected
+                        lastResortAlignment = aligned
 
                     _log.debug ("domainalign: passing %d - %d alignment with %s:\n%s"
                                 % (r.start, r.end, templateSelected, alignmentRepr(
-                                   	aligned, ['target', 'midline', 'template'])))
+                                    aligned, ['target', 'midline', 'template'])))
 
                 else:
                     _log.debug (("domainalign: rejecting %d - %d alignment with %s:\n"
-				 + "%s\ncover: %.1f %%, identity: %.1f %%\n")
+                                 + "%s\ncover: %.1f %%, identity: %.1f %%\n")
                                  % (r.start, r.end, templateSelected, alignmentRepr (
-                                    	aligned, ['target', 'midline', 'template']).strip (), 
-				    pcover, pid))
+                                        aligned, ['target', 'midline', 'template']).strip (), pcover, pid))
 
             else: # No chosen template, check all
 
@@ -677,11 +676,11 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
                     for alignment in hits[hitID]:
 
-			aligned = {'target': alignment.queryalignment,
+                        aligned = {'target': alignment.queryalignment,
                                    'template': alignment.subjectalignment}
 
                         aligned ['midline'] = _get_midline (aligned ['target'],
-	                                                    aligned ['template'])
+                                                            aligned ['template'])
 
                         nalign = alignment.getNumberResiduesAligned()
                         pid = alignment.getIdentity()
@@ -718,33 +717,31 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                                 bestTemplate = m.template
                                 bestAlignment = aligned
                                 bestPCOVER = m.pcover
-			    else:
-				lastResortTemplate = m.template
-				lastResortAlignment = aligned
+                            else:
+                                lastResortTemplate = m.template
+                                lastResortAlignment = aligned
 
                             break  # we're done with this template
 
                         else:
                             _log.debug(
                                 ("domainalign: rejecting %d - %d blast hit with %s:\n"
-				 + "%s\ncover: %.1f %%, identity: %.1f %%\n")
+                                 + "%s\ncover: %.1f %%, identity: %.1f %%\n")
                                  % (r.start, r.end, template,
-				    	alignmentRepr (aligned,
-						       ['target', 'midline',
-						        'template']).strip (),
-				    pcover, pid))
+                                    alignmentRepr (aligned,
+                                                   ['target', 'midline',
+                                                    'template']).strip (), pcover, pid))
 
 
-	    if not bestTemplate and lastResortTemplate:
+        if not bestTemplate and lastResortTemplate:
 
-		bestTemplate = lastResortTemplate
-		bestAlignment = lastResortAlignment
-		
+            bestTemplate = lastResortTemplate
+            bestAlignment = lastResortAlignment
 
             if bestTemplate:  # we have a best hit for this range
 
-		_log.debug ("pick %d - %d best hit %s:\n%s"
-			    % (r.start, r.end, bestTemplate,
+                _log.debug ("pick %d - %d best hit %s:\n%s"
+                            % (r.start, r.end, bestTemplate,
                                alignmentRepr (bestAlignment,
                                               ['target', 'midline',
                                                'template'])))
@@ -754,8 +751,8 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                 while i < len (bestRanges):
                     if r.encloses (bestRanges[i]):
 
-			_log.debug ("removing smaller best %d - %d, enclosed by larger %d - %d" % 
-				    (bestRanges [i].start, bestRanges [i].end, r.start, r.end))
+                        _log.debug ("removing smaller best %d - %d, enclosed by larger %d - %d" % 
+                                    (bestRanges [i].start, bestRanges [i].end, r.start, r.end))
 
                         # this one should replace the smaller one
                         bestRanges = bestRanges[: i] + bestRanges[i + 1:]
