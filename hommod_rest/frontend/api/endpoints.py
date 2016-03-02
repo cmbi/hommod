@@ -162,7 +162,7 @@ def get_model_file(jobid):
         contents = extract_model(path)
     except:
         _log.warn('failed to get all data from %s' % path)
-        return '', 500
+        return ''
 
     _log.info("model successfully retrieved for job %s" % jobid)
 
