@@ -179,20 +179,21 @@ def get_metadata(jobid):
     """
 
     _log.info("metadata request for job %s" % jobid)
+    return ''
 
-    from hommod_rest.application import celery
-    result = celery.AsyncResult(jobid)
-    path = result.result
-    if not path:
-        return {}
+    #from hommod_rest.application import celery
+    #result = celery.AsyncResult(jobid)
+    #path = result.result
+    #if not path:
+    #    return {}
 
-    try:
-        data = extract_info(path)
-        data['alignment'] = extract_alignment(path)
-    except:
-        _log.warn('failed to get all data from %s' % path)
-        return ''
+    #try:
+    #    data = extract_info(path)
+    #    data['alignment'] = extract_alignment(path)
+    #except:
+    #    _log.warn('failed to get all data from %s' % path)
+    #    return ''
 
-    _log.info("metadata successfully retrieved for job %s" % jobid)
+    #_log.info("metadata successfully retrieved for job %s" % jobid)
 
-    return jsonify(data)
+    #return jsonify(data)
