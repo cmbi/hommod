@@ -193,7 +193,7 @@ def get_metadata(jobid):
         data['alignment'] = extract_alignment(path)
     except:
         _log.warn('failed to get all data from %s' % path)
-        return 'data not available', 500
+        return 'data not available'
 
     _log.info("metadata successfully retrieved for job %s" % jobid)
 
