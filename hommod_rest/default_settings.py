@@ -1,6 +1,6 @@
 from kombu import Exchange, Queue
 
-DEBUG = True
+DEBUG = False
 TESTING = False
 
 # Celery
@@ -24,7 +24,6 @@ MAIL_SERVER = "131.174.165.22"
 MAIL_SMTP_PORT = 25
 MAIL_FROM = "hommod-rest@cmbi.umcn.nl"
 MAIL_TO = ["Coos.Baakman@radboudumc.nl", "Jon.Black@radboudumc.nl"]
-LOG_TO = "/var/log/hommod.log"
 
 TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
 

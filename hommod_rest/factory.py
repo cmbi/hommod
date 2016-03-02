@@ -18,9 +18,6 @@ def create_app(settings=None):
     else:  # pragma: no cover
         app.config.from_envvar('HOMMOD_REST_SETTINGS')  # pragma: no cover
 
-    logging.basicConfig (filename=app.config["LOG_TO"],
-                         format="%(levelname)s - %(asctime)s : %(message)s")
-
     # Ignore Flask's built-in logging
     # app.logger is accessed here so Flask tries to create it
     app.logger_name = "nowhere"
@@ -57,10 +54,6 @@ def create_app(settings=None):
         sh.setLevel (logging.DEBUG)
 
         root_logger.addHandler (sh)
-
-    # Use ProxyFix to correct URL's when redirecting.
-#    from werkzeug.contrib.fixers import ProxyFix
-#    app.wsgi_app = ProxyFix(app.wsgi_app)
 
     # Use ProxyFix to correct URL's when redirecting.
     from hommod_rest.middleware import ReverseProxied
