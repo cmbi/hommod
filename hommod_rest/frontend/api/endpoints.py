@@ -1,11 +1,9 @@
 import logging
-import inspect
-import re
 
 from flask import Blueprint, jsonify, request, Response, render_template
 
 from hommod_rest.services.utils import(extract_info, extract_alignment,
-                                        extract_model, list_models_of)
+                                       extract_model, list_models_of)
 
 _log = logging.getLogger(__name__)
 
@@ -198,31 +196,3 @@ def get_metadata(jobid):
     _log.info("metadata successfully retrieved for job %s" % jobid)
 
     return jsonify(data)
-
-
-@bp.route('/')
-def docs():
-
-    _log.info("endpoint request for hommod docs")
-
-    fs = [update_cache, submit, has_model, status, get_model_file, get_metadata]
-    docs = {}
-    for f in fs:
-        src = inspect.getsourcelines(f)
-        m = re.search(r"@bp\.route\('([\w\/\<\>\.]*)', methods=\['([A-Z]*)']\)",
-                      src[0][0])
-
-        if not m:  # pragma: no cover
-
-            _log.warn("Unable to document function '{}'".format(f))
-            continue
-
-        url = m.group(1)
-        method = m.group(2)
-        docstring = inspect.getdoc(f)
-        docs[url] =(method, docstring)
-
-    _log.info("rendering template for hommod docs")
-
-    return render_template('api/docs.html', docs=docs)
-

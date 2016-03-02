@@ -10,8 +10,7 @@ _log = logging.getLogger(__name__)
 def create_app(settings=None):
     _log.info("Creating app")
 
-    app = Flask(__name__, static_folder='frontend/static',
-                template_folder='frontend/templates')
+    app = Flask(__name__)
     app.config.from_object('hommod_rest.default_settings')
     if settings:
         app.config.update(settings)
@@ -23,18 +22,22 @@ def create_app(settings=None):
     app.logger_name = "nowhere"
     app.logger
 
-    # Configure email logging. It is somewhat dubious to get _log from the
-    # root package, but I can't see a better way. Having the email handler
-    # configured at the root means all child loggers inherit it.
-    from hommod_rest import _log as root_logger
+    # Configure logging.
+    #
+    # It is somewhat dubious to get _log from the root package, but I can't see
+    # a better way. Having the email handler configured at the root means all
+    # child loggers inherit it.
+    from hommod_rest import _log as hommod_logger
+
+    # Only log to email during production.
     if not app.debug and not app.testing:  # pragma: no cover
         mail_handler = SMTPHandler((app.config["MAIL_SERVER"],
-                                    app.config["MAIL_SMTP_PORT"]),
+                                   app.config["MAIL_SMTP_PORT"]),
                                    app.config["MAIL_FROM"],
                                    app.config["MAIL_TO"],
                                    "hommod-rest failed")
         mail_handler.setLevel(logging.ERROR)
-        root_logger.addHandler(mail_handler)
+        hommod_logger.addHandler(mail_handler)
         mail_handler.setFormatter(
             logging.Formatter("Message type: %(levelname)s\n" +
                               "Location: %(pathname)s:%(lineno)d\n" +
@@ -44,24 +47,25 @@ def create_app(settings=None):
                               "Message:\n" +
                               "%(message)s"))
 
-
+    # Only log to the console during development and production, but not during
+    # testing.
+    if app.testing:
+        hommod_logger.setLevel(logging.DEBUG)
     else:
-        sh = logging.StreamHandler()
+        ch = logging.StreamHandler()
         formatter = logging.Formatter(
             '%(asctime)s - %(levelname)s - %(message)s')
-        sh.setFormatter (formatter)
-        _log.addHandler (sh)
-        sh.setLevel (logging.DEBUG)
+        ch.setFormatter(formatter)
+        hommod_logger.addHandler(ch)
 
-        root_logger.addHandler (sh)
+        if app.debug:
+            hommod_logger.setLevel(logging.DEBUG)
+        else:
+            hommod_logger.setLevel(logging.INFO)
 
     # Use ProxyFix to correct URL's when redirecting.
     from hommod_rest.middleware import ReverseProxied
     app.wsgi_app = ReverseProxied(app.wsgi_app)
-
-    # Register jinja2 filters
-    from hommod_rest.frontend.filters import beautify_docstring
-    app.jinja_env.filters['beautify_docstring'] = beautify_docstring
 
     # Register blueprints
     from hommod_rest.frontend.api.endpoints import bp as api_bp
