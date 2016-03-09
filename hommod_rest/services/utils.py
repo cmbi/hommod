@@ -166,7 +166,7 @@ def list_models_of(sequence, species, position):
             inputtargetseq = sequence [start - 1: end]
             modeltargetseqs = alignment ['target'].replace ('-', '').replace ('.', '').split ('|')
             if inputtargetseq not in modeltargetseqs:
-                _log.error ("sequence mismatch in %s:\ninput: %s\nalign: %s" % (f, inputtargetseq, modeltargetseq))
+                _log.error ("sequence mismatch in %s:\ninput: %s\nalign: %s" % (f, inputtargetseq, alignment ['target']))
 
             _log.debug ("add %s to list of models for %s %s %i" % (f, h, species, position))
             l.append(f)
