@@ -733,10 +733,10 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                                                     'template']).strip (), pcover, pid))
 
 
-        if not bestTemplate and lastResortTemplate:
+            if not bestTemplate and lastResortTemplate:
 
-            bestTemplate = lastResortTemplate
-            bestAlignment = lastResortAlignment
+                bestTemplate = lastResortTemplate
+                bestAlignment = lastResortAlignment
 
             if bestTemplate:  # we have a best hit for this range
 
@@ -762,6 +762,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                 aligned = bestAlignment
 
                 if bestPCOVER < 80.0:
+
                     m = getCoveredTargetRange(aligned)
                 else:
                     m = TargetRange(r.start, r.end)
@@ -837,10 +838,14 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
         nalign, pid = getNalignIdentity(aligned['target'], aligned['template'])
 
-        if pid >= minIdentity(nalign):
-            returnAlignments.append((r, r.template, r.alignment))
+        if pid >= minIdentity (nalign):
 
-    _log.debug("domainalign: returning %i alignments" % len(returnAlignments))
+            returnAlignments.append((r, r.template, r.alignment))
+        else:
+            _log.debug ("throwing away earlier matched %d-%d with %s, because of low identity" %
+                        r.start, r.end, r.template)
+
+    _log.debug ("domainalign: returning %i alignments" % len(returnAlignments))
 
     return returnAlignments
 
