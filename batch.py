@@ -4,17 +4,12 @@
 # It can be run from console and uses the same modeling procedure as the restful service does.
 
 import logging
+
 import sys
 import os
 import traceback
 
-sys.path.append (os.path.dirname (os.path.abspath (__file__)))
-from hommod_rest.services.model import modeler
-from hommod_rest.services.modelutils import parseFasta
-import hommod_rest.default_settings as config
-
-_log = logging.getLogger(__name__)
-
+_log = logging.getLogger (__name__)
 
 def init():
 
@@ -46,9 +41,35 @@ def init():
     import hommod_rest.services.modelutils
     hommod_rest.services.modelutils.TEMPLATESFASTA = config.TEMPLATESFASTA
 
-if len (sys.argv) not in [3, 4] or not os.path.isfile (sys.argv[2]):
-    print 'usage: %s [species id] [fasta filepath] <optionally a resnum>' % sys.argv[0]
-    sys.exit(1)
+args = []
+loglevel = logging.INFO
+for arg in sys.argv [1:]:
+
+    if arg.startswith ('-'):
+
+        if arg == '-d':
+            loglevel = logging.DEBUG
+    else:
+
+        args.append (arg)
+
+if len (args) not in [2, 3]:
+
+    print 'usage: %s [species id] [fasta filepath] <optionally a resnum>' % sys.argv [0]
+    sys.exit (1)
+
+elif not os.path.isfile (args [1]):
+
+    print "no such file: %s" % args [1]
+    sys.exit (1)
+
+logging.basicConfig (level=loglevel)
+
+sys.path.append (os.path.dirname (os.path.abspath (__file__)))
+from hommod_rest.services.model import modeler
+from hommod_rest.services.modelutils import parseFasta
+import hommod_rest.default_settings as config
+
 
 init()
 
@@ -58,20 +79,20 @@ init()
 #
 # A model is attempted to be built for every sequence in the fasta.
 
-species = sys.argv [1]
-seqs = parseFasta (open (sys.argv [2],'r'))
+species = args [0]
+seqs = parseFasta (open (args [1],'r'))
 
 for ID in seqs:
 
     try:
 
-        if len (sys.argv) == 3:
+        if len (args) == 2:
 
             modeler.modelProc (seqs[ID], species)
 
-        elif len (sys.argv) == 4:
+        elif len (args) == 3:
 
-            modeler.modelProc (seqs[ID], species, requireRes=int (sys.argv [3]))
+            modeler.modelProc (seqs[ID], species, requireRes=int (args [2]))
 
     except:
         # Print the error to stdout, but don't quit.
