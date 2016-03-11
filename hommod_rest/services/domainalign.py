@@ -158,6 +158,9 @@ class TargetRange(object):
 
         return indices
 
+    def __add__ (self, number):
+
+      return TargetRange (self.start + number, self.end + number)
 
 # A picker object can filter alignments, when inserted
 # into the pickAlignment function.
@@ -761,11 +764,11 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
                 aligned = bestAlignment
 
-                if bestPCOVER < 80.0:
+                coverstart = tarSeq.find (aligned ['target'].replace ('-','')
+                if coverstart < 0:
+                    raise Exception ("aligned target sequence not found in full target sequence")
 
-                    m = getCoveredTargetRange(aligned)
-                else:
-                    m = TargetRange(r.start, r.end)
+                m = getCoveredTargetRange (aligned) + coverstart
                 m.template = bestTemplate
                 m.alignment = bestAlignment
                 m.pid = bestPID
