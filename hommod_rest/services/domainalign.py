@@ -13,6 +13,8 @@ from modelutils import (get_aa321, getNalignIdentity, filterGoodHits,
 
 _log = logging.getLogger(__name__)
 
+SIMILAR_RANGES_MIN_OVERLAP_PERCENT = 80.0
+SIMILAR_RANGES_MAX_LENDIFF_PERCENT = 10.0
 
 # Loads the template blacklist file and returns whether the given
 # pdb id occurs in it or not.
@@ -158,12 +160,13 @@ class TargetRange(object):
 
         return indices
 
-    def __add__ (self, number):
+    def __add__ (self, rshift):
 
-      return TargetRange (self.start + number, self.end + number)
+      return TargetRange (self.start + rshift, self.end + rshift)
 
 # A picker object can filter alignments, when inserted
 # into the pickAlignment function.
+# (must be implemented elsewhere)
 class Picker (object):
 
     def accepts (self, hitID, alignment):
@@ -176,15 +179,21 @@ def distance (range1, range2):  # in AA
     if range1.start < range2.start:
 
         if range1.end < range2.start:
+
             return range2.start - range1.end
+
         else:  # overlap
+
             return 0
 
     else:  # range2.start < range1.start
 
         if range2.end < range1.start:
+
             return range1.start - range2.end
+
         else:  # overlap
+
             return 0
 
 
@@ -211,7 +220,6 @@ def overlapStats(range1, range2):
 
     return poverlap, plendiff
 
-
 # Merges ranges of significant overlap, with almost the same length.
 # Returns the list of merged ranges.
 def mergeSimilar (ranges):
@@ -236,14 +244,16 @@ def mergeSimilar (ranges):
 
             merged = merge(ranges[i], ranges[j])
 
-            if poverlap > 80.0 and plendiff < 10.0:
+            if poverlap > SIMILAR_RANGES_MIN_OVERLAP_PERCENT and \
+                    plendiff < SIMILAR_RANGES_MAX_LENDIFF_PERCENT:
 
                 ranges = (ranges[:i] + [merged] + ranges[i + 1:j] +
                           ranges[j + 1:])
 
         i += 1
 
-        ranges = removeDoubles(ranges)
+        # Make list shorter to save time:
+        ranges = removeDoubles (ranges)
 
     ranges.sort()
 
@@ -266,7 +276,8 @@ def removeDoubles (ranges):
         j = i + 1
         while j < len(ranges):
             if ranges[i] == ranges[j]:
-                if (j + 1) < len(ranges):
+
+                if (j + 1) < len (ranges):
                     ranges = ranges[:j] + ranges[j + 1:]
                 else:
                     ranges = ranges[:j]
@@ -764,7 +775,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
                 aligned = bestAlignment
 
-                coverstart = tarSeq.find (aligned ['target'].replace ('-','')
+                coverstart = tarSeq.find (aligned ['target'].replace ('-',''))
                 if coverstart < 0:
                     raise Exception ("aligned target sequence not found in full target sequence")
 
