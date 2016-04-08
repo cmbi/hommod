@@ -1,0 +1,27 @@
+version: "2"
+
+services:
+    hommod_flask:
+        build:
+            context: .
+            dockerfile: Dockerfile-flask
+        ports:
+            - "7001:7001"
+        links:
+            - "redis"
+        volumes:
+            - "/data:/data"
+    hommod_celery:
+        build:
+            context: .
+            dockerfile: Dockerfile-celery
+        links:
+            - "redis"
+            - "rabbitmq"
+            - "hommod_flask"
+        volumes:
+            - "/data:/data"
+    redis:
+        image: redis
+    rabbitmq:
+        image: rabbitmq

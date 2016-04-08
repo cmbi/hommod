@@ -1113,8 +1113,8 @@ class Modeler(object):
 
         _log.info ("yasara modeling run ended for alignment %s" % alignmentFastaPath)
 
-modeler = Modeler()
 
+modeler = Modeler()
 
 # This function iterates through a dictionary of sequences
 # and selects the one with most sequence identity to the

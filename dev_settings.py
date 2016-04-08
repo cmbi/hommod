@@ -3,6 +3,8 @@ import os
 DEBUG = True
 RETRY_FAILURE = True
 
+CELERY_BROKER_URL = "amqp://guest@rabbitmq_1"
+
 # Paths
 MODELDIR = os.path.abspath('./models/')
 INTERPRODIR = os.path.abspath('./interpro/')
@@ -14,13 +16,13 @@ TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
 DSSPDIR = '/mnt/cmbi4/dssp/'
 
 # Executables:
-MSA = '/data/prog/pairwiseUBUNTU/MSA' # made by Joanna Lange
+MSA = 'hommod-kmad/hommod_kmad' # made by Joanna Lange
 BLASTP = '/usr/bin/blastp' # ncbi
 CLUSTAL = '/usr/bin/clustalw'
 INTERPROSCAN = '/data/prog/interproscan-5.8-49.0/interproscan.sh'
 
 # Yasara installation:
-YASARADIR = '/home/jon/yasara'
+YASARADIR = '/deps/yasara/yasara'
 
 # Blast databases:
 SPECIESDBDIR = '/data/blast/uniprot-species/'

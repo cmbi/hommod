@@ -1,0 +1,7 @@
+FROM python:2.7-onbuild
+
+WORKDIR /usr/src/app
+EXPOSE 7000
+ENV HOMMOD_REST_SETTINGS /usr/src/app/dev_settings.py
+
+CMD ["gunicorn", "-k", "gevent", "-b", "127.0.0.1:7001", "hommod_rest.flask_application:app"]

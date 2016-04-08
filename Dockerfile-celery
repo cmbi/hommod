@@ -1,0 +1,62 @@
+FROM python:2.7-onbuild
+
+
+# Install blast and clustal
+RUN apt-get update
+RUN apt-get install -y ncbi-blast\+ clustalw
+
+
+# Build pairwise alignment program
+RUN apt-get update
+RUN apt-get install -y libboost-all-dev
+WORKDIR /usr/src/app/hommod-kmad
+RUN make
+
+
+# Install yasara
+# This should really be in its own container so lots of things can use the same
+# instance.
+RUN dpkg --add-architecture i386
+RUN apt-get update
+RUN apt-get install -y libgl1-mesa-glx:i386
+
+RUN mkdir -p /deps/yasara
+WORKDIR /deps/yasara
+ADD install_yasara_15.3.8 /deps/yasara/install_yasara
+RUN chmod 755 /deps/yasara/install_yasara
+# The yasara install script unpacks yasara and then runs it in gui mode. Since
+# there is no gui, this fails with a non-zero exit code, which causes docker to
+# fail building the image. Piping with true allows us to ignore this exit code,
+# causing docker to build the image successfully. The side-effect is that if
+# installation fails, we won't notice until we run yasara.
+RUN ./install_yasara -norun
+
+ENV PATH $PATH:/deps/yasara/yasara
+
+
+# Data files directory
+
+# Install interproscan + dependencies
+RUN mkdir /usr/src/app/interproscan
+WORKDIR /usr/src/app/interproscan
+RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz
+RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz.md5
+RUN md5sum -c interproscan-5.17-56.0-64-bit.tar.gz.md5
+RUN tar -pxvzf interproscan-5.17-56.0-64-bit.tar.gz
+
+WORKDIR /usr/src/app/interproscan/data
+RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz
+RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz.md5
+RUN md5sum -c panther-data-10.0.tar.gz.md5
+RUN tar -pxvzf panther-data-10.0.tar.gz
+
+
+# Install berkely database libraries, needed by celery
+RUN apt-get install -y libdb-dev python-bsddb3
+RUN ln -s /usr/lib/python2.7/lib-dynload/_bsddb.x86_64-linux-gnu.so /usr/local/lib/python2.7/lib-dynload/_bsddb.so
+
+WORKDIR /usr/src/app
+ENV HOMMOD_REST_SETTINGS /usr/src/app/dev_settings.py
+
+ENV C_FORCE_ROOT true
+CMD ["celery", "-A", "hommod_rest.celery_application:celery", "worker", "-B"]
