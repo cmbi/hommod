@@ -11,7 +11,7 @@ RUN apt-get update
 RUN apt-get install -y libboost-all-dev
 COPY ./hommod-kmad.tar.gz /deps/hommod-kmad.tar.gz
 WORKDIR /deps/
-RUN tar xzf hommod-kmad.tgz
+RUN tar xzf hommod-kmad.tar.gz
 WORKDIR /deps/hommod-kmad
 RUN make
 
