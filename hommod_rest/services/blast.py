@@ -17,20 +17,30 @@ class BlastService(object):
         self.templatesDB = None
         self.uniprotspeciesDir = None
 
+    def _checkinit (self):
+
+        from flask import current_app as flask_app
+
+        self.templatesDB = flask_app.config ['TEMPLATESDB']
+        self.uniprotspeciesDir = flask_app.config ['SPECIESDBDIR']
+        self.blastpExe = flask_app.config ['BLASTP']
+
     # Blast against a database of templates:
     def templateBlast (self, seq):
 
+        self._checkinit ()
         _log.info ("performing template blast for\n%s" %seq)
 
         if not self.templatesDB:
             _log.error ("templates blast database not set")
             raise Exception("templates blast database not set")
 
-        return _blast (seq, self.templatesDB)
+        return self._blast (seq, self.templatesDB)
 
     # Blast against a proteome of a given species:
     def speciesBlast (self, seq, species):
 
+        self._checkinit ()
         _log.info ("performing species blast for\n%s" %seq)
 
         if not self.uniprotspeciesDir:
@@ -42,43 +52,44 @@ class BlastService(object):
                     _log.error ('Species database not found: ' + dbpath)
                     raise Exception('Species database not found: ' + dbpath)
 
-        return _blast(seq, dbpath)
+        return self._blast(seq, dbpath)
 
 
-def _blast(querySeq, db):
+    def _blast(self, querySeq, db):
 
-    if not blaster.blastpExe:
+        self._checkinit ()
+        if not self.blastpExe:
 
-        _log.error ('blastp executable not set')
-        raise Exception('blastp executable not set')
+            _log.error ('blastp executable not set')
+            raise Exception('blastp executable not set')
 
-    queryFile = '/tmp/query%i.fasta' % (os.getpid())
-    writeFasta({'query': querySeq}, queryFile)
+        queryFile = '/tmp/query%i.fasta' % (os.getpid())
+        writeFasta({'query': querySeq}, queryFile)
 
-    outFile = '/tmp/results%i.xml' % (os.getpid())
+        outFile = '/tmp/results%i.xml' % (os.getpid())
 
-    # Runt blastp and make sure it gives xml output format:
-    cs = [blaster.blastpExe, '-query', queryFile, '-db', db,
-          '-outfmt', '5', '-out', outFile]
-    _log.debug(str(cs))
+        # Runt blastp and make sure it gives xml output format:
+        cs = [self.blastpExe, '-query', queryFile, '-db', db,
+              '-outfmt', '5', '-out', outFile]
+        _log.debug(str(cs))
 
-    p = subprocess.Popen (cs, stderr=subprocess.PIPE)
-    p.wait ()
+        p = subprocess.Popen (cs, stderr=subprocess.PIPE)
+        p.wait ()
 
-    if not os.path.isfile (outFile):
+        if not os.path.isfile (outFile):
 
-        errstr = p.stderr.read ()
+            errstr = p.stderr.read ()
 
-        _log.error ("blast failed:\n%s" % errstr)
-        raise Exception ("blast failed:\n%s" % errstr)
+            _log.error ("blast failed:\n%s" % errstr)
+            raise Exception ("blast failed:\n%s" % errstr)
 
-    hits = parseBlastXML (open(outFile, 'r').read())
+        hits = parseBlastXML (open(outFile, 'r').read())
 
-    os.remove (queryFile)
-    os.remove (outFile)
+        os.remove (queryFile)
+        os.remove (outFile)
 
-    _log.info ("found %d hits for %s in %s" %(len (hits), querySeq, db))
+        _log.info ("found %d hits for %s in %s" %(len (hits), querySeq, db))
 
-    return hits
+        return hits
 
 blaster = BlastService()

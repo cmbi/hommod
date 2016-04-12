@@ -3,7 +3,8 @@ import os
 DEBUG = True
 RETRY_FAILURE = True
 
-CELERY_BROKER_URL = "amqp://guest@rabbitmq_1"
+CELERY_BROKER_URL = "amqp://guest@amq"
+CELERY_RESULT_BACKEND = 'redis://redis/1'
 
 # Paths
 MODELDIR = os.path.abspath('./models/')
@@ -16,10 +17,10 @@ TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
 DSSPDIR = '/mnt/cmbi4/dssp/'
 
 # Executables:
-MSA = 'hommod-kmad/hommod_kmad' # made by Joanna Lange
+MSA = '/deps/hommod-kmad/hommod_kmad' # made by Joanna Lange
 BLASTP = '/usr/bin/blastp' # ncbi
 CLUSTAL = '/usr/bin/clustalw'
-INTERPROSCAN = '/data/prog/interproscan-5.8-49.0/interproscan.sh'
+INTERPROSCAN = '/deps/interproscan/interproscan-5.17-56.0/interproscan.sh'
 
 # Yasara installation:
 YASARADIR = '/deps/yasara/yasara'

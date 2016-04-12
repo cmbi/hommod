@@ -9,8 +9,6 @@ import os
 import traceback
 import requests
 
-from celery import current_app as celery_app
-
 _log = logging.getLogger(__name__)
 
 if len(sys.argv) != 4:
@@ -24,4 +22,4 @@ pos = int (sys.argv[3])
 # Send http post request to server:
 
 payload = {'sequence': seq, 'species_id': species, 'position': pos}
-response = requests.post('http://localhost/hommod/api/submit/', data = payload)
+response = requests.post('http://localhost:7001/api/submit/', data = payload)

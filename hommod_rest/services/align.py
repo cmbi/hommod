@@ -14,9 +14,18 @@ class alignService(object):
         self.clustalExe = None
         self.msaExe = None
 
+    def _checkinit (self):
+
+        from flask import current_app as flask_app
+
+        self.clustalExe = flask_app.config ['CLUSTAL']
+        self.msaExe = flask_app.config ['MSA']
+
     # Use Clustalw2 for alignment: http://www.clustal.org/clustal2/
     # Simply uses dictionaries for input and output
     def clustalAlign(self, d):
+
+        self._checkinit ()
 
         _log.info ("clustal aligning %s" % str (d))
 
@@ -66,6 +75,7 @@ class alignService(object):
     def msaAlign(self, pdbSeq, pdbSecStr, tarSeq,
                  gapOpen=-13.0, gapExt=-0.4, modifier=3.0):
 
+        self._checkinit ()
         _log.info ("making pairwise MSA alignment")
 
         if not self.msaExe:

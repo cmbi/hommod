@@ -334,12 +334,14 @@ def getTemplatePDBIDandChain (blastHitID):
 # Gets the seqres sequence of the template, not the structure's sequence!
 def getTemplateSequence (pdbac, chain):
 
+    from flask import current_app as flask_app
+
     # See if we have a local copy of this sequence, if not
     # then download.
-    if TEMPLATESFASTA  and \
-            os.path.isfile (TEMPLATESFASTA):
+    if flask_app and flask_app.config ['TEMPLATESFASTA'] and \
+            os.path.isfile (flask_app.config ['TEMPLATESFASTA']):
 
-        source = open (TEMPLATESFASTA, 'r')
+        source = open (flask_app.config ['TEMPLATESFASTA'], 'r')
         searchID = "pdb|%s|%s" % (pdbac.upper (), chain)
     else:
         source = urlopen ('ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt')
@@ -359,7 +361,7 @@ def getTemplateSequence (pdbac, chain):
 
         elif len (line.strip ()) > 0:
 
-            currentSeq += line.strip ()                
+            currentSeq += line.strip ()
 
     if currentID == searchID:
         return currentSeq
@@ -762,7 +764,7 @@ def parseBlastXML(xmlstring):
         for mem in it.findall('Iteration_hits'):
             for hit in mem.findall('Hit'):
 
-                hitID = hit.find('Hit_id').text
+                hitID = hit.find('Hit_def').text
                 hits[hitID] = []
 
                 hsps = hit.find('Hit_hsps')

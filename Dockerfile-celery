@@ -9,7 +9,10 @@ RUN apt-get install -y ncbi-blast\+ clustalw
 # Build pairwise alignment program
 RUN apt-get update
 RUN apt-get install -y libboost-all-dev
-WORKDIR /usr/src/app/hommod-kmad
+COPY ./hommod-kmad.tgz /deps/hommod-kmad.tgz
+WORKDIR /deps/
+RUN tar xzf hommod-kmad.tgz
+WORKDIR /deps/hommod-kmad
 RUN make
 
 
@@ -37,14 +40,19 @@ ENV PATH $PATH:/deps/yasara/yasara
 # Data files directory
 
 # Install interproscan + dependencies
-RUN mkdir /usr/src/app/interproscan
-WORKDIR /usr/src/app/interproscan
+COPY ./jre-8u77-linux-x64.tar.gz /deps/jre-8u77-linux-x64.tar.gz
+WORKDIR /deps/
+RUN tar xzf jre-8u77-linux-x64.tar.gz
+RUN ln -sf /deps/jre1.8.0_77/bin/java /usr/bin/java
+
+RUN mkdir /deps/interproscan
+WORKDIR /deps/interproscan
 RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz
 RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz.md5
 RUN md5sum -c interproscan-5.17-56.0-64-bit.tar.gz.md5
 RUN tar -pxvzf interproscan-5.17-56.0-64-bit.tar.gz
 
-WORKDIR /usr/src/app/interproscan/data
+WORKDIR /deps/interproscan/data
 RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz
 RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz.md5
 RUN md5sum -c panther-data-10.0.tar.gz.md5
@@ -58,5 +66,25 @@ RUN ln -s /usr/lib/python2.7/lib-dynload/_bsddb.x86_64-linux-gnu.so /usr/local/l
 WORKDIR /usr/src/app
 ENV HOMMOD_REST_SETTINGS /usr/src/app/dev_settings.py
 
+
+# Copy required files
+ADD blacklisted_templates /data/blacklisted_templates
+
+# Create templates databank:
+RUN mkdir /data/fasta/ /data/blast/
+RUN python makeXrayPDBFinder2Fasta.py /data/fasta/templates.fa
+RUN makeblastdb -in /data/fasta/templates.fa -dbtype prot -out /data/blast/templates
+
+# Create uniprot per species databanks:
+RUN rsync rsync.ebi.ac.uk::pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz /data/fasta/uniprot_sprot.fasta.gz
+RUN gunzip -f /data/fasta/uniprot_sprot.fasta.gz
+RUN rsync rsync.ebi.ac.uk::pub/databases/uniprot/knowledgebase/uniprot_trembl.fasta.gz /data/fasta/uniprot_trembl.fasta.gz
+RUN gunzip -f /data/fasta/uniprot_trembl.fasta.gz
+
+RUN mkdir -p /data/fasta/uniprot-species/ /data/blast/uniprot-species/
+RUN python uniprotSpecies.py /data/fasta/uniprot-species/
+RUN for fasta in /data/fasta/uniprot-species/*.fa; do makeblastdb -in $fasta -dbtype prot -out /data/blast/uniprot-species/`basename ${fasta%.fa}`; done
+
+
 ENV C_FORCE_ROOT true
-CMD ["celery", "-A", "hommod_rest.celery_application:celery", "worker", "-B"]
+CMD ["celery", "-A", "hommod_rest.application:celery", "worker", "-B"]

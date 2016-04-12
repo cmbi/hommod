@@ -16,12 +16,10 @@ class SecStrProvider(object):
 
     def _check_config(self):
 
-        if not self.dssp_dir:
-            _log.error ("dssp dir not set")
-            raise Exception("dssp dir not set")
-        if not self._yasara_dir:
-            _log.error ("yasara dir not set")
-            raise Exception("yasara dir not set")
+        from flask import current_app as flask_app
+
+        self.dssp_dir = flask_app.config ['DSSPDIR']
+        self.yasara_dir = flask_app.config ['YASARADIR']
 
     @property
     def yasara_dir(self):

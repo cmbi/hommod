@@ -26,8 +26,16 @@ class InterproService (object):
         self.interproExe = None
         self.storageDir = None
 
+    def _checkinit (self):
+
+        from flask import current_app as flask_app
+
+        self.interproExe = flask_app.config ['INTERPROSCAN']
+        self.storageDir = flask_app.config ['INTERPRODIR']
+
     def _create_data_file(self, sequence):
 
+        self._checkinit ()
         _log.info ("creating interpro file for sequence:\n%s" % sequence)
 
         if not self.interproExe or not self.storageDir:
@@ -61,7 +69,7 @@ class InterproService (object):
             # Run interproscan and wait for it to finish:
             cmd = '%s --goterms --formats xml --input %s --outfile %s --seqtype p' % \
                   (self.interproExe, _in, out)
-            
+
             p = subprocess.Popen (cmd, shell=True, stderr=subprocess.PIPE)
             p.wait ()
 
@@ -89,6 +97,7 @@ class InterproService (object):
     # Creates an interpro file for the given sequence and parses it.
     def getInterproDomainLocations(self, sequence):
 
+        self._checkinit ()
         _log.info ("getting interpro domains for sequence:\n%s" % sequence)
 
         filepath = self._create_data_file(sequence)

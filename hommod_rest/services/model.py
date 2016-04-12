@@ -30,12 +30,12 @@ import domainalign
 _log = logging.getLogger(__name__)
 
 # Record on how long certain modeling steps took,
-# for performance monitoring: 
+# for performance monitoring:
 def time_log (text):
 
     logfile = 'time.txt'
     open (logfile, 'a').write (text)
-        
+
 def selectHighestSeqID (seq, fromd):
     qid = 'query'
 
@@ -219,21 +219,12 @@ class Modeler(object):
 
     def _check_init(self):
 
-        if self._yasara_dir is None:
-            _log.error ("yasara_dir has not been set")
-            raise Exception("yasara_dir has not been set")
+        from flask import current_app as flask_app
 
-        if self.execution_root_dir is None:
-            _log.error ("execution root not set")
-            raise Exception("execution root not set")
-
-        if self.model_root_dir is None:
-            _log.error ("model root not set")
-            raise Exception("model root not set")
-
-        if self.template_blacklist is None:
-            _log.error ("blacklist not set")
-            raise Exception("blacklist not set")
+        self.yasara_dir = flask_app.config ['YASARADIR']
+        self.execution_root_dir = flask_app.config ['EXECUTIONDIR']
+        self.model_root_dir = flask_app.config ['MODELDIR']
+        self.template_blacklist = flask_app.config ['TEMPLATE_BLACKLIST']
 
     # The blacklist contains pdb ids of templates that always
     # cause failures in yasara's modeling run.
@@ -294,7 +285,7 @@ class Modeler(object):
     #    * replacing residues of type X by alanine or glycine
     #
     # returns the number of the yasara object and the
-    # oligomerization factor. (1 if no oligomerization) 
+    # oligomerization factor. (1 if no oligomerization)
     def _set_template(self, tempac, oligomerize=True):
 
         _log.info ("setting template %s to yasara" % tempac)
@@ -350,7 +341,7 @@ class Modeler(object):
                 self.yasara.JoinMol (
                     '%s and obj %i and Protein' %
                     (chainOrder[i], tempobj))
-                
+
         # YASARA also cleans when starting a modeling run, but
         # we need to make sure that we have the molecule in its
         # final state, before we start reading from it.
@@ -390,16 +381,17 @@ class Modeler(object):
     # but instead of building a model, use the pdb structure.
     def _collect_template (self, modelDir, mainTargetID, uniprotSpeciesName,
                            mainTemplateID, mainDomainAlignment, mainDomainRange):
-  
+
+        self._check_init()
         _log.info ("collecting template %s for %s, rather than building a model" %\
                    (str (mainTemplateID), mainTargetID))
- 
+
         pdbac = mainTemplateID.pdbac.lower ()
         chainID = mainTemplateID.chainID
         part = pdbac [1:3]
 
         pdb_url = 'ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/%s/pdb%s.ent.gz' % (part, pdbac)
-        
+
         modelPath = os.path.join (modelDir, 'target.pdb')
         alignmentFastaPath = os.path.join (modelDir, 'align.fasta')
         selectedTargetsPath = \
@@ -442,6 +434,7 @@ class Modeler(object):
     def _build_for_domain (self, modelDir, mainTargetID, uniprotSpeciesName,
                            mainTemplateID, mainTargetSeq, mainDomainRange):
 
+        self._check_init()
         _log.info ("building model %s range %s on template %s" %
                    (mainTemplateID, str (mainDomainRange), str (mainTemplateID)))
 
@@ -479,7 +472,7 @@ class Modeler(object):
 
         time_start = time()
 
-       
+
         # Part of the main target sequence that's in the domain range:
         mainDomainSeq = \
             mainTargetSeq [mainDomainRange.start: mainDomainRange.end]
@@ -748,7 +741,7 @@ class Modeler(object):
 
     # This is the main function for building a set of models.
     # Input is a target sequence and a uniprot species id.
-    # The function seqrches its own templates. 
+    # The function seqrches its own templates.
     #
     # Optional:
     #   requireRes: a residue number in target sequence (1,2,3,..) that must be covered by the model.
@@ -1081,7 +1074,7 @@ class Modeler(object):
                 (modelPackingQuality, templatePackingQuality))
 
     # This function starts the model building process by calling
-    # yasara. It will wait for the modeling run to finish. 
+    # yasara. It will wait for the modeling run to finish.
     def modelWithAlignment (self, alignmentFastaPath, tempobj):
 
         _log.info ("building a model in yasara from alignment %s" % alignmentFastaPath)

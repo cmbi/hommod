@@ -8,7 +8,8 @@ services:
         ports:
             - "7001:7001"
         links:
-            - "redis"
+            - "rabbitmq:amq"
+            - "redis:redis"
         volumes:
             - "/data:/data"
     hommod_celery:
@@ -16,8 +17,8 @@ services:
             context: .
             dockerfile: Dockerfile-celery
         links:
-            - "redis"
-            - "rabbitmq"
+            - "redis:redis"
+            - "rabbitmq:amq"
             - "hommod_flask"
         volumes:
             - "/data:/data"
