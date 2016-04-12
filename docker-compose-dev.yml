@@ -1,0 +1,9 @@
+version: "2"
+
+services:
+    hommod_flask:
+        volumes:
+            - ".:/usr/src/app"
+    hommod_celery:
+        volumes:
+            - ".:/usr/src/app"
