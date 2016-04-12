@@ -9,7 +9,7 @@ RUN apt-get install -y ncbi-blast\+ clustalw
 # Build pairwise alignment program
 RUN apt-get update
 RUN apt-get install -y libboost-all-dev
-COPY ./hommod-kmad.tgz /deps/hommod-kmad.tgz
+COPY ./hommod-kmad.tar.gz /deps/hommod-kmad.tar.gz
 WORKDIR /deps/
 RUN tar xzf hommod-kmad.tgz
 WORKDIR /deps/hommod-kmad
