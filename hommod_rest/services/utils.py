@@ -165,12 +165,19 @@ def list_models_of(sequence, species, position):
 
             inputtargetseq = sequence [start - 1: end]
             modeltargetseqs = alignment ['target'].replace ('-', '').replace ('.', '').split ('|')
-            if inputtargetseq not in modeltargetseqs:
-                _log.error ("sequence mismatch in %s:\ninput: %s\naligned: %s" % (f, inputtargetseq, alignment ['target']))
+
+            fragment_present = False
+            for modeltargetseq in modeltargetseqs:
+                if inputtargetseq in modeltargetseq:
+                    fragment_present = True
+                    break
+
+            if not fragment_present:
+                _log.error ("sequence mismatch in %s:\nquery target: %s\naligned target: %s" % (f, inputtargetseq, alignment ['target']))
                 continue
 
             _log.debug ("add %s to list of models for %s %s %i" % (f, h, species, position))
-            l.append(f)
+            l.append (f)
 
     _log.debug ("found %i models for %s %s %i" % (len (l), h, species, position))
     return l
