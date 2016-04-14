@@ -1,6 +1,6 @@
 import os
 import sys
-from hommod_rest.services.modelutils import parseDSSP
+from hommod_rest.services.modelutils import parseDSSP, downloadPDB
 
 import logging
 _log = logging.getLogger(__name__)
@@ -54,7 +54,9 @@ class SecStrProvider(object):
 
             return template.chainID in d
         else:
-            obj = self.yasara.LoadPDB(template.pdbac, download='Yes')[0]
+            pdbfile = "%s.pdb" % template.pdbac
+            open (pdbfile, 'w').write (downloadPDB (template.pdbac))
+            obj = self.yasara.LoadPDB (pdbfile)[0]
             for ss in self.yasara.SecStrRes('obj %i' % obj):
                 if ss != 'X':
                     self.yasara.DelObj(obj)

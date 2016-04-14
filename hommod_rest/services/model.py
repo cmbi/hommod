@@ -12,7 +12,7 @@ from time import time
 from suds import client
 from urllib import urlopen
 
-from modelutils import (getChainCAsSeqSecStr, getNalignIdentity,
+from modelutils import (getChainCAsSeqSecStr, getNalignIdentity, downloadPDB,
                         getCoverageIdentity, YasaraChain,
                         identifyDeletedRegions, getPercentageIdentity,
                         filterMinLength, minIdentity,
@@ -293,7 +293,9 @@ class Modeler(object):
 
         self.yasara.Clear()
 
-        tempobj = self.yasara.LoadPDB(tempac, download='best')[0]
+        pdbfile = '%s.pdb' % tempac
+        open (pdbfile, 'w').write (downloadPDB (tempac))
+        tempobj = self.yasara.LoadPDB(pdbfile)[0]
         self.yasara.DelObj('not %i' % tempobj)
 
         # Count the number of molecules in unoligomerized state:
@@ -315,7 +317,7 @@ class Modeler(object):
                 # oligomerisation might throw an exception,
                 # in which case we must restore the old situation
                 self.yasara.Clear()
-                tempobj = self.yasara.LoadPDB(tempac, download='best')[0]
+                tempobj = self.yasara.LoadPDB(pdbfile)[0]
 
             # Count the number of molecules in oligomerized state:
             nMolsOligomerized = len(
@@ -326,7 +328,7 @@ class Modeler(object):
             if nMolsOligomerized < nMolsUnoligomerized:
 
                 self.yasara.Clear()
-                tempobj = self.yasara.LoadPDB(tempac, download='best')[0]
+                tempobj = self.yasara.LoadPDB(pdbfile)[0]
 
         # If BuildSymRes throws an exception, we just continue
         try:

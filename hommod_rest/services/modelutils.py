@@ -91,6 +91,12 @@ def writeFasta(d,  filename):
             i = j
     f.close()
 
+def downloadPDB (pdbid):
+
+    url= "ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/%s/pdb%s.ent.gz" % (pdbid [1:3].lower (), pdbid.lower ())
+    p = subprocess.Popen ("/usr/bin/curl %s | /bin/zcat" % url, shell=True, stdout=subprocess.PIPE)
+    return p.stdout.read ()
+
 # parseDSSP returns a dictionary.
 #
 # Example output:
