@@ -15,14 +15,14 @@ class BlastService(object):
 
         self.blastpExe = None
         self.templatesDB = None
-        self.uniprotspeciesDir = None
+        self.uniprotDB = None
 
     def _checkinit (self):
 
         from flask import current_app as flask_app
 
         self.templatesDB = flask_app.config ['TEMPLATESDB']
-        self.uniprotspeciesDir = flask_app.config ['SPECIESDBDIR']
+        self.uniprotDB = flask_app.config ['UNIPROTDB']
         self.blastpExe = flask_app.config ['BLASTP']
 
     # Blast against a database of templates:
@@ -43,7 +43,7 @@ class BlastService(object):
         self._checkinit ()
         _log.info ("performing species blast for\n%s" %seq)
 
-        if not self.uniprotspeciesDir:
+        if not self.uniprotDB:
             _log.error ("Species database directory not set")
             raise Exception("Species database directory not set")
 
@@ -52,7 +52,14 @@ class BlastService(object):
                     _log.error ('Species database not found: ' + dbpath)
                     raise Exception('Species database not found: ' + dbpath)
 
-        return self._blast(seq, dbpath)
+        hits = self._blast(seq, dbpath)
+
+        species_hits = {}
+        for hitID in hits:
+            if hitID.endswith ('_' + species):
+                species_hits [hitID] = hits [hitID]
+
+        return species_hits
 
 
     def _blast(self, querySeq, db):
@@ -61,7 +68,7 @@ class BlastService(object):
         if not self.blastpExe:
 
             _log.error ('blastp executable not set')
-            raise Exception('blastp executable not set')
+            raise Exception ('blastp executable not set')
 
         queryFile = '/tmp/query%i.fasta' % (os.getpid())
         writeFasta({'query': querySeq}, queryFile)

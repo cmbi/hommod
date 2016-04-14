@@ -82,10 +82,9 @@ RUN gunzip -f /data/fasta/uniprot_sprot.fasta.gz
 RUN rsync rsync.ebi.ac.uk::pub/databases/uniprot/knowledgebase/uniprot_trembl.fasta.gz /data/fasta/uniprot_trembl.fasta.gz
 RUN gunzip -f /data/fasta/uniprot_trembl.fasta.gz
 
-RUN mkdir -p /data/fasta/uniprot-species/ /data/blast/uniprot-species/
-RUN python uniprotSpecies.py /data/fasta/uniprot-species/
-RUN for fasta in /data/fasta/uniprot-species/*.fa; do makeblastdb -in $fasta -dbtype prot -out /data/blast/uniprot-species/`basename ${fasta%.fa}`; done
-
+RUN makeblastdb -in /data/fasta/uniprot_sprot.fasta -dbtype prot -out /data/blast/uniprot_sprot
+RUN makeblastdb -in /data/fasta/uniprot_trembl.fasta -dbtype prot -out /data/blast/uniprot_trembl
+RUN /bin/echo -e "TITLE uniprot\nDBLIST /data/blast/uniprot_sprot /data/blast/uniprot_trembl" > /data/blast/uniprot.pal
 
 ENV C_FORCE_ROOT true
 CMD ["celery", "-A", "hommod_rest.application:celery", "worker", "-B"]
