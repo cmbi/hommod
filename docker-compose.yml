@@ -20,6 +20,13 @@ services:
             - "redis:redis"
             - "rabbitmq:amq"
             - "hommod_flask"
+            - "hommod_databanks"
+        volumes:
+            - "/data:/data"
+    hommod_databanks:
+        build:
+            context: .
+            dockerfile: Dockerfile-databanks
         volumes:
             - "/data:/data"
     redis:

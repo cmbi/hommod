@@ -7,3 +7,8 @@ services:
     hommod_celery:
         volumes:
             - ".:/usr/src/app"
+    hommod_databanks:
+        environment:
+            - DEVELOPMENT=1
+        volumes:
+            - ".:/usr/src/app"
