@@ -49,13 +49,13 @@ WORKDIR /deps/interproscan
 RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz
 RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz.md5
 RUN md5sum -c interproscan-5.17-56.0-64-bit.tar.gz.md5
-RUN tar -pxvzf interproscan-5.17-56.0-64-bit.tar.gz
+RUN tar -pxzf interproscan-5.17-56.0-64-bit.tar.gz
 
 WORKDIR /deps/interproscan/data
 RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz
 RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz.md5
 RUN md5sum -c panther-data-10.0.tar.gz.md5
-RUN tar -pxvzf panther-data-10.0.tar.gz
+RUN tar -pxzf panther-data-10.0.tar.gz
 
 
 # Install berkely database libraries, needed by celery
