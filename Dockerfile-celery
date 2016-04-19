@@ -46,14 +46,14 @@ RUN ln -sf /deps/jre1.8.0_77/bin/java /usr/bin/java
 
 RUN mkdir /deps/interproscan
 WORKDIR /deps/interproscan
-RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz
-RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz.md5
+RUN wget -nv ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz
+RUN wget -nv ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.17-56.0/interproscan-5.17-56.0-64-bit.tar.gz.md5
 RUN md5sum -c interproscan-5.17-56.0-64-bit.tar.gz.md5
 RUN tar -pxzf interproscan-5.17-56.0-64-bit.tar.gz
 
 WORKDIR /deps/interproscan/data
-RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz
-RUN wget ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz.md5
+RUN wget -nv ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz
+RUN wget -nv ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/data/panther-data-10.0.tar.gz.md5
 RUN md5sum -c panther-data-10.0.tar.gz.md5
 RUN tar -pxzf panther-data-10.0.tar.gz
 
