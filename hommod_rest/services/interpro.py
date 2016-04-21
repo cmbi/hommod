@@ -4,9 +4,85 @@ from modelutils import idForSeq, writeFasta
 import xml.etree.ElementTree as xmlElementTree
 import bz2
 import subprocess
+import urllib
+import urllib2
+import platform
+import sys
+from time import sleep
+from glob import glob
 
 import logging
 _log = logging.getLogger(__name__)
+
+_interpro_base_url = 'http://www.ebi.ac.uk/Tools/services/rest/iprscan5'
+
+def _interpro_user_agent():
+
+    # Agent string for urllib2 library.
+    urllib_agent = 'Python-urllib/%s' % urllib2.__version__
+
+    clientRevision = '$Revision: 2809 $'
+    clientVersion = '0'
+    if len(clientRevision) > 11:
+        clientVersion = clientRevision[11:-2]
+
+    # Prepend client specific agent string.
+    user_agent = 'EBI-Sample-Client/%s (%s; Python %s; %s) %s' % (
+
+        clientVersion, os.path.basename( __file__ ),
+        platform.python_version(), platform.system(),
+        urllib_agent
+    )
+
+    return user_agent
+
+def _interpro_post (url, data):
+
+    requestData = urllib.urlencode (data)
+
+    # Set the HTTP User-agent.
+    user_agent = _interpro_user_agent ()
+    http_headers = { 'User-Agent' : user_agent }
+    req = urllib2.Request (url, None, http_headers)
+
+    # Make the submission (HTTP POST).
+    reqH = urllib2.urlopen (req, requestData)
+    result = reqH.read ()
+    reqH.close ()
+
+    return result
+
+def _interpro_get (url):
+
+    user_agent = _interpro_user_agent ()
+    http_headers = { 'User-Agent' : user_agent }
+    req = urllib2.Request(url, None, http_headers)
+
+    # Make the request (HTTP GET).
+    reqH = urllib2.urlopen(req)
+    result = reqH.read()
+    reqH.close()
+
+    return result
+
+def _interpro_submit (sequence):
+
+    params = {
+        'email': "c.baakman@radboudumc.nl",
+        'sequence': sequence,
+        'goterms': True,
+        'pathways': False
+    }
+
+    return _interpro_post (_interpro_base_url + '/run/', params)
+
+def _interpro_get_status (jobid):
+
+    return _interpro_get (_interpro_base_url + '/status/' + jobid)
+
+def _interpro_get_result (jobid):
+
+    return _interpro_get (_interpro_base_url + '/result/' + jobid + '/xml')
 
 class InterproDomain(object):
 
@@ -18,6 +94,8 @@ class InterproDomain(object):
         self.end = end
         self.ac = ac
 
+_MAX_INTERPRO_JOBS = 30
+
 # Uses interproscan to obtain data: https://code.google.com/p/interproscan/wiki/HowToDownload
 class InterproService (object):
 
@@ -25,6 +103,7 @@ class InterproService (object):
 
         self.interproExe = None
         self.storageDir = None
+        self._njobs = 0
 
     def _checkinit (self):
 
@@ -32,6 +111,14 @@ class InterproService (object):
 
         self.interproExe = flask_app.config ['INTERPROSCAN']
         self.storageDir = flask_app.config ['INTERPRODIR']
+
+    def _interpro_lockfile_path (self, ID):
+
+        return os.path.join (self.storageDir, 'lock_%s' % ID)
+
+    def _interpro_count_lockfiles (self):
+
+        return len (glob (os.path.join (self.storageDir, "lock_*")))
 
     def _create_data_file(self, sequence):
 
@@ -46,52 +133,43 @@ class InterproService (object):
 
         ID = idForSeq (sequence) # unique
 
+        outfilepath = os.path.join(self.storageDir, '%s.xml.bz2' % ID)
+        if os.path.isfile (outfilepath):
+            return outfilepath
+
         # We don't want two processes to build the same interpro file
         # at the same time. So use a lock file:
-        lockfilepath = os.path.join(self.storageDir, 'lock_%s' % ID)
-
-        lock = FileLock(lockfilepath)
+        lock = FileLock(self._interpro_lockfile_path (ID))
 
         with lock:
 
-            wd = os.getcwd()
-            _in = os.path.join(wd, 'in%i.fasta' % os.getpid())
-            out = os.path.join(self.storageDir, '%s.xml' % ID)
+            # Wait for a place in line to start an interpro job
+            while self._interpro_count_lockfiles () >= _MAX_INTERPRO_JOBS:
 
-            # If the interpro file is already there, then don't
-            # make it anew.
-            if os.path.isfile(out + '.bz2'):
-                return out + '.bz2'
+                sleep (10)
 
-            # Make the input file for interpro:
-            writeFasta({ID: sequence}, _in)
+            # Wait for the interpro server to finish:
+            jobid = _interpro_submit (sequence)
+            while True:
 
-            # Run interproscan and wait for it to finish:
-            cmd = '%s --goterms --formats xml --input %s --outfile %s --seqtype p' % \
-                  (self.interproExe, _in, out)
+                status = _interpro_get_status (jobid)
+                _log.debug ("intepro job status: " + status)
 
-            p = subprocess.Popen (cmd, shell=True, stderr=subprocess.PIPE)
-            p.wait ()
+                if status in ['RUNNING', 'PENDING', 'STARTED']:
 
-            os.remove(_in)
+                    sleep (10)
+                else:
+                    break
 
-            if not os.path.isfile (out):
+            if status != 'FINISHED':
+                raise Exception ("inteproscan job status = " + status)
 
-                # Get the console output:
-                errstr = p.stderr.read ()
+            xmlstr = _interpro_get_result (jobid)
 
-                _log.error ("interpro did not create %s:\n%s" %
-                            (out, errstr))
+            # Write results to file
+            bz2.BZ2File (outfilepath, 'w').write (xmlstr)
 
-                raise Exception('interprofile %s not created:\n%s' % (out, errstr))
-
-            # hommod assumes the interpro files to be bzip2 compressed by default:
-            os.system ('bzip2 -f %s' % out)
-            out = out + '.bz2'
-
-            _log.info ("interprofile %s sucessfully created" % out)
-
-            return out
+            return outfilepath
 
 
     # Creates an interpro file for the given sequence and parses it.
@@ -104,20 +182,17 @@ class InterproService (object):
         ID = idForSeq(sequence)
 
         # Get the xml tag of type protein and the given sequence ID:
+        protein = None
+        s = ''
         root = xmlElementTree.fromstring (bz2.BZ2File (filepath, 'r').read())
-        for child in root:
-            if child.tag.endswith('}protein'):
-                p = child
-                for child in p:
-                    if child.tag.endswith('}xref') and \
-                            child.attrib['id'] == ID:
-                        protein = p
-                        break
-            elif child.tag == 'protein' and child.attrib['id'] == ID:
-                protein = child
+        for p in root.iter ():
+            if p.tag.endswith('}protein') or p.tag == 'protein':
+
+                protein = p
+                break
 
         if protein is None:
-            raise Exception('Protein not found: '+ID)
+            raise Exception('Protein not found: ' + ID + ' in' + s)
 
         # Look for pattern matches in the file:
         matches = []

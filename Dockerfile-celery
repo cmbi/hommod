@@ -36,23 +36,6 @@ RUN ./install_yasara -norun
 ENV PATH $PATH:/deps/yasara/yasara
 
 
-# Data files directory
-
-# Install interproscan + dependencies
-COPY ./jre-8u77-linux-x64.tar.gz /deps/jre-8u77-linux-x64.tar.gz
-WORKDIR /deps/
-RUN tar xzf jre-8u77-linux-x64.tar.gz
-RUN ln -sf /deps/jre1.8.0_77/bin/java /usr/bin/java
-
-RUN mkdir /deps/interproscan
-WORKDIR /deps/interproscan
-RUN tar -pxzf interproscan-5.17-56.0-64-bit.tar.gz
-RUN rm interproscan-5.17-56.0-64-bit.tar.gz
-
-WORKDIR /deps/interproscan/data
-RUN tar -pxzf panther-data-10.0.tar.gz
-RUN rm panther-data-10.0.tar.gz
-
 # Install berkely database libraries, needed by celery
 RUN apt-get install -y libdb-dev python-bsddb3
 RUN ln -s /usr/lib/python2.7/lib-dynload/_bsddb.x86_64-linux-gnu.so /usr/local/lib/python2.7/lib-dynload/_bsddb.so
