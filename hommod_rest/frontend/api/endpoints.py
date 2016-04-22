@@ -90,13 +90,13 @@ def submit():
 
     if not(sequence and position and species_id):
 
-        _log.warn("submit request did not contain all required input data");
+        _log.error("submit request did not contain all required input data");
 
         return jsonify({'error': 'invalid input'}), 400
     try:
         position = int(position)
     except:
-        _log.warn("submit request did not contain an integer position");
+        _log.error("submit request did not contain an integer position");
 
         return jsonify({'error': 'expected integer for position'}), 400
 
@@ -158,8 +158,8 @@ def get_model_file(jobid):
 
     try:
         contents = extract_model(path)
-    except:
-        _log.warn('failed to get all data from %s' % path)
+    except Exception as e:
+        _log.error('failed to get all data from %s: %s' % (path, str (e)))
         return ''
 
     _log.info("model successfully retrieved for job %s" % jobid)
@@ -190,8 +190,8 @@ def get_metadata(jobid):
     #try:
     #    data = extract_info(path)
     #    data['alignment'] = extract_alignment(path)
-    #except:
-    #    _log.warn('failed to get all data from %s' % path)
+    #except Exception as e:
+    #    _log.error('failed to get all data from %s: %s' % (path, str (e)))
     #    return ''
 
     #_log.info("metadata successfully retrieved for job %s" % jobid)
