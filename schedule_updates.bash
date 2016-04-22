@@ -6,7 +6,7 @@ UPDATE=$MYDIR/update_databanks.bash
 
 chmod 755 $UPDATE
 
-if ! [ -f /data/blast/uniprot.pal ] || ! [ -f /data/blast/templates.psq ] || ! [-f /data/blacklisted_templates ]; then
+if ! [ -f /data/blast/uniprot.pal ] || ! [ -f /data/blast/templates.psq ] || ! [ -f /data/blacklisted_templates ]; then
 
     # Databanks not present, build now!
     /bin/bash $UPDATE
