@@ -1,5 +1,6 @@
 import requests
 from time import sleep
+import sys
 
 payload = {
     'position': 47, 'species_id': 'HUMAN',
@@ -31,7 +32,10 @@ while True:
     sleep (10)
 
 if status != "SUCCESS":
-    raise Exception (response.message)
+    if "message" in response.json ():
+        raise Exception (response.json () ['message'])
+    else:
+        sys.exit (1)
 
 response = requests.get ('http://localhost:7001/api/get_model_file/%s.pdb' % jobid)
 print response.text
