@@ -58,13 +58,17 @@ class alignService(object):
             subprocess.call(args, stdout=subprocess.PIPE)
 
         finally:
-            os.remove(os.path.splitext(_in)[0] + '.dnd')
-            os.remove(_in)
+            DND = os.path.splitext(_in)[0] + '.dnd'
+            if os.path.isfile (DND):
+                os.remove(DND)
+            if os.path.isfile (_in):
+                os.remove(_in)
 
         try:
             d = parseFasta(open(out, 'r'))
         finally:
-            os.remove(out)
+            if os.path.isfile (out):
+                os.remove(out)
 
         _log.info ("successfully created a clustal alignment")
 
@@ -117,24 +121,28 @@ class alignService(object):
               (self.msaExe, toalignpath, alignedpath,
                gapOpen, gapExt, modifier)
 
-        p = subprocess.Popen (cmd, shell=True, stderr=subprocess.PIPE)
-        p.wait ()
+        try:
+            feedback = subprocess.check_output (cmd, shell=True, stderr=subprocess.STDOUT)
+
+        finally:
+            if os.path.isfile (toalignpath):
+                os.remove (toalignpath)
 
         alignedpath += '_al'
 
         if not os.path.isfile (alignedpath):
 
-            errstr = p.stderr.read ()
-
             _log.error ('alignment file %s not created, MSA error:\n%s' %
-                        (alignedpath, errstr))
+                        (alignedpath, feedback))
             raise Exception ('alignment file %s not created, MSA error:\n%s' %
-                             (alignedpath, errstr))
+                             (alignedpath, feedback))
 
-        aligned = parseFasta (open(alignedpath, 'r'))
+        try:
+            aligned = parseFasta (open(alignedpath, 'r'))
 
-        os.remove (alignedpath)
-        os.remove (toalignpath)
+        finally:
+            if os.path.isfile (alignedpath):
+                os.remove (alignedpath)
 
         if aligned['template'].replace('-', '') != pdbSeq:
             _log.error ('MSA output mismatch:\npdbSeq:' + pdbSeq +
@@ -142,7 +150,7 @@ class alignService(object):
             raise Exception('MSA output mismatch:\npdbSeq:' + pdbSeq +
                             'aligned:' + aligned['template'])
 
-        _log.info ("successfully created a pairwise MSA alignment")
+        _log.debug ("successfully created a pairwise MSA alignment")
 
         return aligned
 
