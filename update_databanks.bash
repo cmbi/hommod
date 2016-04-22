@@ -2,6 +2,8 @@
 
 mkdir -p /data/fasta/ /data/blast/
 
+cp blacklisted_templates /data/blacklisted_templates
+
 build_templates () {
 
     python makeXrayPDBFinder2Fasta.py /data/fasta/templates.fa

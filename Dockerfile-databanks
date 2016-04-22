@@ -4,8 +4,6 @@ FROM python:2.7-onbuild
 RUN apt-get update
 RUN apt-get install -y ncbi-blast\+ rsync cron
 
-# Copy required files
-ADD blacklisted_templates /data/blacklisted_templates
+RUN chmod 0755 /usr/src/app/schedule_updates.bash /usr/src/app/update_databanks.bash
 
-RUN chmod 0755 /usr/src/app/schedule_updates.bash
 CMD ["/bin/bash", "/usr/src/app/schedule_updates.bash"]
