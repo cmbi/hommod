@@ -75,25 +75,34 @@ class BlastService(object):
 
         outFile = '/tmp/results%i.xml' % (os.getpid())
 
-        # Runt blastp and make sure it gives xml output format:
+        # Run blastp and make sure it gives xml output format:
         cs = [self.blastpExe, '-query', queryFile, '-db', db,
               '-outfmt', '5', '-out', outFile]
         _log.debug(str(cs))
 
-        p = subprocess.Popen (cs, stderr=subprocess.PIPE)
-        p.wait ()
+        try:
+            feedback = subprocess.check_output (cs, stderr=subprocess.STDOUT)
 
-        if not os.path.isfile (outFile):
+            xmlstr = open(outFile, 'r').read ()
 
-            errstr = p.stderr.read ()
+        except subprocess.CalledProcessError as e:
 
-            _log.error ("blast failed:\n%s" % errstr)
-            raise Exception ("blast failed:\n%s" % errstr)
+            _log.error ("blast failed:\n%s" % e.output)
+            raise Exception ("blast failed:\n%s" % e.output)
 
-        hits = parseBlastXML (open(outFile, 'r').read())
+        finally:
+            if os.path.isfile (queryFile):
+                os.remove (queryFile)
 
-        os.remove (queryFile)
-        os.remove (outFile)
+            if os.path.isfile (outFile):
+                os.remove (outFile)
+
+        if len (xmlstr) <= 0:
+
+            _log.error ("no blast output:\n%s" % (feedback))
+            raise Exception ("no blast output:\n%s" % (feedback))
+
+        hits = parseBlastXML (xmlstr)
 
         _log.info ("found %d hits for %s in %s" %(len (hits), querySeq, db))
 
