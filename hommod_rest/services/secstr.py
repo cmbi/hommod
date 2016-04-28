@@ -54,7 +54,7 @@ class SecStrProvider(object):
 
             return template.chainID in d
         else:
-            pdbfile = "%s.pdb" % template.pdbac
+            pdbfile = os.path.abspath ("%s.pdb" % template.pdbac)
             open (pdbfile, 'w').write (downloadPDB (template.pdbac))
             obj = self.yasara.LoadPDB (pdbfile)[0]
             for ss in self.yasara.SecStrRes('obj %i' % obj):
