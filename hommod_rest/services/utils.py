@@ -21,8 +21,11 @@ sh.setFormatter(formatter)
 _log.addHandler(sh)
 _log.setLevel(logging.DEBUG)
 
+#template: 3hrw
+#    matched main target 7cd68612-3b7d-668d-756a-7f5573b87fa9 with chain B
+
 ptargetchain = re.compile(
-    r"^modeling\s+(main\s+|)target\s+([A-Za-z0-9\-]+)\s+on chain\s+(\w)$")
+    r"^matched\s+(main\s+|)target\s+([A-Za-z0-9\-]+)\s+with chain\s+(\w)$")
 
 
 def extract_info(tar_path):
@@ -31,8 +34,13 @@ def extract_info(tar_path):
 
     tf = tarfile.open(tar_path, 'r')
 
+
     infopath = os.path.join(
-        os.path.splitext(os.path.basename(tar_path))[0], 'selected-targets.txt')
+                 os.path.splitext(
+                   os.path.basename(tar_path))[0], 'selected-targets.txt')
+
+    _log.debug ("extract info from %s" % infopath)
+
     if infopath in tf.getnames():
         for line in tf.extractfile(infopath):
 
@@ -42,6 +50,7 @@ def extract_info(tar_path):
             else:
                 m = ptargetchain.match(line)
                 if m:
+                    _log.debug ("matched target chain line:\n%s" % line)
                     chain = m.group(3)
                     target = m.group(2)
                     info['targets'][chain] = target

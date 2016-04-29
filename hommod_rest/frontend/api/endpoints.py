@@ -151,14 +151,16 @@ def get_model_file(jobid):
     path = result.result
     if not path:
         # no model could be created
-        _log.warn('no model was created for job %s' % jobid)
-        return ''
+        message = 'no model was created for job %s' % jobid
+        _log.warn (message)
+        return jsonify({'error': message}), 400
 
     try:
         contents = extract_model(path)
     except Exception as e:
-        _log.error('failed to get all data from %s: %s' % (path, str (e)))
-        return ''
+        error = 'failed to get all data from %s: %s' % (path, str (e))
+        _log.error(error)
+        return jsonify({'error': error}), 500
 
     _log.info("model successfully retrieved for job %s" % jobid)
 
@@ -176,22 +178,22 @@ def get_metadata(jobid):
              this method returns an error.
     """
 
-    _log.info("metadata request for job %s" % jobid)
-    return ''
+    _log.debug("metadata request for job %s" % jobid)
 
-    #from hommod_rest.application import celery
-    #result = celery.AsyncResult(jobid)
-    #path = result.result
-    #if not path:
-    #    return {}
+    from hommod_rest.application import celery
+    result = celery.AsyncResult(jobid)
+    path = result.result
+    if not path:
+        return jsonify({})
 
-    #try:
-    #    data = extract_info(path)
-    #    data['alignment'] = extract_alignment(path)
-    #except Exception as e:
-    #    _log.error('failed to get all data from %s: %s' % (path, str (e)))
-    #    return ''
+    try:
+        data = extract_info(path)
+        data['alignment'] = extract_alignment(path)
+    except Exception as e:
+        error = 'failed to get all data from %s: %s' % (path, str (e))
+        _log.error(error)
+        return jsonify({'error': error}), 500
 
-    #_log.info("metadata successfully retrieved for job %s" % jobid)
+    _log.debug("metadata successfully retrieved for job %s" % jobid)
 
-    #return jsonify(data)
+    return jsonify(data)
