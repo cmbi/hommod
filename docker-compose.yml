@@ -23,6 +23,7 @@ services:
             - "hommod_databanks"
         volumes:
             - "/data:/data"
+            - "/mnt/cmbi4:/mnt/cmbi4"
     hommod_databanks:
         build:
             context: .
