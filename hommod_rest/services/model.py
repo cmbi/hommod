@@ -240,11 +240,17 @@ class Modeler(object):
     # from future blast runs.
     def _add_template_to_blacklist (self, pdbid):
 
-        open (self.template_blacklist, 'a').write ('%s\n' % pdbid.lower ())
+        with open (self.template_blacklist, 'a') as _file:
+            _file.write ('%s\n' % pdbid.lower ())
 
     def _template_in_blacklist (self, pdbid):
 
-        return (open (self.template_blacklist, 'r').read ().find (pdbid.lower ()) != -1)
+        if not os.path.isfile (self.template_blacklist):
+            raise Exception ("No such file: %s" % self.template_blacklist)
+
+        with open (self.template_blacklist, 'r') as _file:
+            pdbids = _file.read ().split ()
+            return pdbid in pdbids
 
     # Use this function to get the template sequences:
     def getChainOrderAndSeqs(self, tempobj):
