@@ -11,6 +11,7 @@ import hommod_rest.default_settings as config
 def setupApps():
     interpro.interproExe = config.INTERPROSCAN
     interpro.storageDir = config.INTERPRODIR
+    blaster.uniprotDB = config.UNIPROTDB
     blaster.templatesDB = config.TEMPLATESDB
     blaster.blastpExe = config.BLASTP
     secstr.dssp_dir = config.DSSPDIR
