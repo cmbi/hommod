@@ -293,7 +293,7 @@ class Modeler(object):
 
         self.yasara.Clear()
 
-        pdbfile = '%s.pdb' % tempac
+        pdbfile = os.path.abspath ('%s.pdb' % tempac)
         open (pdbfile, 'w').write (downloadPDB (tempac))
         tempobj = self.yasara.LoadPDB(pdbfile)[0]
         self.yasara.DelObj('not %i' % tempobj)
