@@ -7,6 +7,9 @@ import hommod_rest.default_settings as config
 import logging
 _log = logging.getLogger(__name__)
 
+import os
+
+mydir = os.path.dirname (__file__)
 
 def setupApps():
 
@@ -15,7 +18,8 @@ def setupApps():
     modeler.model_root_dir = config.MODELDIR
     modeler.template_blacklist = config.TEMPLATE_BLACKLIST
 
-    blaster.uniprotDB = config.UNIPROTDB
+    blaster.uniprotDB = os.path.join (mydir, "data/uniprot_sprot") # small version
+    blaster.templatesDB = config.TEMPLATESDB
     blaster.blastpExe = config.BLASTP
 
 
@@ -25,6 +29,7 @@ def tearDown():
 
 @with_setup(setupApps, tearDown)
 def test_1OCO_BOVIN():
+
     tempobj, oligomerisation = modeler._set_template('1OCO')
     chainOrder, templateChainSequences = modeler.getChainOrderAndSeqs(tempobj)
 

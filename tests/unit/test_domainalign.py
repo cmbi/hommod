@@ -7,11 +7,14 @@ from hommod_rest.services.secstr import secstr
 
 import hommod_rest.default_settings as config
 
+import os
+
+mydir = os.path.dirname (__file__)
 
 def setupApps():
     interpro.interproExe = config.INTERPROSCAN
     interpro.storageDir = config.INTERPRODIR
-    blaster.uniprotDB = config.UNIPROTDB
+    blaster.uniprotDB = os.path.join (mydir, "data/uniprot_sprot") # small version
     blaster.templatesDB = config.TEMPLATESDB
     blaster.blastpExe = config.BLASTP
     secstr.dssp_dir = config.DSSPDIR
