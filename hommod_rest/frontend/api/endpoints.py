@@ -121,8 +121,6 @@ def status(jobid):
     :return: Either PENDING, STARTED, SUCCESS, FAILURE, RETRY, or REVOKED.
     """
 
-    _log.info("status request for job %s" % jobid)
-
     from hommod_rest.application import celery
     result = celery.AsyncResult(jobid)
 
@@ -130,7 +128,7 @@ def status(jobid):
     if result.failed():
         response ['message'] = result.traceback
 
-    _log.info("found status %s for job %s" %(result.status, jobid))
+    _log.info("Status for job {}: {}".format(jobid, result.status))
 
     return jsonify(response)
 

@@ -38,7 +38,4 @@ class ReverseProxied(object):  # pragma: no cover
         if server:
             environ["HTTP_HOST"] = server
 
-        _log.info(environ)
-        _log.info(start_response)
-
         return self.app(environ, start_response)
