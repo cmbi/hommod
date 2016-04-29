@@ -21,9 +21,14 @@ class BlastService(object):
 
         from flask import current_app as flask_app
 
-        self.templatesDB = flask_app.config ['TEMPLATESDB']
-        self.uniprotDB = flask_app.config ['UNIPROTDB']
-        self.blastpExe = flask_app.config ['BLASTP']
+        if not self.templatesDB:
+            self.templatesDB = flask_app.config ['TEMPLATESDB']
+
+        if not self.uniprotDB:
+            self.uniprotDB = flask_app.config ['UNIPROTDB']
+
+        if not self.blastpExe:
+            self.blastpExe = flask_app.config ['BLASTP']
 
     # Blast against a database of templates:
     def templateBlast (self, seq):
@@ -47,12 +52,7 @@ class BlastService(object):
             _log.error ("Species database directory not set")
             raise Exception("Species database directory not set")
 
-        dbpath = os.path.join(self.uniprotspeciesDir, 'uniprot-%s' % species.upper ())
-        if len(glob('%s.*' % dbpath)) <= 0:
-                    _log.error ('Species database not found: ' + dbpath)
-                    raise Exception('Species database not found: ' + dbpath)
-
-        hits = self._blast(seq, dbpath)
+        hits = self._blast(seq, self.uniprotDB)
 
         species_hits = {}
         for hitID in hits:

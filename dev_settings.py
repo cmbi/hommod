@@ -17,7 +17,7 @@ TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
 DSSPDIR = '/mnt/cmbi4/dssp/'
 
 # Executables:
-MSA = '/deps/hommod-kmad/hommod_kmad' # made by Joanna Lange
+KMAD = '/deps/hommod-kmad/hommod_kmad' # made by Joanna Lange
 BLASTP = '/usr/bin/blastp' # ncbi
 CLUSTAL = '/usr/bin/clustalw'
 INTERPROSCAN = '/deps/interproscan/interproscan-5.17-56.0/interproscan.sh'

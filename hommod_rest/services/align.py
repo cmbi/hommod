@@ -12,14 +12,17 @@ class alignService(object):
     def __init__(self):
 
         self.clustalExe = None
-        self.msaExe = None
+        self.kmadExe = None
 
     def _checkinit (self):
 
         from flask import current_app as flask_app
 
-        self.clustalExe = flask_app.config ['CLUSTAL']
-        self.msaExe = flask_app.config ['MSA']
+        if not self.clustalExe:
+            self.clustalExe = flask_app.config ['CLUSTAL']
+
+        if not self.kmadExe:
+            self.kmadExe = flask_app.config ['KMAD']
 
     # Use Clustalw2 for alignment: http://www.clustal.org/clustal2/
     # Simply uses dictionaries for input and output
@@ -76,16 +79,16 @@ class alignService(object):
 
     # Use Joanna Lange's alignment program, requires secondary structure information.
     # Output is a dictionary with: 'template' and 'target' as ids, pointing to sequences.
-    def msaAlign(self, pdbSeq, pdbSecStr, tarSeq,
+    def kmadAlign(self, pdbSeq, pdbSecStr, tarSeq,
                  gapOpen=-13.0, gapExt=-0.4, modifier=3.0):
 
         self._checkinit ()
-        _log.info ("making pairwise MSA alignment")
+        _log.info ("making pairwise kmad alignment")
 
-        if not self.msaExe:
-            raise Exception("msa path not set")
+        if not self.kmadExe:
+            raise Exception("kmad path not set")
 
-        # Prevent MSA from adding insertions in bulges.
+        # Prevent kmad from adding insertions in bulges.
         # Fool the program by making
         # it think they're helix/strand residues:
         pdbSecStr = removeBulges (pdbSecStr, 'H', 3)
@@ -114,15 +117,17 @@ class alignService(object):
 
         toalignpath = 'toalign%i.fasta' % os.getpid()
         alignedpath = 'aligned%i' % os.getpid()
-        open(toalignpath, 'w').write('>template\n%s\n>target\n%s\n' %
-                                     (seq1, seq2))
 
-        cmd = '%s -i %s -o %s -g %.1f -e %.1f -s %.1f -c' % \
-              (self.msaExe, toalignpath, alignedpath,
+        _input = '>template\n%s\n>target\n%s\n' % (seq1, seq2)
+        open(toalignpath, 'w').write(_input)
+
+        cmd = '%s -i %s -o %s -g %.1f -e %.1f -s %.1f -c; exit 0' % \
+              (self.kmadExe, toalignpath, alignedpath,
                gapOpen, gapExt, modifier)
 
         try:
-            feedback = subprocess.check_output (cmd, shell=True, stderr=subprocess.STDOUT)
+            feedback = subprocess.check_output (cmd, shell=True,
+                                                stderr=subprocess.STDOUT)
 
         finally:
             if os.path.isfile (toalignpath):
@@ -132,10 +137,11 @@ class alignService(object):
 
         if not os.path.isfile (alignedpath):
 
-            _log.error ('alignment file %s not created, MSA error:\n%s' %
-                        (alignedpath, feedback))
-            raise Exception ('alignment file %s not created, MSA error:\n%s' %
-                             (alignedpath, feedback))
+            error = ('alignment file %s not created,' + \
+                     'kmad input:\n%s\nkmad error:\n%s') % \
+                        (alignedpath, _input, feedback)
+            _log.error (error)
+            raise Exception (error)
 
         try:
             aligned = parseFasta (open(alignedpath, 'r'))
@@ -145,12 +151,12 @@ class alignService(object):
                 os.remove (alignedpath)
 
         if aligned['template'].replace('-', '') != pdbSeq:
-            _log.error ('MSA output mismatch:\npdbSeq:' + pdbSeq +
-                            'aligned:' + aligned['template'])
-            raise Exception('MSA output mismatch:\npdbSeq:' + pdbSeq +
-                            'aligned:' + aligned['template'])
+            error = 'kmad output mismatch:\npdbSeq:' + pdbSeq + \
+                            'aligned:' + aligned['template']
+            _log.error (error)
+            raise Exception (error)
 
-        _log.debug ("successfully created a pairwise MSA alignment")
+        _log.debug ("successfully created a pairwise kmad alignment")
 
         return aligned
 

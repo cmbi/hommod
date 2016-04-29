@@ -11,7 +11,11 @@ _log = logging.getLogger(__name__)
 def setupApps():
 
     modeler.yasara_dir = config.YASARADIR
-    blaster.uniprotspeciesDir = config.SPECIESDBDIR
+    modeler.execution_root_dir = config.EXECUTIONDIR
+    modeler.model_root_dir = config.MODELDIR
+    modeler.template_blacklist = config.TEMPLATE_BLACKLIST
+
+    blaster.uniprotDB = config.UNIPROTDB
     blaster.blastpExe = config.BLASTP
 
 

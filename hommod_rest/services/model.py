@@ -213,18 +213,26 @@ class Modeler(object):
         sys.path.append(os.path.join(yasara_dir, 'pym'))
         sys.path.append(os.path.join(yasara_dir, 'plg'))
 
+        # Don't use graphic mode, it fails without graphical interface!
         import yasaramodule
         self.yasara = yasaramodule
-        self.yasara.info.mode = 'txt' # Don't use graphic, it fails without graphical interface
+        self.yasara.info.mode = 'txt'
 
     def _check_init(self):
 
         from flask import current_app as flask_app
 
-        self.yasara_dir = flask_app.config ['YASARADIR']
-        self.execution_root_dir = flask_app.config ['EXECUTIONDIR']
-        self.model_root_dir = flask_app.config ['MODELDIR']
-        self.template_blacklist = flask_app.config ['TEMPLATE_BLACKLIST']
+        if not self._yasara_dir:
+            self.yasara_dir = flask_app.config ['YASARADIR']
+
+        if not self.execution_root_dir:
+            self.execution_root_dir = flask_app.config ['EXECUTIONDIR']
+
+        if not self.model_root_dir:
+            self.model_root_dir = flask_app.config ['MODELDIR']
+
+        if not self.template_blacklist:
+            self.template_blacklist = flask_app.config ['TEMPLATE_BLACKLIST']
 
     # The blacklist contains pdb ids of templates that always
     # cause failures in yasara's modeling run.
@@ -503,7 +511,7 @@ class Modeler(object):
                         .format(templateChainSeq, templateChainSecStr))
 
             alignments [chainID] = aligner \
-                .msaAlign(templateChainSeq,
+                .kmadAlign(templateChainSeq,
                           templateChainSecStr, mainDomainSeq)
             open (selectedTargetsPath, 'a') \
                 .write('\tmodeling main target %s on chain %s\n' %
@@ -590,7 +598,7 @@ class Modeler(object):
 
                     # If we have targets with extremely high coverage,
                     # then we don't need interpro
-                    alignment = aligner.msaAlign(
+                    alignment = aligner.kmadAlign(
                         yasaraChain.seq,
                         yasaraChain.secstr,
                         potentialTargetSeqs[targetID])
@@ -657,7 +665,7 @@ class Modeler(object):
 
                         # Realign once more using the complete target
                         # range that we found by joining the alignments:
-                        alignment = aligner.msaAlign(
+                        alignment = aligner.kmadAlign(
                             templateChainSeq, templateChainSecStr,
                             domain_target_seq)
 

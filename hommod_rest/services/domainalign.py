@@ -391,7 +391,7 @@ def makeYasaraAlignment (yasara, domainSeq, yasaraObject, yasaraChainID):
         pdbSeq += get_aa321(yasara.ListRes('atom %i' % ca, 'RESNAME')[0])
         pdbSecStr += yasara.SecStrRes('atom %i' % ca)[0]
 
-    aligned = aligner.msaAlign(pdbSeq, pdbSecStr, domainSeq)
+    aligned = aligner.kmadAlign(pdbSeq, pdbSecStr, domainSeq)
     aligned['secstr'] = _map_gaps(aligned['template'], pdbSecStr)
     aligned['midline'] = _get_midline(aligned['template'], aligned['target'])
 
@@ -413,7 +413,7 @@ def makeDSSPAlignment(domainSeq, template):
         raise Exception('No chain %s in %s' % (template.chainID, dssppath))
     pdbSeq, pdbSecStr, pdbDisulfid = d[template.chainID]
 
-    aligned = aligner.msaAlign(pdbSeq, pdbSecStr, domainSeq)
+    aligned = aligner.kmadAlign(pdbSeq, pdbSecStr, domainSeq)
     aligned['secstr'] = _map_gaps(aligned['template'], pdbSecStr)
     aligned['midline'] = _get_midline(aligned['template'], aligned['target'])
 
@@ -622,10 +622,15 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                     TemplateID(yasaraChain.objname, yasaraChain.chainID)
 
                 # align only against 1 template:
-                aligned = alignmentDAO.getAlignmentFromYasara(
-                    yasaraChain.yasaramodule, r,
-                    yasaraChain.obj, yasaraChain.chainID
-                )
+                try:
+                    aligned = alignmentDAO.getAlignmentFromYasara(
+                        yasaraChain.yasaramodule, r,
+                        yasaraChain.obj, yasaraChain.chainID
+                    )
+                except:
+                    # If kmad fails, then skip this one :(
+                    continue
+
                 nalign, pid = getNalignIdentity(
                     aligned['target'], aligned['template'])
                 pcover = (nalign * 100.0) / (r.end - r.start)
@@ -814,21 +819,25 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                     #   the template in exactly the same way
                     if dist < 10 and merged not in checkedRanges:
 
-                        if yasaraChain and \
-                                yasaraChain.getTemplateID() == template:
-                            alignment1 = alignmentDAO.getAlignmentFromYasara(
-                                ranges[i], yasaraChain.obj, yasaraChain.chainID)
-                            alignment2 = alignmentDAO.getAlignmentFromYasara(
-                                ranges[j], yasaraChain.obj, yasaraChain.chainID)
-                            alignmentM = alignmentDAO.getAlignmentFromYasara(
-                                merged, yasaraChain.obj, yasaraChain.chainID)
-                        else:
-                            alignment1 = alignmentDAO.getAlignment(
-                                ranges[i], template)
-                            alignment2 = alignmentDAO.getAlignment(
-                                ranges[j], template)
-                            alignmentM = alignmentDAO.getAlignment(
-                                merged, template)
+                        try:
+                            if yasaraChain and \
+                                    yasaraChain.getTemplateID() == template:
+                                alignment1 = alignmentDAO.getAlignmentFromYasara(
+                                    ranges[i], yasaraChain.obj, yasaraChain.chainID)
+                                alignment2 = alignmentDAO.getAlignmentFromYasara(
+                                    ranges[j], yasaraChain.obj, yasaraChain.chainID)
+                                alignmentM = alignmentDAO.getAlignmentFromYasara(
+                                    merged, yasaraChain.obj, yasaraChain.chainID)
+                            else:
+                                alignment1 = alignmentDAO.getAlignment(
+                                    ranges[i], template)
+                                alignment2 = alignmentDAO.getAlignment(
+                                    ranges[j], template)
+                                alignmentM = alignmentDAO.getAlignment(
+                                    merged, template)
+                        except:
+                            # If kmad fails, then skip this one :(
+                            continue
 
                         intersected = intersection(ranges[i], ranges[j])
                         isectTempSeq1 = getTemplateSeqAtTargetPositions(

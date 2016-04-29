@@ -40,17 +40,17 @@ EXECUTIONDIR = '/data/tmp/'
 INTERPRODIR = '/data/interpro/'
 
 # Executables:
-MSA = '/data/prog/pairwiseUBUNTU/MSA' # made by Joanna Lange
+KMAD = '/data/prog/pairwiseUBUNTU/MSA' # made by Joanna Lange
 BLASTP = '/usr/bin/blastp' # ncbi
 CLUSTAL = '/usr/bin/clustalw'
 INTERPROSCAN = '/data/prog/interproscan-5.8-49.0/interproscan.sh'
 
 # Yasara installation:
-YASARADIR = '/data/prog/Yasara/yasara/'
+YASARADIR = '/deps/yasara/yasara/'
 
 # Blast databases:
-SPECIESDBDIR = '/data/blast/uniprot-species/'
 TEMPLATESDB = '/data/blast/templates'
+UNIPROTDB = '/data/blast/uniprot'
 
 
 TEMPLATESFASTA = '/data/fasta/templates.fa'

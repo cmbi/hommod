@@ -109,8 +109,11 @@ class InterproService (object):
 
         from flask import current_app as flask_app
 
-        self.interproExe = flask_app.config ['INTERPROSCAN']
-        self.storageDir = flask_app.config ['INTERPRODIR']
+        if not self.interproExe:
+            self.interproExe = flask_app.config ['INTERPROSCAN']
+
+        if not self.storageDir:
+            self.storageDir = flask_app.config ['INTERPRODIR']
 
     def _interpro_lockfile_path (self, ID):
 
