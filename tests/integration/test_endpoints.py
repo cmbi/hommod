@@ -1,7 +1,4 @@
-from hommod_rest.factory import create_app, create_celery_app
 from time import sleep
-
-import hommod_rest.default_settings as config
 
 import json
 
@@ -10,8 +7,6 @@ _log = logging.getLogger (__name__)
 _log.setLevel (logging.DEBUG)
 
 import requests
-
-print "hello"
 
 def test_endpoints ():
 
@@ -42,7 +37,7 @@ def test_endpoints ():
 
         if status in ["PENDING", "STARTED", "RUNNING"]:
 
-            sleep (10)
+            sleep (1)
         else:
             break
 
