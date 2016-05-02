@@ -10,7 +10,6 @@ _log = logging.getLogger(__name__)
 
 bp = Blueprint('hommod', __name__, url_prefix='/api')
 
-
 @bp.route('/update_cache/', methods=['POST'])
 def update_cache():
 
@@ -26,7 +25,7 @@ def update_cache():
     sequence = request.form.get('sequence', None)
     species_id = request.form.get('species_id', None)
 
-    _log.info("update cache request for( sequence: %s, species: %s )"
+    _log.info("endpoints.update_cache request for( sequence: %s, species: %s )"
                %(sequence, species_id))
 
     if not(sequence and species_id):
@@ -35,7 +34,7 @@ def update_cache():
     from hommod_rest.tasks import create_models_seq
     result = create_models_seq.apply_async((sequence, species_id))
 
-    _log.info("cache will update in job %s" % result.task_id)
+    _log.debug("endpoints: cache will update in job %s" % result.task_id)
 
     return jsonify({'jobid': result.task_id})
 
@@ -55,17 +54,17 @@ def has_model():
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
 
-    _log.info("has_model request recieved for( sequence: %s, species: %s, position: %s )"
+    _log.info("endpoints.has_model request recieved for( sequence: %s, species: %s, position: %s )"
                %(sequence, species_id, position))
 
     paths = list_models_of(sequence, species_id, position)
 
     if len(paths) > 0:
 
-        _log.info("has_model: returning true for %s" % str(paths))
+        _log.debug("endpoints.has_model: returning true for %s" % str(paths))
         return True
     else:
-        _log.info("has_model: returning false for %s" % str(paths))
+        _log.debug("endpoints.has_model: returning false for %s" % str(paths))
         return False
 
 @bp.route('/submit/', methods=['POST'])
@@ -85,28 +84,29 @@ def submit():
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
 
-    _log.info("submit request recieved for( sequence: %s, species: %s, position: %s )"
+    _log.info("endpoints.submit: request recieved for( sequence: %s, species: %s, position: %s )"
                %(sequence, species_id, position))
 
     if not(sequence and position and species_id):
 
-        _log.error("submit request did not contain all required input data");
+        _log.error("endpoints.submit: submit request did not contain all required input data");
 
         return jsonify({'error': 'invalid input'}), 400
     try:
         position = int(position)
     except:
-        _log.error("submit request did not contain an integer position");
+        _log.error("endpoints.submit: submit request did not contain an integer position");
 
         return jsonify({'error': 'expected integer for position'}), 400
 
-    _log.debug("submitted( sequence: %s, species: %s, position: %i )"
+    _log.debug("endpoints.submit: submitted( sequence: %s, species: %s, position: %i )"
                %(sequence, species_id, position))
 
     from hommod_rest.tasks import create_model
     result = create_model.apply_async((sequence, species_id, position))
 
-    _log.info("created job %s" % result.task_id)
+    _log.debug("endpoints.submit: created job %s, current_status=%s" % 
+               (result.task_id, result.status))
 
     return jsonify({'jobid': result.task_id})
 
@@ -121,14 +121,19 @@ def status(jobid):
     :return: Either PENDING, STARTED, SUCCESS, FAILURE, RETRY, or REVOKED.
     """
 
-    from hommod_rest.application import celery
-    result = celery.AsyncResult(jobid)
+    _log.info ("endpoints.status request for job %s" % jobid)
 
-    response = {'status': result.status}
+#    from hommod_rest.application import celery
+    from celery import current_app as celery_app
+    result = celery_app.AsyncResult(jobid)
+    job_status = result.status
+
+    response = {'status': job_status}
     if result.failed():
-        response ['message'] = result.traceback
+        response ['message'] = str (result.traceback)
 
-    _log.info("Status for job {}: {}".format(jobid, result.status))
+    _log.debug ("endpoints.status: response for job %s: %s" %
+                (jobid, str (job_status)))
 
     return jsonify(response)
 
@@ -144,10 +149,11 @@ def get_model_file(jobid):
     :return: The pdb file created by the job. If the job status is not SUCCESS, this method returns an error.
     """
 
-    _log.info("model request for job %s" % jobid)
+    _log.info("endpoints: model request for job %s" % jobid)
 
-    from hommod_rest.application import celery
-    result = celery.AsyncResult(jobid)
+#    from hommod_rest.application import celery
+    from celery import current_app as celery_app
+    result = celery_app.AsyncResult(jobid)
     path = result.result
     if not path:
         # no model could be created
@@ -162,7 +168,7 @@ def get_model_file(jobid):
         _log.error(error)
         return jsonify({'error': error}), 500
 
-    _log.info("model successfully retrieved for job %s" % jobid)
+    _log.debug("endpoints: model successfully retrieved for job %s" % jobid)
 
     return Response(contents, mimetype='chemical/x-pdb')
 
@@ -180,8 +186,9 @@ def get_metadata(jobid):
 
     _log.debug("metadata request for job %s" % jobid)
 
-    from hommod_rest.application import celery
-    result = celery.AsyncResult(jobid)
+#    from hommod_rest.application import celery
+    from celery import current_app as celery_app
+    result = celery_app.AsyncResult(jobid)
     path = result.result
     if not path:
         return jsonify({})
@@ -194,6 +201,6 @@ def get_metadata(jobid):
         _log.error(error)
         return jsonify({'error': error}), 500
 
-    _log.debug("metadata successfully retrieved for job %s" % jobid)
+    _log.debug("endpoints: metadata successfully retrieved for job %s" % jobid)
 
     return jsonify(data)

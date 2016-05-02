@@ -672,10 +672,15 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
             else: # No chosen template, check all
 
+                _log.debug ('blasting range: %s\n%s' %
+                                (r, tarSeq [r.start:r.end]))
+
                 # iterate over blast hits:
                 hits = filterGoodHits(
                     blaster.templateBlast(tarSeq[r.start: r.end]))
-                for hitID in hits.keys():
+
+                _log.debug ('iterating %d blast hits' % len (hits))
+                for hitID in hits:
 
                     pdbid, pdbchain = getTemplatePDBIDandChain(hitID)
                     if _template_in_blacklist (pdbid):

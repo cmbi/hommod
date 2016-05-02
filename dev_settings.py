@@ -3,9 +3,6 @@ import os
 DEBUG = True
 RETRY_FAILURE = True
 
-CELERY_BROKER_URL = "amqp://guest@amq"
-CELERY_RESULT_BACKEND = 'redis://redis/1'
-
 # Paths
 MODELDIR = os.path.abspath('./models/')
 INTERPRODIR = os.path.abspath('./interpro/')

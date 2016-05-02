@@ -18,8 +18,11 @@ class SecStrProvider(object):
 
         from flask import current_app as flask_app
 
-        self.dssp_dir = flask_app.config ['DSSPDIR']
-        self.yasara_dir = flask_app.config ['YASARADIR']
+        if not self.dssp_dir:
+            self.dssp_dir = flask_app.config ['DSSPDIR']
+
+        if not self.yasara_dir:
+            self.yasara_dir = flask_app.config ['YASARADIR']
 
     @property
     def yasara_dir(self):

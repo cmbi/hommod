@@ -5,14 +5,14 @@ TESTING = False
 
 # Celery
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
-CELERY_BROKER_URL = 'amqp://guest@localhost'
+CELERY_BROKER_URL = 'amqp://guest@amq'
 CELERY_DEFAULT_QUEUE = 'hommod'
 CELERYD_CONCURRENCY = 20
 CELERY_QUEUES = (
     Queue('hommod', Exchange('hommod'), routing_key='hommod'),
 )
 CELERY_TRACK_STARTED = True
-CELERY_RESULT_BACKEND = 'redis://localhost/1'
+CELERY_RESULT_BACKEND = 'redis://redis/1'
 
 
 # Time it takes for a model to get outdated:
@@ -40,10 +40,10 @@ EXECUTIONDIR = '/data/tmp/'
 INTERPRODIR = '/data/interpro/'
 
 # Executables:
-KMAD = '/data/prog/pairwiseUBUNTU/MSA' # made by Joanna Lange
+KMAD = '/deps/hommod-kmad/hommod_kmad' # made by Joanna Lange
 BLASTP = '/usr/bin/blastp' # ncbi
 CLUSTAL = '/usr/bin/clustalw'
-INTERPROSCAN = '/data/prog/interproscan-5.8-49.0/interproscan.sh'
+INTERPROSCAN = '/deps/interproscan/interproscan-5.17-56.0/interproscan.sh'
 
 # Yasara installation:
 YASARADIR = '/deps/yasara/yasara/'

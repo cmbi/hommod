@@ -8,7 +8,7 @@ _log = logging.getLogger(__name__)
 
 
 def create_app(settings=None):
-    _log.info("Creating app")
+    _log.info("Creating flask app with settings: %s" % str (settings))
 
     app = Flask(__name__)
     app.config.from_object('hommod_rest.default_settings')
@@ -76,12 +76,14 @@ def create_app(settings=None):
 
 def create_celery_app (flask_app=None):  # pragma: no cover
 
-    if not flask_app:
-
-        _log.info("Creating celery app")
+    if flask_app:
+        _log.info("Creating celery app with given flask app")
+    else:
+        _log.info("Creating celery app with new flask app")
         flask_app = create_app ()
 
-    celery = Celery(__name__, backend=flask_app.config['CELERY_RESULT_BACKEND'],
+    celery = Celery(__name__,
+                    backend=flask_app.config['CELERY_RESULT_BACKEND'],
                     broker=flask_app.config['CELERY_BROKER_URL'])
     celery.conf.update(flask_app.config)
     TaskBase = celery.Task

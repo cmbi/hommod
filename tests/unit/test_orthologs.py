@@ -1,4 +1,4 @@
-from nose.tools import ok_, with_setup
+from nose.tools import eq_, ok_, with_setup
 
 from hommod_rest.services.model import modeler, findOrthologsToSeq
 from hommod_rest.services.blast import blaster
@@ -11,31 +11,30 @@ import os
 
 mydir = os.path.dirname (__file__)
 
-def setupApps():
+def _setup():
 
-    modeler.yasara_dir = config.YASARADIR
-    modeler.execution_root_dir = config.EXECUTIONDIR
-    modeler.model_root_dir = config.MODELDIR
-    modeler.template_blacklist = config.TEMPLATE_BLACKLIST
-
-    blaster.uniprotDB = os.path.join (mydir, "data/uniprot_sprot") # small version
+    blaster.uniprotDB = os.path.join (mydir, "data/mini") # small version
     blaster.templatesDB = config.TEMPLATESDB
     blaster.blastpExe = config.BLASTP
 
 
-def tearDown():
+def _tear_down():
     pass
 
-
-@with_setup(setupApps, tearDown)
+@with_setup(_setup, _tear_down)
 def test_1OCO_BOVIN():
 
-    tempobj, oligomerisation = modeler._set_template('1OCO')
-    chainOrder, templateChainSequences = modeler.getChainOrderAndSeqs(tempobj)
+    orthologs = findOrthologsToSeq (
+        "MFINRWLFSTNHKDIGTLYLLFGAWAGMVGTALSLLIRAELGQPGTLLGDDQI"
+        "YNVVVTAHAFVMIFFMVMPIMIGGFGNWLVPLMIGAPDMAFPRMNNMSFWLLP"
+        "PSFLLLLASSMVEAGAGTGWTVYPPLAGNLAHAGASVDLTIFSLHLAGVSSIL"
+        "GAINFITTIINMKPPAMSQYQTPLFVWSVMITAVLLLLSLPVLAAGITMLLTD"
+        "RNLNTTFFDPAGGGDPILYQHLFWFFGHPEVYILILPGFGMISHIVTYYSGKK"
+        "EPFGYMGMVWAMMSIGFLGFIVWAHHMFTVGMDVDTRAYFTSATMIIAIPTGV"
+        "KVFSWLATLHGGNIKWSPAMMWALGFIFLFTVGGLTGIVLANSSLDIVLHDTY"
+        "YVVAHFHYVLSMGAVFAIMGGFVHWFPLFSGYTLNDTWAKIHFAIMFVGVNMT"
+        "FFPQHFLGLSGMPRRYSDYPDAYTMWNTISSMGSFISLTAVMLMVFIIWEAFA"
+        "SKREVLTVDLTTTNLEWLNGCPPPYHTFEEPTYVNLK", 'HUMAN')
 
-    for chain in chainOrder:
-        _log.debug("finding orthologs for %s:\n%s"
-                   % (chain, templateChainSequences[chain]))
-        orthologs = findOrthologsToSeq(templateChainSequences[chain], 'BOVIN')
-
-        ok_(len(orthologs) > 0)
+    eq_ (type(orthologs), dict)
+    ok_ (len(orthologs) > 0)
