@@ -547,6 +547,35 @@ def getForbiddenRanges (interproDomains):
 
     return rs
 
+def _alignment_ok_for_range (r, tarSeq, nalign, pid, pcover):
+
+    # bHH: highly homologous to the whole target sequence
+    bHH = pid >= 80.0 and r.length() == len (tarSeq)
+
+    return pid >= minIdentity (nalign) and (pcover >= 80.0 or bHH)
+
+def _get_range_from (r, template, alignment, pid, pcover):
+
+    if pcover < 80.0:
+        m = getCoveredTargetRange(alignment)
+    else:
+        m = TargetRange(r.start, r.end)
+
+    m.template = template
+    m.pid = pid
+    m.pcover = pcover
+
+    return m
+
+class _Best_Hit_candidate (object):
+
+    def __init__ (self, template, alignment, pid, pcover):
+
+        self.template = template
+        self.alignment = alignment
+        self.pid = pid
+        self.pcover = pcover
+
 # This function tries to find the best possible sets of alignments,
 # given the target sequence, interpro ranges and optionally, a template object.
 # * Joins overlapping ranges
@@ -587,6 +616,8 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
         # merging must reduce the number of blasts/alignments:
         mergedSampleRanges = mergeSimilar (sampleRanges)
 
+        # Check the largest ranges first. If that yields, then the smaller
+        # ones don't matter.
         for r in sortLargestFirst (mergedSampleRanges):
 
             if r in checkedRanges:
@@ -605,14 +636,11 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                 continue
 
             # Template to pick when there are good choices
-            bestTemplate = None
-            bestAlignment = None
-            bestPID = 0.0
-            bestPCOVER = 0.0
+            bestHitForRange = None
 
-            # Template to pick when there's only a highly homologous one, with low coverage
-            lastResortTemplate = None
-            lastResortAlignment = None
+            # Template to pick when there's only a highly homologous one, with
+            # low coverage
+            lastResortForRange = None
 
             _log.debug ('trying range: %s' % r)
 
@@ -635,30 +663,18 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                     aligned['target'], aligned['template'])
                 pcover = (nalign * 100.0) / (r.end - r.start)
 
-                # bHH: highly homologous to the whole target sequence
-                bHH = pid >= 80.0 and r.length() == len (tarSeq)
+                if _alignment_ok_for_range (r, tarSeq, nalign, pid, pcover):
 
-                if pid >= minIdentity(nalign) and (pcover >= 80.0 or bHH):
+                    # This range made an OK alignment, so at least store it for
+                    # later usage:
+                    m = _get_range_from (r, templateSelected, alignment,
+                                     pid, pcover)
+                    okRanges.append (m)
 
-                    if pcover < 80.0:
-                        m = getCoveredTargetRange(aligned)
-                    else:
-                        m = TargetRange(r.start, r.end)
-
-                    m.template = templateSelected
-                    m.pid = pid
-                    m.pcover = pcover
-                    okRanges.append(m)
-
-                    if pcover >= 80.0:
-
-                        bestTemplate = templateSelected
-                        bestAlignment = aligned
-                        bestPID = pid
-                        bestPCOVER = pcover
-                    else:
-                        lastResortTemplate = templateSelected
-                        lastResortAlignment = aligned
+                    # Remember to use this alignment for this range:
+                    bestHitForRange = _Best_Hit_candidate (templateSelected,
+                                                           aligned,
+                                                           pid, pcover)
 
                     _log.debug ("domainalign: passing %d - %d alignment with %s:\n%s"
                                 % (r.start, r.end, templateSelected, alignmentRepr(
@@ -685,7 +701,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                     pdbid, pdbchain = getTemplatePDBIDandChain(hitID)
                     if _template_in_blacklist (pdbid):
 
-                        _log.debug ("not using %s as template" % pdbid + 
+                        _log.debug ("not using %s as template" % pdbid +
                                     ", because it's blacklisted")
                         continue
 
@@ -702,28 +718,20 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
                         aligned = {'target': alignment.queryalignment,
                                    'template': alignment.subjectalignment}
-
                         aligned ['midline'] = _get_midline (aligned ['target'],
                                                             aligned ['template'])
 
-                        nalign = alignment.getNumberResiduesAligned()
-                        pid = alignment.getIdentity()
-                        pcover = (nalign*100.0)/(r.end-r.start)
-
-                        # bHH: highly homologous to the whole target sequence
-                        bHH = pid >= 80.0 and r.length() == len(tarSeq)
+                        nalign = alignment.getNumberResiduesAligned ()
+                        pid = alignment.getIdentity ()
+                        pcover = (nalign * 100.0) / (r.end - r.start)
 
                         # minimal criteria to make a model:
-                        if pid >= minIdentity(nalign) and (pcover >= 80.0 or bHH):
+                        if _alignment_ok_for_range (r, tarSeq, nalign, pid, pcover):
 
-                            if pcover < 80.0:
-                                m = getCoveredTargetRange(aligned)
-                            else:
-                                m = TargetRange(r.start, r.end)
-
-                            m.template = template
-                            m.pid = pid
-                            m.pcover = pcover
+                            # This range made an OK alignment, so at least
+                            # store it for later usage:
+                            m = _get_range_from (r, template,
+                                                 alignment, pid, pcover)
                             okRanges.append(m)
 
                             _log.debug (
@@ -735,18 +743,25 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
                             # is this one better than previous hits?
                             if pcover >= 80.0 and \
-                                    (not bestTemplate or pid > bestPID):
+                                    (not bestHitForRange or 
+                                     pid > bestHitForRange.pid):
 
-                                bestPID = m.pid
-                                bestTemplate = m.template
-                                bestAlignment = aligned
-                                bestPCOVER = m.pcover
+                                # Remember to use this alignment for this
+                                # range:
+                                bestHitForRange = _Best_Hit_candidate (template,
+                                                                       aligned,
+                                                                       m.pid,
+                                                                       m.pcover)
                             else:
-                                lastResortTemplate = m.template
-                                lastResortAlignment = aligned
-
-                            break  # we're done with this template
-
+                                # Only use low-coverage alignments if no other
+                                # options.
+                                lastResortForRange = _Best_Hit_candidate (m.template,
+                                                                          aligned,
+                                                                          m.pid,
+                                                                          m.pcover)
+                            # we're done with this hitID, since we made
+                            # a full alignment.
+                            break
                         else:
                             _log.debug(
                                 ("domainalign: rejecting %d - %d blast hit with %s:\n"
@@ -757,109 +772,36 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                                                     'template']).strip (), pcover, pid))
 
 
-            if not bestTemplate and lastResortTemplate:
+            if not bestHitForRange and lastResortForRange:
+                bestHitForRange = lastResortForRange
 
-                bestTemplate = lastResortTemplate
-                bestAlignment = lastResortAlignment
-
-            if bestTemplate:  # we have a best hit for this range
+            if bestHitForRange:  # we have a best hit for this range
 
                 _log.debug ("pick %d - %d best hit %s:\n%s"
-                            % (r.start, r.end, bestTemplate,
-                               alignmentRepr (bestAlignment,
+                            % (r.start, r.end, bestHitForRange.template,
+                               alignmentRepr (bestHitForRange.alignment,
                                               ['target', 'midline',
                                                'template'])))
 
                 # Remove any smaller ranges that this one encloses:
-                i = 0
-                while i < len (bestRanges):
-                    if r.encloses (bestRanges[i]):
+                bestRanges = _remove_enclosing (r, bestRanges)
 
-                        _log.debug ("removing smaller best %d - %d, enclosed by larger %d - %d" % 
-                                    (bestRanges [i].start, bestRanges [i].end, r.start, r.end))
-
-                        # this one should replace the smaller one
-                        bestRanges = bestRanges[: i] + bestRanges[i + 1:]
-                    else:
-                        i += 1
-
-                aligned = bestAlignment
-
-                coverstart = tarSeq.find (aligned ['target'].replace ('-',''))
-                if coverstart < 0:
-                    raise Exception ("aligned target sequence not found in full target sequence")
-
-                m = getCoveredTargetRange (aligned) + coverstart
-                m.template = bestTemplate
-                m.alignment = bestAlignment
-                m.pid = bestPID
-                m.pcover = bestPCOVER
+                # Memorize this best hit:
+                m = _range_of_alignment_in (bestHitForRange.alignment, tarSeq)
+                m.template = bestHitForRange.template
+                m.alignment = bestHitForRange.alignment
+                m.pid = bestHitForRange.pid
+                m.pcover = bestHitForRange.pcover
                 bestRanges.append(m)
 
-        # See if we can merge ranges that have
-        # the same template in their blast hits:
-        checkedRanges = removeDoubles(checkedRanges + sampleRanges)
-        sampleRanges = []
-        dictSharedHits = findSharedHits(okRanges)
-        for template in dictSharedHits.keys():
+        # After iterating the sample ranges once, prepare for the next round:
+        sampleRanges = _clean_ranges_search_space (checkedRanges,
+                                                   sampleRanges,
+                                                   okRanges)
 
-            ranges = dictSharedHits[template]
 
-            for i in range(len(ranges)):
-                overlapping = ranges[i].findOverlapping(ranges)
-
-                for j in overlapping:
-                    if j == i:
-                        continue  # don't merge with itself
-
-                    poverlap, plendiff = overlapStats(ranges[i], ranges[j])
-                    dist = distance(ranges[i], ranges[j])
-
-                    merged = merge(ranges[i], ranges[j])
-
-                    # Merge only if:
-                    # - the ranges are close together
-                    # - the merge has not already been done
-                    # - the intersecting parts of the ranges align to
-                    #   the template in exactly the same way
-                    if dist < 10 and merged not in checkedRanges:
-
-                        try:
-                            if yasaraChain and \
-                                    yasaraChain.getTemplateID() == template:
-                                alignment1 = alignmentDAO.getAlignmentFromYasara(
-                                    ranges[i], yasaraChain.obj, yasaraChain.chainID)
-                                alignment2 = alignmentDAO.getAlignmentFromYasara(
-                                    ranges[j], yasaraChain.obj, yasaraChain.chainID)
-                                alignmentM = alignmentDAO.getAlignmentFromYasara(
-                                    merged, yasaraChain.obj, yasaraChain.chainID)
-                            else:
-                                alignment1 = alignmentDAO.getAlignment(
-                                    ranges[i], template)
-                                alignment2 = alignmentDAO.getAlignment(
-                                    ranges[j], template)
-                                alignmentM = alignmentDAO.getAlignment(
-                                    merged, template)
-                        except:
-                            # If kmad fails, then skip this one :(
-                            continue
-
-                        intersected = intersection(ranges[i], ranges[j])
-                        isectTempSeq1 = getTemplateSeqAtTargetPositions(
-                            alignment1, intersected.start - ranges[i].start,
-                            intersected.end - ranges[i].start)
-                        isectTempSeq2 = getTemplateSeqAtTargetPositions(
-                            alignment2, intersected.start - ranges[j].start,
-                            intersected.end - ranges[j].start)
-                        isectTempSeqM = getTemplateSeqAtTargetPositions(
-                            alignmentM, intersected.start - merged.start,
-                            intersected.end - merged.start)
-
-                        if isectTempSeq1 == isectTempSeqM and \
-                                isectTempSeq2 == isectTempSeqM:
-                            sampleRanges.append(merged)
-
-    # populate the returned list:
+    # Removed the metaphoric question marks from all the sample ranges.
+    # Populate the returned list of alignments to model with:
     returnAlignments = []
     bestRanges.sort()
     for r in bestRanges:
@@ -877,6 +819,101 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
     return returnAlignments
 
+def _range_of_alignment_in (alignment, tarSeq):
+
+    # We need to translate the alignment's range to the right,
+    # because it's only a fraction of the complete target sequence.
+
+    coverstart = tarSeq.find (alignment ['target'].replace ('-',''))
+    if coverstart < 0:
+        raise Exception ("aligned target sequence not " +
+                         "found in full target sequence")
+
+    return getCoveredTargetRange (alignment) + coverstart
+
+def _remove_enclosing (r, ranges):
+
+    i = 0
+    while i < len (ranges):
+        if r.encloses (ranges [i]):
+            _log.debug ("removing smaller %d - %d, " % 
+                        (ranges[i].start, ranges [i].end) +
+                        " enclosed by larger %d - %d" %
+                        (r.start, r.end))
+
+            # this one should replace the smaller one
+            ranges = ranges[: i] + ranges[i + 1:]
+        else:
+            i += 1
+
+    return ranges
+
+def _clean_ranges_search_space (checkedRanges, sampleRanges, okRanges):
+
+    # See if we can merge ranges that have
+    # the same template in their blast hits:
+    checkedRanges = removeDoubles (checkedRanges + sampleRanges)
+    sampleRanges = []
+    dictSharedHits = findSharedHits (okRanges)
+    for template in dictSharedHits:
+
+        ranges = dictSharedHits[template]
+
+        for i in range(len(ranges)):
+            overlapping = ranges[i].findOverlapping(ranges)
+
+            for j in overlapping:
+                if j == i:
+                    continue  # don't merge with itself
+
+                poverlap, plendiff = overlapStats(ranges[i], ranges[j])
+                dist = distance(ranges[i], ranges[j])
+
+                merged = merge(ranges[i], ranges[j])
+
+                # Merge only if:
+                # - the ranges are close together
+                # - the merge has not already been done
+                # - the intersecting parts of the ranges align to
+                #   the template in exactly the same way
+                if dist < 10 and merged not in checkedRanges:
+
+                    try:
+                        if yasaraChain and \
+                                yasaraChain.getTemplateID() == template:
+                            alignment1 = alignmentDAO.getAlignmentFromYasara(
+                                ranges[i], yasaraChain.obj, yasaraChain.chainID)
+                            alignment2 = alignmentDAO.getAlignmentFromYasara(
+                                ranges[j], yasaraChain.obj, yasaraChain.chainID)
+                            alignmentM = alignmentDAO.getAlignmentFromYasara(
+                                merged, yasaraChain.obj, yasaraChain.chainID)
+                        else:
+                            alignment1 = alignmentDAO.getAlignment(
+                                ranges[i], template)
+                            alignment2 = alignmentDAO.getAlignment(
+                                ranges[j], template)
+                            alignmentM = alignmentDAO.getAlignment(
+                                merged, template)
+                    except:
+                        # If kmad fails, then skip this one :(
+                        continue
+
+                    intersected = intersection(ranges[i], ranges[j])
+                    isectTempSeq1 = getTemplateSeqAtTargetPositions(
+                        alignment1, intersected.start - ranges[i].start,
+                        intersected.end - ranges[i].start)
+                    isectTempSeq2 = getTemplateSeqAtTargetPositions(
+                        alignment2, intersected.start - ranges[j].start,
+                        intersected.end - ranges[j].start)
+                    isectTempSeqM = getTemplateSeqAtTargetPositions(
+                        alignmentM, intersected.start - merged.start,
+                        intersected.end - merged.start)
+
+                    if isectTempSeq1 == isectTempSeqM and \
+                            isectTempSeq2 == isectTempSeqM:
+                        sampleRanges.append(merged)
+
+    return sampleRanges
 
 # This function checks to be sure tha two alignments are compatible
 # i.e. they don't overlap.
