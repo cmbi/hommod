@@ -84,7 +84,18 @@ class InteractionPicker (domainalign.Picker):
 
         self.yasaraChains = yasaraChains
         self.subjectChainID = subjectChainID
+
+        if subjectChainID not in yasaraChains:
+            raise Exception ("must provide all yasara chains of the complex, " +
+                             "including subject chain %s" % subjectChainID)
+
         self.interactionChainAlignments = interactionChainAlignments
+
+        for chainID in yasaraChains:
+            if chainID != subjectChainID:
+                if chainID not in interactionChainAlignments:
+                    raise Exception ("alignment not provided for " +
+                                     "interacting chain %s" % chainID)
 
     def accepts (self, targetID, subjectChainAlignment):
 
