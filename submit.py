@@ -21,5 +21,7 @@ pos = int (sys.argv[3])
 
 # Send http post request to server:
 
+url = 'http://localhost:7001/api'
+
 payload = {'sequence': seq, 'species_id': species, 'position': pos}
-response = requests.post('http://localhost:7001/api/submit/', data = payload)
+response = requests.post (url + '/submit/', data = payload)
