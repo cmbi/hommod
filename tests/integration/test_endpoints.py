@@ -8,18 +8,16 @@ _log.setLevel (logging.DEBUG)
 
 import requests
 
-def test_endpoints ():
+url = "http://localhost:7001/api"
 
-    url = "http://localhost:7001/api"
+def _test_func (sequence, species_id, position):
 
     _log.debug ("submitting..")
 
-    # Best a very easy request, that doesn't take much time!
     response = requests.post ('%s/submit/' % url,
-                            data={'position': 25,
-                                  'species_id': "CRAAB",
-                                  'sequence': \
-                        "TTCCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGDYAN"})
+                              data = {'position'  : position,
+                                      'species_id': species_id,
+                                      'sequence'  : sequence})
 
     jobid = response.json () ['jobid']
 
@@ -53,3 +51,9 @@ def test_endpoints ():
     response = requests.get ('%s/get_model_file/%s.pdb' % (url, jobid))
     response = requests.get ('%s/get_metadata/%s/' % (url, jobid))
 
+
+# Best use very easy requests, that don't take much time!
+
+def test_endpoints_1crn ():
+
+    _test_func ("TTCCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGDYAN", "CRAAB", 25)
