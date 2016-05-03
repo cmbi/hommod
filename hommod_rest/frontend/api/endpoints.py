@@ -123,9 +123,8 @@ def status(jobid):
 
     _log.info ("endpoints.status request for job %s" % jobid)
 
-#    from hommod_rest.application import celery
-    from celery import current_app as celery_app
-    result = celery_app.AsyncResult(jobid)
+    from hommod_rest.application import celery
+    result = celery.AsyncResult(jobid)
     job_status = result.status
 
     response = {'status': job_status}
@@ -151,9 +150,8 @@ def get_model_file(jobid):
 
     _log.info("endpoints: model request for job %s" % jobid)
 
-#    from hommod_rest.application import celery
-    from celery import current_app as celery_app
-    result = celery_app.AsyncResult(jobid)
+    from hommod_rest.application import celery
+    result = celery.AsyncResult(jobid)
     path = result.result
     if not path:
         # no model could be created
@@ -186,9 +184,8 @@ def get_metadata(jobid):
 
     _log.debug("metadata request for job %s" % jobid)
 
-#    from hommod_rest.application import celery
-    from celery import current_app as celery_app
-    result = celery_app.AsyncResult(jobid)
+    from hommod_rest.application import celery
+    result = celery.AsyncResult(jobid)
     path = result.result
     if not path:
         return jsonify({})
