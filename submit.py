@@ -25,3 +25,5 @@ url = 'http://localhost:7001/api'
 
 payload = {'sequence': seq, 'species_id': species, 'position': pos}
 response = requests.post (url + '/submit/', data = payload)
+
+print response.json () ['jobid']
