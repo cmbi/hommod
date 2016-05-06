@@ -15,6 +15,9 @@ build_sprot () {
     rsync rsync.ebi.ac.uk::pub/databases/uniprot/knowledgebase/uniprot_sprot.fasta.gz /data/fasta/uniprot_sprot.fasta.gz
     gunzip -f /data/fasta/uniprot_sprot.fasta.gz
 
+    # To prevent warnings ..
+    sed -i 's/^>\([^ ]\+\) .*$/>\1/' /data/fasta/uniprot_sprot.fasta
+
     makeblastdb -in /data/fasta/uniprot_sprot.fasta -dbtype prot -out /data/blast/uniprot_sprot
 }
 
@@ -22,6 +25,9 @@ build_trembl () {
 
     rsync rsync.ebi.ac.uk::pub/databases/uniprot/knowledgebase/uniprot_trembl.fasta.gz /data/fasta/uniprot_trembl.fasta.gz
     gunzip -f /data/fasta/uniprot_trembl.fasta.gz
+
+    # To prevent warnings ..
+    sed -i 's/^>\([^ ]\+\) .*$/>\1/' /data/fasta/uniprot_trembl.fasta
 
     makeblastdb -in /data/fasta/uniprot_trembl.fasta -dbtype prot -out /data/blast/uniprot_trembl
 }
