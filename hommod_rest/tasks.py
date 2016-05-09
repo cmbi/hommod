@@ -27,8 +27,8 @@ def create_model(sequence, species_id, residue_number):
 
     if len(paths) <= 0:
 
-        _log.debug ("create_model: running modeler for {} {} {}",
-                    sequence, species_id, residue_number)
+        _log.debug ("create_model: running modeler for {} {} {}"
+                    .format(sequence, species_id, residue_number))
 
         paths = modeler.modelProc (sequence, species_id, residue_number, False)
 
@@ -36,13 +36,14 @@ def create_model(sequence, species_id, residue_number):
 
     if len(paths) > 0:
 
-        _log.debug("create_model: selecting best model for {} {} {} out of {}".format (
-                   sequence, species_id, residue_number, paths))
+        _log.debug("create_model: selecting best model for {} {} {} out of {}"
+                   .format (sequence, species_id, residue_number, paths))
 
         best_model = select_best_model (sequence, species_id, residue_number)
 
-        _log.debug ("create_model: ending job with best model {} found for {} {} {}".format (
-                    best_model, sequence, species_id, residue_number))
+        _log.debug ("create_model: ending job with " + 
+                    "best model {} found for {} {} {}"
+                    .format (best_model, sequence, species_id, residue_number))
         return best_model
     else:
         _log.warn("create_model: 0 models created for  {} {} {}"
