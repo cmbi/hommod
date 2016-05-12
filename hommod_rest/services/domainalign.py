@@ -667,7 +667,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
                     # This range made an OK alignment, so at least store it for
                     # later usage:
-                    m = _get_range_from (r, templateSelected, alignment,
+                    m = _get_range_from (r, templateSelected, aligned,
                                      pid, pcover)
                     okRanges.append (m)
 
@@ -731,7 +731,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                             # This range made an OK alignment, so at least
                             # store it for later usage:
                             m = _get_range_from (r, template,
-                                                 alignment, pid, pcover)
+                                                 aligned, pid, pcover)
                             okRanges.append(m)
 
                             _log.debug (
