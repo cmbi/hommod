@@ -128,8 +128,8 @@ class InterproService (object):
         self._checkinit ()
         _log.info ("creating interpro file for sequence:\n%s" % sequence)
 
-        if not not self.storageDir:
-            raise Exception("interproExe and storageDir must be set")
+        if not self.storageDir:
+            raise Exception("storageDir must be set")
 
         if not os.path.isdir(self.storageDir):
             os.mkdir(self.storageDir)
