@@ -109,8 +109,8 @@ class InterproService (object):
 
         from flask import current_app as flask_app
 
-        if not self.interproExe:
-            self.interproExe = flask_app.config ['INTERPROSCAN']
+#        if not self.interproExe:
+#            self.interproExe = flask_app.config ['INTERPROSCAN']
 
         if not self.storageDir:
             self.storageDir = flask_app.config ['INTERPRODIR']
