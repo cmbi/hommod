@@ -25,32 +25,21 @@ MAIL_SMTP_PORT = 25
 MAIL_FROM = "hommod-rest@cmbi.umcn.nl"
 MAIL_TO = ["Coos.Baakman@radboudumc.nl", "Jon.Black@radboudumc.nl"]
 
+# Folders
 TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
-
-# Directory where dssp files are stored:
 DSSPDIR = '/mnt/cmbi4/dssp/'
-
-# Output directory to store models in:
 MODELDIR = '/data/models/'
-
-# Working directory for yasara:
-EXECUTIONDIR = '/data/tmp/'
-
-# Directory where interpro files are stored:
+EXECUTIONDIR = '/data/tmp/' # yasara execution dir
 INTERPRODIR = '/data/interpro/'
 
-# Executables:
+# Executables
 KMAD = '/deps/hommod-kmad/hommod_kmad' # made by Joanna Lange
 BLASTP = '/usr/bin/blastp' # ncbi
 CLUSTAL = '/usr/bin/clustalw'
 INTERPROSCAN = '/deps/interproscan/interproscan-5.17-56.0/interproscan.sh'
-
-# Yasara installation:
 YASARADIR = '/deps/yasara/yasara/'
 
-# Blast databases:
+# Blast databases
 TEMPLATESDB = '/data/blast/templates'
 UNIPROTDB = '/data/blast/uniprot'
-
-
 TEMPLATESFASTA = '/data/fasta/templates.fa'

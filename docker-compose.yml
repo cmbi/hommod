@@ -11,7 +11,7 @@ services:
             - "rabbitmq:amq"
             - "redis:redis"
         volumes:
-            - "/data:/data"
+            - "/srv/hommod:/data"
     hommod_celery:
         build:
             context: .
@@ -22,14 +22,14 @@ services:
             - "hommod_flask"
             - "hommod_databanks"
         volumes:
-            - "/data:/data"
-            - "/mnt/cmbi4:/mnt/cmbi4"
+            - "/srv/hommod:/data"
+            - "/srv/backup/cmbi4/data:/mnt/cmbi4"
     hommod_databanks:
         build:
             context: .
             dockerfile: Dockerfile-databanks
         volumes:
-            - "/data:/data"
+            - "/srv/hommod:/data"
     redis:
         image: redis
     rabbitmq:
