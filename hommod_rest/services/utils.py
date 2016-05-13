@@ -48,11 +48,15 @@ def extract_info(tar_path):
             if line.startswith('template:'):
                 info['template'] = line.split(':')[1].strip()
             else:
-                m = ptargetchain.match(line)
-                if m:
-                    _log.debug ("matched target chain line:\n%s" % line)
-                    chain = m.group(3)
-                    target = m.group(2)
+                i_target = line.find (' target ')
+                i_chain = line.find (' chain ')
+                if i_target != -1 and i_chain != -1:
+
+                    target = line [i_target:].split () [1]
+                    chain = line [i_chain:].split () [1]
+
+                    _log.debug ("matched target chain line:\n\"%s\"\n" % line +
+                                "chain=\'%s\', target=\'%s\'" % (chain, target))
                     info['targets'][chain] = target
 
     tf.close()
