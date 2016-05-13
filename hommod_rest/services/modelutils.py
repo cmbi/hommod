@@ -218,7 +218,7 @@ def hmmerscan (querySeq, db):
 # All sequence ids of a template blast database are expected to have this format.
 #   pdb|<pdbid>|<chain id>
 templateBlastHitPattern = \
-    re.compile (r"^pdb\|[0-9][A-Za-z0-9]{3}\|[A-Z0-9]{1,2}$")
+    re.compile (r"^pdb\|[0-9][A-Za-z0-9]{3}\|[A-Za-z0-9]{1,2}$")
 
 
 # Requests the list of C-alpha numbers, sequence and secondary structure for a yasara chain.

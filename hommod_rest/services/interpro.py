@@ -109,8 +109,8 @@ class InterproService (object):
 
         from flask import current_app as flask_app
 
-        if not self.interproExe:
-            self.interproExe = flask_app.config ['INTERPROSCAN']
+#        if not self.interproExe:
+#            self.interproExe = flask_app.config ['INTERPROSCAN']
 
         if not self.storageDir:
             self.storageDir = flask_app.config ['INTERPRODIR']
@@ -128,8 +128,8 @@ class InterproService (object):
         self._checkinit ()
         _log.info ("creating interpro file for sequence:\n%s" % sequence)
 
-        if not self.interproExe or not self.storageDir:
-            raise Exception("interproExe and storageDir must be set")
+        if not self.storageDir:
+            raise Exception("storageDir must be set")
 
         if not os.path.isdir(self.storageDir):
             os.mkdir(self.storageDir)

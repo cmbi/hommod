@@ -8,15 +8,22 @@ import sys
 import os
 import traceback
 import requests
+from hommod_rest.services.modelutils import parseFirstFastaSequence
 
 _log = logging.getLogger(__name__)
 
 if len(sys.argv) != 4:
-    print 'usage: %s [sequence] [species id] [position]' % sys.argv[0]
+    print 'usage: %s [sequence/fasta path] [species id] [position]' % sys.argv[0]
     sys.exit(1)
 
 species = sys.argv[2].upper()
-seq = sys.argv[1].upper()
+
+fasta = sys.argv[1]
+if os.path.isfile (fasta):
+    _id, seq = parseFirstFastaSequence (fasta)
+else:
+    seq = fasta.upper()
+
 pos = int (sys.argv[3])
 
 # Send http post request to server:

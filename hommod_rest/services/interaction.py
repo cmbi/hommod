@@ -91,11 +91,11 @@ class InteractionPicker (domainalign.Picker):
 
         self.interactionChainAlignments = interactionChainAlignments
 
-        for chainID in yasaraChains:
+        for chainID in interactionChainAlignments:
             if chainID != subjectChainID:
-                if chainID not in interactionChainAlignments:
-                    raise Exception ("alignment not provided for " +
-                                     "interacting chain %s" % chainID)
+                if chainID not in yasaraChains:
+                    raise Exception ("yasara chain not provided for %s"
+                                     % chainID)
 
     def accepts (self, targetID, subjectChainAlignment):
 
