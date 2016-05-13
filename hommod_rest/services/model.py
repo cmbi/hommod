@@ -723,6 +723,8 @@ class Modeler(object):
                 _log.debug("deleting not-interacting chain {} of {}"
                            .format(chainID, mainTemplateID.pdbac))
 
+                # Only delete protein, keep ligands and nucleic acids, for
+                # which no alignments are created.
                 self.yasara.DelMol('%s and protein' % chainID)
                 open(selectedTargetsPath, 'a') \
                     .write('\tdeleting not-interacting '
