@@ -813,7 +813,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
             returnAlignments.append((r, r.template, r.alignment))
         else:
             _log.debug ("throwing away earlier matched %d-%d with %s, because of low identity" %
-                        r.start, r.end, r.template)
+                        (r.start, r.end, r.template))
 
     _log.debug ("domainalign: returning %i alignments" % len(returnAlignments))
 
