@@ -137,6 +137,17 @@ def status(jobid):
     return jsonify(response)
 
 
+@bp.route('/result/<job_id>/', methods=['GET'])
+def result(job_id):
+    from hommod_rest.application import celery
+    result = celery.AsyncResult(job_id)
+    path = result.result
+    if not path:
+        return jsonify({'model_created': False})
+    else:
+        return jsonify({'model_created': True})
+
+
 @bp.route('/get_model_file/<jobid>.pdb', methods=['GET'])
 @bp.route('/get_model_file/<jobid>.PDB', methods=['GET'])
 def get_model_file(jobid):
