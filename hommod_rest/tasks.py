@@ -46,6 +46,9 @@ def create_model(sequence, species_id, residue_number):
                     .format (best_model, sequence, species_id, residue_number))
         return best_model
     else:
-        _log.warn("create_model: 0 models created for  {} {} {}"
+        # This isn't an error but I want to get an email when it happens so I
+        # can keep an eye on it. There are too many warn log statements to set
+        # the SMTP logger to send them.
+        _log.error("create_model: 0 models created for  {} {} {}"
                   .format(sequence, species_id, residue_number))
-	return ''
+        return ''
