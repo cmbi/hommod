@@ -355,9 +355,13 @@ class Modeler(object):
         chainOrder = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
         for i in range (len (chainOrder)):
             if i > 0 and chainOrder [i - 1] == chainOrder [i]:
-                self.yasara.JoinMol (
-                    '%s and obj %i and Protein' %
-                    (chainOrder[i], tempobj))
+                _log.debug ("chain %s occurs twice in %s, joining.." %
+                            (chainOrder[i], tempac))
+
+                atomnums = self.yasara.ListAtom ('mol %s and obj %i and Protein' %
+                                                 (chainOrder[i], tempobj), "ATOMNUM")
+                # Call JoinMol on the last molecule in YASARA's order:
+                self.yasara.JoinMol ("atom %s" % atomnums [-1])
 
         # YASARA also cleans when starting a modeling run, but
         # we need to make sure that we have the molecule in its
