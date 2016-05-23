@@ -2,7 +2,10 @@
 
 mkdir -p /data/fasta/ /data/blast/
 
-cp blacklisted_templates /data/blacklisted_templates
+# Only copy this file the first time, don't overwrite.
+if ! [ -f /data/blacklisted_templates ] ; then
+    cp blacklisted_templates /data/blacklisted_templates
+fi
 
 build_templates () {
 
