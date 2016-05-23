@@ -242,16 +242,19 @@ class Modeler(object):
 
         self._check_init()
 
-        with open (self.template_blacklist, 'a') as _file:
-            _file.write ('%s\n' % pdbid.lower ())
+        _log.warn ("adding template %s to blacklist %s" %
+                   (pdbid.lower (), self.template_blacklist))
+
+        with open (self.template_blacklist, 'a') as f:
+            f.write ('%s\n' % pdbid.lower ())
 
     def _template_in_blacklist (self, pdbid):
 
         self._check_init()
 
-        with open (self.template_blacklist, 'r') as _file:
-            pdbids = _file.read ().split ()
-            return pdbid in pdbids
+        with open (self.template_blacklist, 'r') as f:
+            pdbids = f.read ().split ()
+            return pdbid.lower () in pdbids
 
     # Use this function to get the template sequences:
     def getChainOrderAndSeqs(self, tempobj):
