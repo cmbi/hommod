@@ -393,8 +393,8 @@ class Modeler(object):
 
             if nocc > 1:
                 self._add_template_to_blacklist (tempac)
-                _log.error ("chain %s occurs more than once after cleaning" % chain)
-                raise Exception ("chain %s occurs more than once after cleaning" % chain)
+                _log.error ("chain %s in %s occurs more than once after cleaning" % (chain, tempac))
+                raise Exception ("chain %s in %s occurs more than once after cleaning" % (chain, tempac))
 
         _log.info ("initialized yasara template with %d chains" % len (chainOrder))
 
