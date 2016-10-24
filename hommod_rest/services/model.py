@@ -773,7 +773,7 @@ class Modeler(object):
     #   requireRes: a residue number in target sequence (1,2,3,..) that must be covered by the model.
     #   overwrite: true if old models must be rebuilt, false if they must be skipped
     def modelProc (self, mainTargetSeq, uniprotSpeciesName, requireRes=None,
-                  overwrite=False):
+                  overwrite=False, chosenTemplateID=None):
         self._check_init()
 
         _log.info ("building models for %s in %s" % (mainTargetSeq, uniprotSpeciesName))
@@ -820,8 +820,16 @@ class Modeler(object):
 
         # Blast and filter alignments that satisfy the given set of
         # domain ranges. No halfway cut domains are alowed!
-        mainTargetAlignments = \
-            domainalign.getAlignments (ranges, mainTargetSeq)
+        if chosenTemplateID:
+            tempobj, oligomerisation = \
+                self._set_template(chosenTemplateID.pdbac)
+            yasaraChain = YasaraChain(self.yasara, tempobj,
+                                      chosenTemplateID.chainID)
+            mainTargetAlignments = \
+                domainalign.getAlignments (ranges, mainTargetSeq, yasaraChain)
+        else:
+            mainTargetAlignments = \
+                domainalign.getAlignments (ranges, mainTargetSeq)
 
         time_after_alignments = time()
 
@@ -855,9 +863,15 @@ class Modeler(object):
                                mainDomainAlignment ['target'], mainDomainAlignment ['template']))
                 continue
 
-            modelname = '%s_%s_%i-%i' % \
-                (mainTargetID, uniprotSpeciesName,
-                 mainDomainRange.start + 1, mainDomainRange.end)
+            if chosenTemplateID:
+                modelname = '%s_%s_%i-%i_%s' % \
+                    (mainTargetID, uniprotSpeciesName,
+                     mainDomainRange.start + 1, mainDomainRange.end,
+                     str(chosenTemplateID))
+            else:
+                modelname = '%s_%s_%i-%i' % \
+                    (mainTargetID, uniprotSpeciesName,
+                     mainDomainRange.start + 1, mainDomainRange.end)
 
             _log.debug ("locking %s, running from %s" % (modelname, runDir))
 
