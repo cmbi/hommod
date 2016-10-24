@@ -158,7 +158,7 @@ def list_models_of(sequence, species, position):
             continue
 
         name = os.path.splitext(os.path.basename(f))[0]
-        ran = name.split('_')[-1].split('-')
+        ran = name.split('_')[2].split('-')
 
         start = int(ran[0])
         end = int(ran[1])
