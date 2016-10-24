@@ -8,6 +8,7 @@ import xml.etree.ElementTree as xmlElementTree
 from math import exp
 from time import sleep
 from hashlib import md5
+from urllib2 import urlopen
 
 
 def isCodedAA (aa1lettercode):
