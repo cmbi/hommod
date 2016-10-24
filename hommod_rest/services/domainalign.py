@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import logging
+import traceback
 
 from hommod_rest.services.blast import blaster
 from hommod_rest.services.secstr import secstr
@@ -655,7 +656,8 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                         yasaraChain.yasaramodule, r,
                         yasaraChain.obj, yasaraChain.chainID
                     )
-                except:
+                except Exception as e:
+                    _log.error("alignment failed:\n" + traceback.format_exc())
                     # If kmad fails, then skip this one :(
                     continue
 
