@@ -36,7 +36,7 @@ def init():
 
     from hommod_rest.services.align import aligner
     aligner.clustalExe = config.CLUSTAL
-    aligner.msaExe = config.MSA
+    aligner.kmadExe = config.KMAD
 
     import hommod_rest.services.modelutils
     hommod_rest.services.modelutils.TEMPLATESFASTA = config.TEMPLATESFASTA
