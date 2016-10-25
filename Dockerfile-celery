@@ -34,12 +34,13 @@ RUN chmod 755 /deps/yasara/install_yasara
 # causing docker to build the image successfully. The side-effect is that if
 # installation fails, we won't notice until we run yasara.
 RUN ./install_yasara -norun
+RUN rm /deps/yasara/install_yasara
 
 ENV PATH $PATH:/deps/yasara/yasara
 
 # Install berkely database libraries, needed by celery
 RUN apt-get install -y libdb-dev python-bsddb3
-RUN ln -s /usr/lib/python2.7/lib-dynload/_bsddb.x86_64-linux-gnu.so /usr/local/lib/python2.7/lib-dynload/_bsddb.so
+RUN ln -sf /usr/lib/python2.7/lib-dynload/_bsddb.x86_64-linux-gnu.so /usr/local/lib/python2.7/lib-dynload/_bsddb.so
 
 WORKDIR /usr/src/app
 ENV HOMMOD_REST_SETTINGS /usr/src/app/prod_settings.py
