@@ -8,6 +8,7 @@ import xml.etree.ElementTree as xmlElementTree
 from math import exp
 from time import sleep
 from hashlib import md5
+from urllib2 import urlopen
 
 
 def isCodedAA (aa1lettercode):
@@ -290,6 +291,9 @@ class YasaraChain(object):
         else:
             return self.getSequence() == other.getSequence()
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __hash__(self):
 
         return hash((self.objname,  self.chainID,  self.seq))
@@ -309,11 +313,16 @@ class TemplateID(object):
 
     def __eq__(self,  other):
 
+        if other is None:
+            return False
         if type(other) == str:
             return str(self) == other
         else:
             return self.pdbac.lower() == other.pdbac.lower() and \
                 self.chainID == other.chainID
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     # Important for comparing two templates:
     def __hash__(self):

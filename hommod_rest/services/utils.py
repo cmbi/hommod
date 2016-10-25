@@ -3,7 +3,7 @@
 from flask import current_app as flask_app
 
 from hommod_rest.services.modelutils import (parseFasta, getCoverageIdentity,
-                                             idForSeq)
+                                             idForSeq, TemplateID)
 from hommod_rest.services.align import aligner
 from time import time
 
@@ -64,6 +64,19 @@ def extract_info(tar_path):
     return info
 
 
+def extract_template_id(tar_path):
+
+    info = extract_info(tar_path)
+    if 'template' in info and '_' in info['template']:
+        pdbac, chain = info['template'].split('_')
+        template_id = TemplateID(pdbac, chain)
+        _log.debug("found template {} in {}".format(template_id, tar_path))
+        return template_id
+    else:
+        _log.debug("found no template in {}".format(tar_path))
+        return None
+
+
 def extract_alignment(tar_path):
 
     alignment = {}
@@ -95,11 +108,11 @@ def extract_model(tar_path):
     return contents
 
 
-def select_best_model(sequence, species, position):
+def select_best_model(sequence, species, position, template):
 
     bestID = 0.0
     best = None
-    for path in list_models_of (sequence, species, position):
+    for path in list_models_of (sequence, species, position, template):
 
         alignment = extract_alignment(path)
 
@@ -138,11 +151,12 @@ def select_best_model(sequence, species, position):
             best = path
             bestID = pid
 
-    _log.debug ("best model for %s %s %i is %s" % (idForSeq(sequence), species, position, best))
+    _log.debug ("best model for %s %s %i %s is %s" % (idForSeq(sequence),
+                species, position, str(template), best))
     return best
 
 
-def list_models_of(sequence, species, position):
+def list_models_of(sequence, species, position, template_id):
 
     h = idForSeq(sequence)
 
@@ -158,13 +172,23 @@ def list_models_of(sequence, species, position):
             continue
 
         name = os.path.splitext(os.path.basename(f))[0]
-        ran = name.split('_')[-1].split('-')
+
+        if template_id:
+            _log.debug("checking whether {} is the template of {}".format(
+                        template_id, f))
+            f_template_id = extract_template_id(f)
+            if f_template_id != template_id:
+                _log.debug("skipping {}, because it does not have {} as template, but {}"
+                            .format(f, template_id, f_template_id))
+                continue
+
+        name_params = name.split('_')
+        ran = name_params[2].split('-')
 
         start = int(ran[0])
         end = int(ran[1])
 
         if position >= start and position <= end:
-
             try:
                 model = extract_model (f)
                 alignment = extract_alignment (f)
