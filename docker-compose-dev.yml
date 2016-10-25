@@ -5,6 +5,8 @@ services:
         volumes:
             - ".:/usr/src/app"
     hommod_celery:
+        environment:
+            - HOMMOD_REST_SETTINGS=/usr/src/app/dev_settings.py
         volumes:
             - ".:/usr/src/app"
     hommod_databanks:
