@@ -428,7 +428,7 @@ class Modeler(object):
 
             # Document the match:
             open(selectedTargetsPath, 'w') \
-                .write('template: %s\n' % pdbac)
+                .write('template: %s_%s\n' % (pdbac, chainID))
 
             open (selectedTargetsPath, 'a') \
                 .write('\tmatched main target %s with chain %s\n' %
@@ -468,7 +468,8 @@ class Modeler(object):
             os.path.join(modelDir, 'selected-targets.txt')
 
         open(selectedTargetsPath, 'w') \
-            .write('template: %s\n' % mainTemplateID.pdbac)
+            .write('template: %s_%s\n' % (mainTemplateID.pdbac,
+                                          mainTemplateID.chain))
 
         # Load template and perform all necessary modifications:
         tempobj, oligomerisation = \

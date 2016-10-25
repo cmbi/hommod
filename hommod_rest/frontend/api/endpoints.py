@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request, Response, render_template
 
 from hommod_rest.services.utils import(extract_info, extract_alignment,
                                        extract_model, list_models_of)
+from hommod_rest.services.modelutils import TemplateID
 
 _log = logging.getLogger(__name__)
 
@@ -53,11 +54,26 @@ def has_model():
     sequence = request.form.get('sequence', None)
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
+    template_id = request.form.get('template_id', None)
 
-    _log.info("endpoints.has_model request recieved for( sequence: %s, species: %s, position: %s )"
-               %(sequence, species_id, position))
+    try:
+        position = int(position)
+    except:
+        _log.error("endpoints.submit: submit request did not contain an integer position");
 
-    paths = list_models_of(sequence, species_id, position)
+        return jsonify({'error': 'expected integer for position'}), 400
+
+    if type(template_id) == str and '-' in template_id:
+        ac, chain = template_id.split('-')
+        template_id = TemplateID(ac, chain)
+    else:
+        template_id = None
+
+    _log.info("endpoints.has_model request recieved for( " +
+              "sequence: %s, species: %s, position: %s ,template %s)"
+              %(sequence, species_id, position, template_id))
+
+    paths = list_models_of(sequence, species_id, position, template_id)
 
     if len(paths) > 0:
 
@@ -83,15 +99,19 @@ def submit():
     sequence = request.form.get('sequence', None)
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
+    template_id = request.form.get('template_id', None)
 
-    _log.info("endpoints.submit: request recieved for( sequence: %s, species: %s, position: %s )"
-               %(sequence, species_id, position))
+    _log.info(("endpoints.submit: request recieved for( " +
+               "sequence: %s, species: %s, position: %s, template: %s)")
+               %(sequence, species_id, position, template_id))
 
     if not(sequence and position and species_id):
 
         _log.error("endpoints.submit: submit request did not contain all required input data");
 
         return jsonify({'error': 'invalid input'}), 400
+
+    species_id = species_id.upper()
     try:
         position = int(position)
     except:
@@ -99,11 +119,18 @@ def submit():
 
         return jsonify({'error': 'expected integer for position'}), 400
 
-    _log.debug("endpoints.submit: submitted( sequence: %s, species: %s, position: %i )"
-               %(sequence, species_id, position))
+    if '_' in template_id:
+        ac, chain = template_id.split('_')
+        template_id = TemplateID(ac, chain)
+    else:
+        template_id = None
+
+    _log.debug("endpoints.submit: submitted ( sequence: %s, species: %s, position: %i, template: %s)"
+               %(sequence, species_id, position, str(template_id)))
 
     from hommod_rest.tasks import create_model
-    result = create_model.apply_async((sequence, species_id, position))
+    result = create_model.apply_async((sequence, species_id, position,
+                                       template_id))
 
     _log.debug("endpoints.submit: created job %s, current_status=%s" % 
                (result.task_id, result.status))

@@ -291,6 +291,9 @@ class YasaraChain(object):
         else:
             return self.getSequence() == other.getSequence()
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __hash__(self):
 
         return hash((self.objname,  self.chainID,  self.seq))
@@ -310,11 +313,16 @@ class TemplateID(object):
 
     def __eq__(self,  other):
 
+        if other is None:
+            return False
         if type(other) == str:
             return str(self) == other
         else:
             return self.pdbac.lower() == other.pdbac.lower() and \
                 self.chainID == other.chainID
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     # Important for comparing two templates:
     def __hash__(self):
