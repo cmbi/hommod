@@ -31,7 +31,7 @@ pos = int (sys.argv[3])
 url = 'http://localhost:7001/api'
 
 payload = {'sequence': seq, 'species_id': species, 'position': pos}
-if len(sys.argv) != 5:
+if len(sys.argv) == 5:
     payload['template_id'] = sys.argv[4]
 
 response = requests.post (url + '/submit/', data = payload)
