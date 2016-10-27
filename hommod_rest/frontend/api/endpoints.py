@@ -99,7 +99,7 @@ def submit():
     sequence = request.form.get('sequence', None)
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
-    template_id = request.form.get('template_id', None)
+    template_id = request.form.get('template_id', '')
 
     _log.info(("endpoints.submit: request recieved for( " +
                "sequence: %s, species: %s, position: %s, template: %s)")
