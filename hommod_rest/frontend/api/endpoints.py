@@ -99,7 +99,7 @@ def submit():
     sequence = request.form.get('sequence', None)
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
-    template_id = request.form.get('template_id', '')
+    template_id = request.form.get('template_id', None)
 
     _log.info(("endpoints.submit: request recieved for( " +
                "sequence: %s, species: %s, position: %s, template: %s)")
@@ -119,11 +119,9 @@ def submit():
 
         return jsonify({'error': 'expected integer for position'}), 400
 
-    if '_' in template_id:
+    if template_id and '_' in template_id:
         ac, chain = template_id.split('_')
         template_id = TemplateID(ac, chain)
-    else:
-        template_id = None
 
     _log.debug("endpoints.submit: submitted ( sequence: %s, species: %s, position: %i, template: %s)"
                %(sequence, species_id, position, str(template_id)))
