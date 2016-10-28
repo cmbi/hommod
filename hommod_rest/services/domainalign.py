@@ -648,7 +648,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
             if yasaraChain: # template already chosen outside this function
 
                 templateSelected = \
-                    TemplateID(yasaraChain.objname, yasaraChain.chainID)
+                        TemplateID(yasaraChain.objname[:4], yasaraChain.chainID)
 
                 # align only against 1 template:
                 try:

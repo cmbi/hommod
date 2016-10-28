@@ -119,11 +119,9 @@ def submit():
 
         return jsonify({'error': 'expected integer for position'}), 400
 
-    if '_' in template_id:
+    if template_id and '_' in template_id:
         ac, chain = template_id.split('_')
         template_id = TemplateID(ac, chain)
-    else:
-        template_id = None
 
     _log.debug("endpoints.submit: submitted ( sequence: %s, species: %s, position: %i, template: %s)"
                %(sequence, species_id, position, str(template_id)))

@@ -68,7 +68,11 @@ def extract_template_id(tar_path):
 
     info = extract_info(tar_path)
     if 'template' in info and '_' in info['template']:
-        pdbac, chain = info['template'].split('_')
+        try:
+            pdbac, chain = info['template'].split('_')
+        except:
+            _log.debug("found no template in {}".format(tar_path))
+            return None
         template_id = TemplateID(pdbac, chain)
         _log.debug("found template {} in {}".format(template_id, tar_path))
         return template_id

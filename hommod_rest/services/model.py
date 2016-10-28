@@ -469,7 +469,7 @@ class Modeler(object):
 
         open(selectedTargetsPath, 'w') \
             .write('template: %s_%s\n' % (mainTemplateID.pdbac,
-                                          mainTemplateID.chain))
+                                          mainTemplateID.chainID))
 
         # Load template and perform all necessary modifications:
         tempobj, oligomerisation = \
@@ -827,19 +827,19 @@ class Modeler(object):
             yasaraChain = YasaraChain(self.yasara, tempobj,
                                       chosenTemplateID.chainID)
             mainTargetAlignments = \
-                domainalign.getAlignments (ranges, mainTargetSeq, yasaraChain)
+                domainalign.getAlignments(ranges, mainTargetSeq, yasaraChain)
         else:
             mainTargetAlignments = \
-                domainalign.getAlignments (ranges, mainTargetSeq)
+                domainalign.getAlignments(ranges, mainTargetSeq)
 
         time_after_alignments = time()
 
-        time_log ("took %i seconds to compute and filter alignments\n" % (time_after_alignments - time_start))
+        time_log("took %i seconds to compute and filter alignments\n" % (time_after_alignments - time_start))
 
         if len (mainTargetAlignments) <= 0:
             _log.warn ('no alignments found for sequence:\n' + mainTargetSeq)
 
-        _log.info ('got %d alignments for sequence:\n%s' %(len (mainTargetAlignments), mainTargetSeq))
+        _log.info('got %d alignments for sequence:\n%s' %(len (mainTargetAlignments), mainTargetSeq))
 
         modelPaths = []
         failedModels = {}
@@ -886,6 +886,7 @@ class Modeler(object):
             lock = FileLock (lockfile_path)
 
             with lock:
+                _log.debug("locked {}".format(lockfile_path))
                 if os.path.isfile (modelArchive) and not overwrite:
 
                 # Found the archive for this model before starting, see if it's populated:
@@ -999,6 +1000,7 @@ class Modeler(object):
                 os.chdir (runDir)
 
             # end of this iteration, move over to next range ...
+        _log.debug("ending lock on {}".format(lockfile_path))
 
         # Clean up all runtime files:
         _log.debug ("modeling done, cleaning up %s" % runDir)
@@ -1009,13 +1011,11 @@ class Modeler(object):
                    (mainTargetSeq, uniprotSpeciesName))
 
         if realign:
-
             # Repeat once more with different templates:
             return self.modelProc (mainTargetSeq, uniprotSpeciesName,
                                    requireRes, overwrite)
 
         elif len (failedModels) > 0:
-
             s = ''
             for name in failedModels:
                 s += "%s:\n%s\n" % (name, failedModels [name])

@@ -12,8 +12,8 @@ from hommod_rest.services.modelutils import parseFirstFastaSequence
 
 _log = logging.getLogger(__name__)
 
-if len(sys.argv) != 4:
-    print 'usage: %s [sequence/fasta path] [species id] [position]' % sys.argv[0]
+if len(sys.argv) != 4 and len(sys.argv) != 5:
+    print 'usage: %s [sequence/fasta path] [species id] [position] [template id]' % sys.argv[0]
     sys.exit(1)
 
 species = sys.argv[2].upper()
@@ -31,6 +31,9 @@ pos = int (sys.argv[3])
 url = 'http://localhost:7001/api'
 
 payload = {'sequence': seq, 'species_id': species, 'position': pos}
+if len(sys.argv) == 5:
+    payload['template_id'] = sys.argv[4]
+
 response = requests.post (url + '/submit/', data = payload)
 
 print response.json () ['jobid']
