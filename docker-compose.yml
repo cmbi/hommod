@@ -1,36 +1,43 @@
 version: "2"
 
 services:
-    hommod_flask:
-        build:
-            context: .
-            dockerfile: Dockerfile-flask
-        ports:
-            - "7001:7001"
-        links:
-            - "rabbitmq:amq"
-            - "redis:redis"
-        volumes:
-            - "/srv/hommod:/data"
-    hommod_celery:
-        build:
-            context: .
-            dockerfile: Dockerfile-celery
-        links:
-            - "redis:redis"
-            - "rabbitmq:amq"
-            - "hommod_flask"
-            - "hommod_databanks"
-        volumes:
-            - "/srv/hommod:/data"
-            - "/srv/backup/cmbi4/data:/mnt/cmbi4"
-    hommod_databanks:
-        build:
-            context: .
-            dockerfile: Dockerfile-databanks
-        volumes:
-            - "/srv/hommod:/data"
-    redis:
-        image: redis
-    rabbitmq:
-        image: rabbitmq
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile-frontend
+    command: gunicorn -k gevent -b 0.0.0.0:7001 hommod_rest.application:app
+    environment:
+      - HOMMOD_REST_SETTINGS=/usr/src/app/prd_settings.py
+    ports:
+      - "7001:7001"
+    volumes:
+      - "/srv/hommod:/data"
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
+    command: celery -A hommod_rest.application:celery worker
+    depends_on:
+      - redis
+      - rabbitmq
+    environment:
+      - HOMMOD_REST_SETTINGS=/usr/src/app/prd_settings.py
+    volumes:
+      - "/srv/hommod:/data"
+      - "/srv/data:/mnt/cmbi4"
+
+  databanks:
+    build:
+      context: .
+      dockerfile: Dockerfile-databanks
+    command: ./usr/src/app/schedule_updates.bash
+    volumes:
+      - "/srv/hommod:/data"
+
+  redis:
+    image: redis
+
+  rabbitmq:
+    image: rabbitmq
