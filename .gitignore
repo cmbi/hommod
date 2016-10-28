@@ -61,3 +61,5 @@ tests/requests
 
 # yasara
 install_yasara*
+
+*.pdb
