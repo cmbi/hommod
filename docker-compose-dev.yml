@@ -1,16 +1,22 @@
 version: "2"
 
 services:
-    hommod_flask:
-        volumes:
-            - ".:/usr/src/app"
-    hommod_celery:
-        environment:
-            - HOMMOD_REST_SETTINGS=/usr/src/app/dev_settings.py
-        volumes:
-            - ".:/usr/src/app"
-    hommod_databanks:
-        environment:
-            - DEVELOPMENT=1
-        volumes:
-            - ".:/usr/src/app"
+
+  frontend:
+    command: watchmedo auto-restart -d /usr/src/app -p "*.py" -D -R -- gunicorn -k gevent -b 0.0.0.0:7001 hommod_rest.application:app
+    volumes:
+      - ".:/usr/src/app"
+
+  celery:
+    command: watchmedo auto-restart -d /usr/src/app -p "*.py" -D -R -- celery -A hommod_rest.application:celery worker
+    environment:
+      - HOMMOD_REST_SETTINGS=/usr/src/app/dev_settings.py
+    volumes:
+      - ".:/usr/src/app"
+
+  databanks:
+    command: watchmedo auto-restart -d /usr/src/app -p "*.py" -D -R -- ./usr/src/app/schedule_updates.bash
+    environment:
+      - DEVELOPMENT=1
+    volumes:
+      - ".:/usr/src/app"
