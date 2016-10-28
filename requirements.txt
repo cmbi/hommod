@@ -20,4 +20,5 @@ pytz==2015.2
 redis==2.10.3
 requests==2.6.0
 suds==0.4
+watchdog==0.8.3
 wsgiref==0.1.2

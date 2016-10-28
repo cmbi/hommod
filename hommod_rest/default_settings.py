@@ -5,14 +5,14 @@ TESTING = False
 
 # Celery
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
-CELERY_BROKER_URL = 'amqp://guest@amq'
+CELERY_BROKER_URL = 'amqp://guest@hommodrest_rabbitmq_1'
 CELERY_DEFAULT_QUEUE = 'hommod'
 CELERYD_CONCURRENCY = 20
 CELERY_QUEUES = (
     Queue('hommod', Exchange('hommod'), routing_key='hommod'),
 )
 CELERY_TRACK_STARTED = True
-CELERY_RESULT_BACKEND = 'redis://redis/1'
+CELERY_RESULT_BACKEND = 'redis://hommodrest_redis_1/1'
 
 
 # Time it takes for a model to get outdated:

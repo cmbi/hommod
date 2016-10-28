@@ -1,7 +1,0 @@
-FROM python:2.7-onbuild
-
-WORKDIR /usr/src/app
-EXPOSE 7001
-ENV HOMMOD_REST_SETTINGS /usr/src/app/dev_settings.py
-
-CMD ["gunicorn", "-k", "gevent", "-b", "0.0.0.0:7001", "hommod_rest.application:app"]
