@@ -2,36 +2,17 @@
 
 ## Pre-requisites
 
-* sudo apt-get install clustalw ncbi-blast+ rabbitmq-server python-pip
+* sudo apt-get install docker docker-compose
 
-* install interproscan
-  (see: https://code.google.com/p/interproscan/wiki/HowToDownload)
-  and set its path in the config file under INTERPROSCAN
-
-* install yasara
+* Download a linux yasara installation executable
   (see: http://www.yasara.org/update.htm)
-  and set the path of the yasara directory in the config file to YASARADIR
+  to the root directory and name it install_yasara_16.4.6
 
 ## Installation
 
-* create the blast database of templates by first by running:
-   makeXrayPDBFinder2Fasta.py and creating a fasta file, then run:
-   makeblastdb -in <fasta> -dbtype prot -parse_seqids -out <database>
-   finally, set the path of the database in the config file to TEMPLATESDB
-
-* create the blast database of uniprot species by first running:
-   uniprotSpecies.py and creating a fasta file, then run on each fasta:
-   makeblastdb -in <fasta> -dbtype prot -parse_seqids -out <database dir>
-   to create databases for each species
-   finally, set the path of the database directory in the config file to
-   SPECIESDBDIR
-
-* copy all cmbi dssp files from ftp://ftp.cmbi.ru.nl/pub/molbio/data/dssp/
-  and set the path to the dssp directory to DSSPDIR in the config file
-  (or nfs mount it)
-
-* compile Joanna Lange's secondary structure-dependent alignment tool
-  and set its path to MSA in the config file
-
-* set MODELDIR, INTERPRODIR and EXECUTIONDIR to the directories to store
-  models, interpro files and temporary runtime files respectively
+1. In docker-compose.yml, make sure that the volume /mnt/cmbi4 mounts to a
+   location where dssp files are stored. At the same time, make the volume
+   /data point to a location with sufficient disk space to store models and
+   blast databanks.
+2. Run 'docker-compose up' from the root directory or for testing purposes:
+   'docker-compose -f docker-compose.yml -f docker-compose-dev.yml'
