@@ -32,7 +32,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-databanks
-    command: ./usr/src/app/schedule_updates.bash
+    command: bash /usr/src/app/schedule_updates.bash
     volumes:
       - "/srv/hommod:/data"
 
