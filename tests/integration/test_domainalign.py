@@ -11,22 +11,24 @@ import hommod_rest.default_settings as config
 
 import os
 
-mydir = os.path.dirname (__file__)
+mydir = os.path.dirname(__file__)
+
 
 def setupApps():
-    interpro.interproExe = config.INTERPROSCAN
-    interpro.storageDir = config.INTERPRODIR
-    blaster.uniprotDB = os.path.join (mydir, "data/mini") # small version
-    blaster.templatesDB = config.TEMPLATESDB
-    blaster.blastpExe = config.BLASTP
+    interpro.interpro_exe = config.INTERPROSCAN
+    interpro.storage_dir = config.INTERPRODIR
+    blaster.uniprot_db = os.path.join(mydir, "data/mini")  # small version
+    blaster.templates_db = config.TEMPLATESDB
+    blaster.blastp_exe = config.BLASTP
     secstr.dssp_dir = config.DSSPDIR
     secstr.yasara_dir = config.YASARADIR
-    aligner.clustalExe = config.CLUSTAL
-    aligner.kmadExe = config.KMAD
+    aligner.clustal_exe = config.CLUSTAL
+    aligner.kmad_exe = config.KMAD
     modeler.yasara_dir = config.YASARADIR
     modeler.execution_root_dir = config.EXECUTIONDIR
     modeler.model_root_dir = config.MODELDIR
     modeler.template_blacklist = config.TEMPLATE_BLACKLIST
+
 
 def tearDown():
     pass
@@ -44,10 +46,10 @@ def test_1CBO_A():
         + "ALFDRINKANGTIYRYDLFGTQLKAFADDFCYNPLGGCVLGKATDDYGRVAGYKNLYV" \
         + "TDGSLIPGSVGVNPFVTITALAERNVERIIKQDV"
 
-    domainranges = interpro.getInterproDomainLocations (seq)
-    ok_ (len (domainranges) > 0)
+    domainranges = interpro.getInterproDomainLocations(seq)
+    ok_(len(domainranges) > 0)
 
-    alignments = getAlignments (domainranges, seq)
+    alignments = getAlignments(domainranges, seq)
 
-    eq_ (type (alignments), list)
-    ok_ (len (alignments) > 0)
+    eq_(type(alignments), list)
+    ok_(len(alignments) > 0)

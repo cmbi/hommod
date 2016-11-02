@@ -3,72 +3,77 @@ import logging
 import os
 import subprocess
 
-from glob import glob
-
 _log = logging.getLogger(__name__)
 
 
 # Uses ncbi blast executables: ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
 class BlastService(object):
 
-    def __init__(self):
+    def __init__(self, blastp_exe=None, templates_db=None, uniprot_db=None):
+        self._blastp_exe = blastp_exe
+        self._templates_db = templates_db
+        self._uniprot_db = uniprot_db
 
-        self.blastpExe = None
-        self.templatesDB = None
-        self.uniprotDB = None
+    @property
+    def blastp_exe(self):
+        return self._blastp_exe
 
-    def _checkinit (self):
+    @blastp_exe.setter
+    def blastp_exe(self, blastp_exe):
+        self._blastp_exe = blastp_exe
 
-        from flask import current_app as flask_app
+    @property
+    def templates_db(self):
+        return self._templates_db
 
-        if not self.templatesDB:
-            self.templatesDB = flask_app.config ['TEMPLATESDB']
+    @templates_db.setter
+    def templates_db(self, templates_db):
+        self._templates_db = templates_db
 
-        if not self.uniprotDB:
-            self.uniprotDB = flask_app.config ['UNIPROTDB']
+    @property
+    def uniprot_db(self):
+        return self._uniprot_db
 
-        if not self.blastpExe:
-            self.blastpExe = flask_app.config ['BLASTP']
+    @uniprot_db.setter
+    def uniprot_db(self, uniprot_db):
+        self._uniprot_db = uniprot_db
+
+    def _checkinit(self):
+        if not self.templates_db:
+            raise Exception("templates_db not set")
+
+        if not self.uniprot_db:
+            raise Exception("uniprot_db not set")
+
+        if not self.blastp_exe:
+            raise Exception("blastp_exe not set")
 
     # Blast against a database of templates:
-    def templateBlast (self, seq):
+    def templateBlast(self, seq):
 
-        self._checkinit ()
-        _log.info ("performing template blast for\n%s" %seq)
+        self._checkinit()
+        _log.info("performing template blast for\n%s" %seq)
 
-        if not self.templatesDB:
-            _log.error ("templates blast database not set")
-            raise Exception("templates blast database not set")
-
-        return self._blast (seq, self.templatesDB)
+        return self._blast(seq, self.templates_db)
 
     # Blast against a proteome of a given species:
-    def speciesBlast (self, seq, species):
+    def speciesBlast(self, seq, species):
 
-        self._checkinit ()
-        _log.info ("performing species blast for\n%s" %seq)
+        self._checkinit()
+        _log.info("performing species blast for\n%s" %seq)
 
-        if not self.uniprotDB:
-            _log.error ("Species database directory not set")
-            raise Exception("Species database directory not set")
-
-        hits = self._blast(seq, self.uniprotDB)
+        hits = self._blast(seq, self.uniprot_db)
 
         species_hits = {}
         for hitID in hits:
-            if hitID.endswith ('_' + species):
-                species_hits [hitID] = hits [hitID]
+            if hitID.endswith('_' + species):
+                species_hits[hitID] = hits[hitID]
 
         return species_hits
 
-
     def _blast(self, querySeq, db):
 
-        self._checkinit ()
-        if not self.blastpExe:
-
-            _log.error ('blastp executable not set')
-            raise Exception ('blastp executable not set')
+        self._checkinit()
 
         queryFile = '/tmp/query%i.fasta' % (os.getpid())
         writeFasta({'query': querySeq}, queryFile)
@@ -76,35 +81,35 @@ class BlastService(object):
         outFile = '/tmp/results%i.xml' % (os.getpid())
 
         # Run blastp and make sure it gives xml output format:
-        cs = [self.blastpExe, '-query', queryFile, '-db', db,
+        cs = [self.blastp_exe, '-query', queryFile, '-db', db,
               '-outfmt', '5', '-out', outFile]
         _log.debug(str(cs))
 
         try:
-            feedback = subprocess.check_output (cs, stderr=subprocess.STDOUT)
+            feedback = subprocess.check_output(cs, stderr=subprocess.STDOUT)
 
-            xmlstr = open(outFile, 'r').read ()
+            xmlstr = open(outFile, 'r').read()
 
         except subprocess.CalledProcessError as e:
 
-            _log.error ("blast failed:\n%s" % e.output)
-            raise Exception ("blast failed:\n%s" % e.output)
+            _log.error("blast failed:\n%s" % e.output)
+            raise Exception("blast failed:\n%s" % e.output)
 
         finally:
-            if os.path.isfile (queryFile):
-                os.remove (queryFile)
+            if os.path.isfile(queryFile):
+                os.remove(queryFile)
 
-            if os.path.isfile (outFile):
-                os.remove (outFile)
+            if os.path.isfile(outFile):
+                os.remove(outFile)
 
-        if len (xmlstr) <= 0:
+        if len(xmlstr) <= 0:
 
-            _log.error ("no blast output:\n%s" % (feedback))
-            raise Exception ("no blast output:\n%s" % (feedback))
+            _log.error("no blast output:\n%s" % (feedback))
+            raise Exception("no blast output:\n%s" % (feedback))
 
-        hits = parseBlastXML (xmlstr)
+        hits = parseBlastXML(xmlstr)
 
-        _log.info ("found %d hits for %s in %s" %(len (hits), querySeq, db))
+        _log.info("found %d hits for %s in %s" %(len(hits), querySeq, db))
 
         return hits
 

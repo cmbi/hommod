@@ -1,13 +1,11 @@
 import os
 from filelock import FileLock
-from modelutils import idForSeq, writeFasta
+from modelutils import idForSeq
 import xml.etree.ElementTree as xmlElementTree
 import bz2
-import subprocess
 import urllib
 import urllib2
 import platform
-import sys
 from time import sleep
 from glob import glob
 
@@ -15,6 +13,7 @@ import logging
 _log = logging.getLogger(__name__)
 
 _interpro_base_url = 'http://www.ebi.ac.uk/Tools/services/rest/iprscan5'
+
 
 def _interpro_user_agent():
 
@@ -29,33 +28,35 @@ def _interpro_user_agent():
     # Prepend client specific agent string.
     user_agent = 'EBI-Sample-Client/%s (%s; Python %s; %s) %s' % (
 
-        clientVersion, os.path.basename( __file__ ),
+        clientVersion, os.path.basename(__file__),
         platform.python_version(), platform.system(),
         urllib_agent
     )
 
     return user_agent
 
-def _interpro_post (url, data):
 
-    requestData = urllib.urlencode (data)
+def _interpro_post(url, data):
+
+    requestData = urllib.urlencode(data)
 
     # Set the HTTP User-agent.
-    user_agent = _interpro_user_agent ()
-    http_headers = { 'User-Agent' : user_agent }
-    req = urllib2.Request (url, None, http_headers)
+    user_agent = _interpro_user_agent()
+    http_headers = {'User-Agent': user_agent}
+    req = urllib2.Request(url, None, http_headers)
 
     # Make the submission (HTTP POST).
-    reqH = urllib2.urlopen (req, requestData)
-    result = reqH.read ()
-    reqH.close ()
+    reqH = urllib2.urlopen(req, requestData)
+    result = reqH.read()
+    reqH.close()
 
     return result
 
-def _interpro_get (url):
 
-    user_agent = _interpro_user_agent ()
-    http_headers = { 'User-Agent' : user_agent }
+def _interpro_get(url):
+
+    user_agent = _interpro_user_agent()
+    http_headers = {'User-Agent': user_agent}
     req = urllib2.Request(url, None, http_headers)
 
     # Make the request (HTTP GET).
@@ -65,7 +66,8 @@ def _interpro_get (url):
 
     return result
 
-def _interpro_submit (sequence):
+
+def _interpro_submit(sequence):
 
     params = {
         'email': "c.baakman@radboudumc.nl",
@@ -74,15 +76,16 @@ def _interpro_submit (sequence):
         'pathways': False
     }
 
-    return _interpro_post (_interpro_base_url + '/run/', params)
+    return _interpro_post(_interpro_base_url + '/run/', params)
 
-def _interpro_get_status (jobid):
 
-    return _interpro_get (_interpro_base_url + '/status/' + jobid)
+def _interpro_get_status(jobid):
+    return _interpro_get(_interpro_base_url + '/status/' + jobid)
 
-def _interpro_get_result (jobid):
 
-    return _interpro_get (_interpro_base_url + '/result/' + jobid + '/xml')
+def _interpro_get_result(jobid):
+    return _interpro_get(_interpro_base_url + '/result/' + jobid + '/xml')
+
 
 class InterproDomain(object):
 
@@ -96,90 +99,83 @@ class InterproDomain(object):
 
 _MAX_INTERPRO_JOBS = 30
 
+
 # Uses interproscan to obtain data: https://code.google.com/p/interproscan/wiki/HowToDownload
 class InterproService (object):
+    def __init__(self, storage_dir=None):
+        self._storage_dir = storage_dir
 
-    def __init__(self):
+    @property
+    def storage_dir(self):
+        return self._storage_dir
 
-        self.interproExe = None
-        self.storageDir = None
-        self._njobs = 0
+    @storage_dir.setter
+    def storage_dir(self, storage_dir):
+        self._storage_dir = storage_dir
 
-    def _checkinit (self):
+    def _checkinit(self):
+        if not self._storage_dir:
+            raise Exception("storage_dir not set")
 
-        from flask import current_app as flask_app
+    def _interpro_lockfile_path(self, ID):
 
-#        if not self.interproExe:
-#            self.interproExe = flask_app.config ['INTERPROSCAN']
+        return os.path.join(self.storage_dir, 'lock_%s' % ID)
 
-        if not self.storageDir:
-            self.storageDir = flask_app.config ['INTERPRODIR']
+    def _interpro_count_lockfiles(self):
 
-    def _interpro_lockfile_path (self, ID):
-
-        return os.path.join (self.storageDir, 'lock_%s' % ID)
-
-    def _interpro_count_lockfiles (self):
-
-        return len (glob (os.path.join (self.storageDir, "lock_*")))
+        return len(glob(os.path.join(self.storage_dir, "lock_*")))
 
     def _create_data_file(self, sequence):
 
-        self._checkinit ()
-        _log.info ("creating interpro file for sequence:\n%s" % sequence)
+        self._checkinit()
+        _log.info("creating interpro file for sequence:\n%s" % sequence)
 
-        if not self.storageDir:
-            raise Exception("storageDir must be set")
+        if not os.path.isdir(self.storage_dir):
+            os.mkdir(self.storage_dir)
 
-        if not os.path.isdir(self.storageDir):
-            os.mkdir(self.storageDir)
+        ID = idForSeq(sequence)  # unique
 
-        ID = idForSeq (sequence) # unique
-
-        outfilepath = os.path.join(self.storageDir, '%s.xml.bz2' % ID)
-        if os.path.isfile (outfilepath):
+        outfilepath = os.path.join(self.storage_dir, '%s.xml.bz2' % ID)
+        if os.path.isfile(outfilepath):
             return outfilepath
 
         # We don't want two processes to build the same interpro file
         # at the same time. So use a lock file:
-        lock = FileLock(self._interpro_lockfile_path (ID))
+        lock = FileLock(self._interpro_lockfile_path(ID))
 
         with lock:
-
             # Wait for a place in line to start an interpro job
-            while self._interpro_count_lockfiles () >= _MAX_INTERPRO_JOBS:
-
-                sleep (10)
+            while self._interpro_count_lockfiles() >= _MAX_INTERPRO_JOBS:
+                sleep(10)
 
             # Wait for the interpro server to finish:
-            jobid = _interpro_submit (sequence)
+            jobid = _interpro_submit(sequence)
             while True:
 
-                status = _interpro_get_status (jobid)
-                _log.debug ("intepro job status: " + status)
+                status = _interpro_get_status(jobid)
+                _log.debug("intepro job status: " + status)
 
                 if status in ['RUNNING', 'PENDING', 'STARTED']:
 
-                    sleep (10)
+                    sleep(10)
                 else:
                     break
 
             if status != 'FINISHED':
-                raise Exception ("inteproscan job status = " + status)
+                raise Exception("inteproscan job status = " + status)
 
-            xmlstr = _interpro_get_result (jobid)
+            xmlstr = _interpro_get_result(jobid)
 
             # Write results to file
-            bz2.BZ2File (outfilepath, 'w').write (xmlstr)
+            bz2.BZ2File(outfilepath, 'w').write(xmlstr)
 
             return outfilepath
-
 
     # Creates an interpro file for the given sequence and parses it.
     def getInterproDomainLocations(self, sequence):
 
-        self._checkinit ()
-        _log.info ("getting interpro domains for sequence:\n%s" % sequence)
+        self._checkinit()
+        _log.info("getting interpro domains for sequence:\n%s" % sequence)
 
         filepath = self._create_data_file(sequence)
         ID = idForSeq(sequence)
@@ -187,8 +183,8 @@ class InterproService (object):
         # Get the xml tag of type protein and the given sequence ID:
         protein = None
         s = ''
-        root = xmlElementTree.fromstring (bz2.BZ2File (filepath, 'r').read())
-        for p in root.iter ():
+        root = xmlElementTree.fromstring(bz2.BZ2File(filepath, 'r').read())
+        for p in root.iter():
             if p.tag.endswith('}protein') or p.tag == 'protein':
 
                 protein = p
@@ -236,8 +232,8 @@ class InterproService (object):
 
             for location in locations:
 
-                start = int(location.attrib['start'])-1
-                end = int(location.attrib['end'])-1
+                start = int(location.attrib['start']) - 1
+                end = int(location.attrib['end']) - 1
                 length = end - start
 
                 # If the range is very short, it might not be an actual domain.
@@ -245,7 +241,7 @@ class InterproService (object):
                 if length > 20 or bShortDomain:
                     domains.append(InterproDomain(start, end, ac))
 
-        _log.info ("successfully retrieved interpro domains for sequence:\n%s" % sequence)
+        _log.info("successfully retrieved interpro domains for sequence:\n%s" % sequence)
 
         return domains
 
