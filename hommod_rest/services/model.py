@@ -1000,7 +1000,7 @@ class Modeler(object):
                 os.chdir (runDir)
 
             # end of this iteration, move over to next range ...
-        _log.debug("ending lock on {}".format(lockfile_path))
+            _log.debug("ending lock on {}".format(lockfile_path))
 
         # Clean up all runtime files:
         _log.debug ("modeling done, cleaning up %s" % runDir)
