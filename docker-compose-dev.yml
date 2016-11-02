@@ -15,7 +15,7 @@ services:
       - ".:/usr/src/app"
 
   databanks:
-    command: watchmedo auto-restart -d /usr/src/app -p "*.py" -D -R -- ./usr/src/app/schedule_updates.bash
+    command: watchmedo auto-restart -d /usr/src/app -p "*.py" -D -R -- bash /usr/src/app/schedule_updates.bash
     environment:
       - DEVELOPMENT=1
     volumes:
