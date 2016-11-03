@@ -4,16 +4,16 @@ from nose.tools import with_setup
 import hommod_rest.default_settings as config
 
 
-def _setup():
+def setup():
     aligner.clustal_exe = config.CLUSTAL
     aligner.kmad_exe = config.KMAD
 
 
-def _tear_down():
+def teardown():
     pass
 
 
-@with_setup(_setup, _tear_down)
+@with_setup(setup, teardown)
 def test_clustal():
 
     toalign = {"s1": "AAACCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGSDYAN",
@@ -24,7 +24,7 @@ def test_clustal():
     assert "s2" in aligned
 
 
-@with_setup(_setup, _tear_down)
+@with_setup(setup, teardown)
 def test_kmad():
 
     targetseq = "AAACCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGSDYAN"
