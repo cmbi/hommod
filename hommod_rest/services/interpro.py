@@ -14,7 +14,6 @@ _log = logging.getLogger(__name__)
 
 _interpro_base_url = 'http://www.ebi.ac.uk/Tools/services/rest/iprscan5'
 
-
 def _interpro_user_agent():
 
     # Agent string for urllib2 library.
