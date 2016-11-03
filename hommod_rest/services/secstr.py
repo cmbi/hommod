@@ -6,10 +6,11 @@ import logging
 _log = logging.getLogger(__name__)
 
 
-# Secondary structure can either be taken from dssp or yasara.
-# Use yasara when dssp is not available.
-class SecStrProvider(object):
-
+class SecondaryStructureProvider(object):
+"""
+Secondary structure can either be taken from dssp or yasara.
+Use yasara when dssp is not available.
+"""
     def __init__(self, dssp_dir=None, yasara_dir=None):
 
         self._dssp_dir = dssp_dir
@@ -46,7 +47,7 @@ class SecStrProvider(object):
         if not self._yasara_dir:
             raise Exception("yasara_dir is not set")
 
-    def hasSecStr(self, template):
+    def has_secondary_structure(self, template):
         _log.info("checking if %s_%s has secondary structure" % (template.pdbac, template.chainID))
 
         self._check_config()
@@ -76,4 +77,4 @@ class SecStrProvider(object):
 
             return False
 
-secstr = SecStrProvider()
+secstr = SecondaryStructureProvider()

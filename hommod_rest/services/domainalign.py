@@ -708,7 +708,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
                         continue
 
                     template = TemplateID(pdbid, pdbchain)
-                    if not secstr.hasSecStr(template):
+                    if not secstr.has_secondary_structure(template):
 
                         _log.warn("domainalign: no secondary structure for %s"
                                   % template)
