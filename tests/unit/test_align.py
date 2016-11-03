@@ -15,7 +15,6 @@ def teardown():
 
 @with_setup(setup, teardown)
 def test_clustal():
-
     toalign = {"s1": "AAACCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGSDYAN",
                "s2": "TTCCPSIVASNVCRLPGTPEAICATYTGCIIIPGATCPGDYA"}
 
@@ -26,7 +25,6 @@ def test_clustal():
 
 @with_setup(setup, teardown)
 def test_kmad():
-
     targetseq = "AAACCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGSDYAN"
     templateseq = "TTCCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGDYAN"
     templatesecstr = " EE SSHHHHHHHHHHHTTT  HHHHHHHHS EE SSS   GGG  "
