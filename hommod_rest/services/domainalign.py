@@ -695,7 +695,7 @@ def getAlignments (interproDomains, tarSeq, yasaraChain=None):
 
                 # iterate over blast hits:
                 hits = filterGoodHits(
-                    blaster.templateBlast(tarSeq[r.start: r.end]))
+                    blaster.blast_templates(tarSeq[r.start: r.end]))
 
                 _log.debug ('iterating %d blast hits' % len (hits))
                 for hitID in hits:

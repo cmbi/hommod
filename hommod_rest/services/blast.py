@@ -48,16 +48,20 @@ class BlastService(object):
         if not self.blastp_exe:
             raise Exception("blastp_exe not set")
 
-    # Blast against a database of templates:
-    def templateBlast(self, seq):
+    def blast_templates(self, seq):
+        """
+        Blast against a database of templates.
+        """
 
         self._checkinit()
         _log.info("performing template blast for\n%s" %seq)
 
         return self._blast(seq, self.templates_db)
 
-    # Blast against a proteome of a given species:
-    def speciesBlast(self, seq, species):
+    def blast_species(self, seq, species):
+        """
+        Blast against a proteome of a given species.
+        """
 
         self._checkinit()
         _log.info("performing species blast for\n%s" %seq)
@@ -72,7 +76,6 @@ class BlastService(object):
         return species_hits
 
     def _blast(self, querySeq, db):
-
         self._checkinit()
 
         queryFile = '/tmp/query%i.fasta' % (os.getpid())
@@ -87,14 +90,10 @@ class BlastService(object):
 
         try:
             feedback = subprocess.check_output(cs, stderr=subprocess.STDOUT)
-
             xmlstr = open(outFile, 'r').read()
-
         except subprocess.CalledProcessError as e:
-
             _log.error("blast failed:\n%s" % e.output)
             raise Exception("blast failed:\n%s" % e.output)
-
         finally:
             if os.path.isfile(queryFile):
                 os.remove(queryFile)
@@ -103,7 +102,6 @@ class BlastService(object):
                 os.remove(outFile)
 
         if len(xmlstr) <= 0:
-
             _log.error("no blast output:\n%s" % (feedback))
             raise Exception("no blast output:\n%s" % (feedback))
 

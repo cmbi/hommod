@@ -1234,7 +1234,7 @@ def selectLongestAligned(hits, minLen=0):
 # (a sequence that looks almost like it, except for some deletions)
 # It makes sure the isoform comes from the given species.
 def getIsoforms (seq, uniprotSpeciesName):
-    hits = blaster.speciesBlast(seq, uniprotSpeciesName)
+    hits = blaster.blast_species(seq, uniprotSpeciesName)
 
     selected = {}
     for hitID in hits:
@@ -1365,7 +1365,7 @@ def adjustTargetSequence (targetseq, templateseq, uniprotSpeciesName):
 def findOrthologsToSeq (seq, uniprotSpeciesName):
     orthologs = {}
 
-    hits = blaster.speciesBlast(seq, uniprotSpeciesName)
+    hits = blaster.blast_species(seq, uniprotSpeciesName)
     for hitID in hits.keys():
         for alignment in hits[hitID]:
 
