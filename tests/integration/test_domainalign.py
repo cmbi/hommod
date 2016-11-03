@@ -14,7 +14,7 @@ import os
 mydir = os.path.dirname(__file__)
 
 
-def setupApps():
+def setup():
     interpro.interpro_exe = config.INTERPROSCAN
     interpro.storage_dir = config.INTERPRODIR
     blaster.uniprot_db = os.path.join(mydir, "data/mini")  # small version
@@ -30,11 +30,11 @@ def setupApps():
     modeler.template_blacklist = config.TEMPLATE_BLACKLIST
 
 
-def tearDown():
+def teardown():
     pass
 
 
-@with_setup(setupApps, tearDown)
+@with_setup(setup, teardown)
 def test_1CBO_A():
     seq = "GYVPAVVIGTGYGAAVSALRLGEAGVQTLMLEMGQLWNQPGPDGNIFCGMLNPDKRSS" \
         + "WFKNRTEAPLGSFLWLDVVNRNIDPYAGVLDRVNYDQMSVYVGRGVGGGSLVNGGMAV" \
