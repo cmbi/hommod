@@ -47,7 +47,7 @@ def selectHighestSeqID (seq, fromd):
         # Aligning them all in one run can be very time consuming !
         # So align in pairs
 
-        aligned = aligner.clustalAlign({qid: seq, homolog: fromd[homolog]})
+        aligned = aligner.clustal_align({qid: seq, homolog: fromd[homolog]})
         pid = getPercentageIdentity(aligned[qid], aligned[homolog])
 
         if pid > bestID:
@@ -547,7 +547,7 @@ class Modeler(object):
                         .format(templateChainSeq, templateChainSecStr))
 
             alignments [chainID] = aligner \
-                .kmadAlign(templateChainSeq,
+                .kmad_align(templateChainSeq,
                           templateChainSecStr, mainDomainSeq)
             open (selectedTargetsPath, 'a') \
                 .write('\tmodeling main target %s on chain %s\n' %
@@ -634,7 +634,7 @@ class Modeler(object):
 
                     # If we have targets with extremely high coverage,
                     # then we don't need interpro
-                    alignment = aligner.kmadAlign(
+                    alignment = aligner.kmad_align(
                         yasaraChain.seq,
                         yasaraChain.secstr,
                         potentialTargetSeqs[targetID])
@@ -701,7 +701,7 @@ class Modeler(object):
 
                         # Realign once more using the complete target
                         # range that we found by joining the alignments:
-                        alignment = aligner.kmadAlign(
+                        alignment = aligner.kmad_align(
                             templateChainSeq, templateChainSecStr,
                             domain_target_seq)
 
@@ -1183,7 +1183,7 @@ def selectMostIdentical(targetSeq, seqs):
     for key in seqs.keys():
 
         d = {key: seqs[key], 'target': targetSeq}
-        aligned = aligner.clustalAlign(d)
+        aligned = aligner.clustal_align(d)
 
         nid = 0
         naligns[key] = 0
@@ -1269,7 +1269,7 @@ def adjustTargetSequence (targetseq, templateseq, uniprotSpeciesName):
         if len(seqs[ac]) < 10000:  # avoid titin
             isoformkeys.append(ac)
 
-    aligned = aligner.clustalAlign({
+    aligned = aligner.clustal_align({
         tempkey: seqs[tempkey], tarkey: seqs[tarkey]})
     deletionRanges = identifyDeletedRegions(aligned[tarkey])
 
@@ -1309,7 +1309,7 @@ def adjustTargetSequence (targetseq, templateseq, uniprotSpeciesName):
             # to see if pieces can be added:
 
             alignedisoform = \
-                aligner.clustalAlign({tarkey: seqs[tarkey], key: seqs[key]})
+                aligner.clustal_align({tarkey: seqs[tarkey], key: seqs[key]})
 
             # identify the location of the deletion in the isoform
             ai = 0
@@ -1328,7 +1328,7 @@ def adjustTargetSequence (targetseq, templateseq, uniprotSpeciesName):
             if len(alignedisoform[key][ai:af].replace('-', '')) > 0:
 
                 # Align to template fragment:
-                ali = aligner.clustalAlign({
+                ali = aligner.clustal_align({
                     key: alignedisoform[key][ai:af].replace('-', ''),
                     tempkey: aligned[tempkey][i:f].replace('-', '')
                 })
@@ -1419,7 +1419,7 @@ def groupIdenticals (d):
             # Aligning them all in one run can be very time-consuming
 
             if pair not in alignments:
-                alignments[pair] = aligner.clustalAlign({
+                alignments[pair] = aligner.clustal_align({
                     ID: d[ID],
                     otherID: d[otherID]
                 })

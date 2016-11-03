@@ -392,7 +392,7 @@ def makeYasaraAlignment (yasara, domainSeq, yasaraObject, yasaraChainID):
         pdbSeq += get_aa321(yasara.ListRes('atom %i' % ca, 'RESNAME')[0])
         pdbSecStr += yasara.SecStrRes('atom %i' % ca)[0]
 
-    aligned = aligner.kmadAlign(pdbSeq, pdbSecStr, domainSeq)
+    aligned = aligner.kmad_align(pdbSeq, pdbSecStr, domainSeq)
     aligned['secstr'] = _map_gaps(aligned['template'], pdbSecStr)
     aligned['midline'] = _get_midline(aligned['template'], aligned['target'])
 
@@ -414,7 +414,7 @@ def makeDSSPAlignment(domainSeq, template):
         raise Exception('No chain %s in %s' % (template.chainID, dssppath))
     pdbSeq, pdbSecStr, pdbDisulfid = d[template.chainID]
 
-    aligned = aligner.kmadAlign(pdbSeq, pdbSecStr, domainSeq)
+    aligned = aligner.kmad_align(pdbSeq, pdbSecStr, domainSeq)
     aligned['secstr'] = _map_gaps(aligned['template'], pdbSecStr)
     aligned['midline'] = _get_midline(aligned['template'], aligned['target'])
 

@@ -8,7 +8,7 @@ import logging
 _log = logging.getLogger(__name__)
 
 
-class alignService(object):
+class AlignService(object):
 
     def __init__(self, clustal_exe=None, kmad_exe=None):
         self._clustal_exe = clustal_exe
@@ -36,9 +36,11 @@ class alignService(object):
         if not self._kmad_exe:
             raise Exception("kmad_exe not set")
 
-    # Use Clustalw2 for alignment: http://www.clustal.org/clustal2/
-    # Simply uses dictionaries for input and output
-    def clustalAlign(self, d):
+    def clustal_align(self, d):
+        """
+        Uses clustalw2 for alignment: http://www.clustal.org/clustal2/
+        Simply uses dictionaries for input and output.
+        """
 
         self._checkinit()
 
@@ -48,8 +50,8 @@ class alignService(object):
 
         for key in d.keys():
             if '|' in key:
-                _log.error('Unallowed syntax for key: ' + key)
-                raise Exception('Unallowed syntax for key: ' + key)
+                _log.error('Invalid syntax for key: ' + key)
+                raise Exception('Invalid syntax for key: ' + key)
             if len(d[key]) == 0:
                 _log.error('empty sequence for %s' % key)
                 raise Exception('empty sequence for %s' % key)
@@ -84,10 +86,13 @@ class alignService(object):
 
         return d
 
-    # Use Joanna Lange's alignment program, requires secondary structure information.
-    # Output is a dictionary with: 'template' and 'target' as ids, pointing to sequences.
-    def kmadAlign(self, pdbSeq, pdbSecStr, tarSeq,
+    def kmad_align(self, pdbSeq, pdbSecStr, tarSeq,
                   gapOpen=-13.0, gapExt=-0.4, modifier=3.0):
+        """
+        Uses Joanna Lange's alignment program, requires secondary structure
+        information. Output is a dictionary with: 'template' and 'target' as
+        ids, pointing to sequences.
+        """
 
         self._checkinit()
         _log.info("making pairwise kmad alignment")
@@ -164,4 +169,4 @@ class alignService(object):
 
         return aligned
 
-aligner = alignService()
+aligner = AlignService()

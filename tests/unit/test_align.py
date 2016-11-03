@@ -19,7 +19,7 @@ def test_clustal():
     toalign = {"s1": "AAACCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGSDYAN",
                "s2": "TTCCPSIVASNVCRLPGTPEAICATYTGCIIIPGATCPGDYA"}
 
-    aligned = aligner.clustalAlign(toalign)
+    aligned = aligner.clustal_align(toalign)
     assert "s1" in aligned
     assert "s2" in aligned
 
@@ -31,6 +31,6 @@ def test_kmad():
     templateseq = "TTCCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGDYAN"
     templatesecstr = " EE SSHHHHHHHHHHHTTT  HHHHHHHHS EE SSS   GGG  "
 
-    aligned = aligner.kmadAlign(templateseq, templatesecstr, targetseq)
+    aligned = aligner.kmad_align(templateseq, templatesecstr, targetseq)
     assert "target" in aligned
     assert "template" in aligned

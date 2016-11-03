@@ -136,7 +136,7 @@ def select_best_model(sequence, species, position, template):
 
             # target sequence might have been slightly altered during the procedure
             # That's why we must align here.
-            aligned = aligner.clustalAlign ({'t':targetseqs[i].replace('-', ''),'m':sequence})
+            aligned = aligner.clustal_align ({'t':targetseqs[i].replace('-', ''),'m':sequence})
             pcov, pid = getCoverageIdentity (aligned ['t'], aligned ['m'])
             if pid > 95.0:
 
