@@ -651,7 +651,7 @@ class Modeler(object):
 
                     else: # no luck, bother interpro:
                         targetsInterproRanges [targetID] = interpro \
-                            .getInterproDomainLocations (mainTargetSeq)
+                            .get_domain_locations(mainTargetSeq)
 
                 if chainID not in alignments: # Not been added yet at this point
 
@@ -816,7 +816,7 @@ class Modeler(object):
 
         # Determine all domain ranges within our main target sequence.
         # (source: interpro)
-        ranges = interpro.getInterproDomainLocations (mainTargetSeq)
+        ranges = interpro.get_domain_locations(mainTargetSeq)
 
         # yasara sticks to the directory where it was started,
         # so make a unique directory for yasara to run in and

@@ -46,7 +46,7 @@ def test_1CBO_A():
         + "ALFDRINKANGTIYRYDLFGTQLKAFADDFCYNPLGGCVLGKATDDYGRVAGYKNLYV" \
         + "TDGSLIPGSVGVNPFVTITALAERNVERIIKQDV"
 
-    domainranges = interpro.getInterproDomainLocations(seq)
+    domainranges = interpro.get_domain_locations(seq)
     ok_(len(domainranges) > 0)
 
     alignments = getAlignments(domainranges, seq)

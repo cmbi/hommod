@@ -6,7 +6,7 @@ import bz2
 import urllib
 import urllib2
 import platform
-from time import sleep
+from time import sleep, time
 from glob import glob
 
 import logging
@@ -26,7 +26,6 @@ def _interpro_user_agent():
 
     # Prepend client specific agent string.
     user_agent = 'EBI-Sample-Client/%s (%s; Python %s; %s) %s' % (
-
         clientVersion, os.path.basename(__file__),
         platform.python_version(), platform.system(),
         urllib_agent
@@ -116,9 +115,9 @@ class InterproService (object):
         if not self._storage_dir:
             raise Exception("storage_dir not set")
 
-    def _interpro_lockfile_path(self, ID):
+    def _interpro_lockfile_path(self, _id):
 
-        return os.path.join(self.storage_dir, 'lock_%s' % ID)
+        return os.path.join(self.storage_dir, 'lock_%s' % _id)
 
     def _interpro_count_lockfiles(self):
 
@@ -132,30 +131,28 @@ class InterproService (object):
         if not os.path.isdir(self.storage_dir):
             os.mkdir(self.storage_dir)
 
-        ID = idForSeq(sequence)  # unique
+        sequence_id = idForSeq(sequence)  # unique
 
-        outfilepath = os.path.join(self.storage_dir, '%s.xml.bz2' % ID)
+        outfilepath = os.path.join(self.storage_dir,
+                                   '%s.xml.bz2' % sequence_id)
         if os.path.isfile(outfilepath):
             return outfilepath
 
         # We don't want two processes to build the same interpro file
         # at the same time. So use a lock file:
-        lock = FileLock(self._interpro_lockfile_path(ID))
-
-        with lock:
+        with FileLock(self._interpro_lockfile_path(sequence_id)) as lock:
             # Wait for a place in line to start an interpro job
             while self._interpro_count_lockfiles() >= _MAX_INTERPRO_JOBS:
                 sleep(10)
 
             # Wait for the interpro server to finish:
             jobid = _interpro_submit(sequence)
-            while True:
-
+            start_time = time()
+            while (time() - start_time) < 1000:
                 status = _interpro_get_status(jobid)
                 _log.debug("intepro job status: " + status)
 
                 if status in ['RUNNING', 'PENDING', 'STARTED']:
-
                     sleep(10)
                 else:
                     break
@@ -171,7 +168,7 @@ class InterproService (object):
             return outfilepath
 
     # Creates an interpro file for the given sequence and parses it.
-    def getInterproDomainLocations(self, sequence):
+    def get_domain_locations(self, sequence):
 
         self._checkinit()
         _log.info("getting interpro domains for sequence:\n%s" % sequence)
@@ -203,7 +200,6 @@ class InterproService (object):
         # Get the ranges of the matched parts of the sequence:
         domains = []
         for match in matches:
-
             # Look at other aspects of the match as well.
             # We have conditions, some matches aren't added.
             bShortDomain = False
@@ -230,7 +226,6 @@ class InterproService (object):
                     locations = child
 
             for location in locations:
-
                 start = int(location.attrib['start']) - 1
                 end = int(location.attrib['end']) - 1
                 length = end - start
