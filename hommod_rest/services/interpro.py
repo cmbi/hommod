@@ -6,7 +6,7 @@ import bz2
 import urllib
 import urllib2
 import platform
-from time import sleep, time
+import time
 from glob import glob
 
 import logging
@@ -143,17 +143,17 @@ class InterproService (object):
         with FileLock(self._interpro_lockfile_path(sequence_id)) as lock:
             # Wait for a place in line to start an interpro job
             while self._interpro_count_lockfiles() >= _MAX_INTERPRO_JOBS:
-                sleep(10)
+                time.sleep(10)
 
             # Wait for the interpro server to finish:
             jobid = _interpro_submit(sequence)
-            start_time = time()
-            while (time() - start_time) < 1000:
+            start_time = time.time()
+            while (time.time() - start_time) < time.timedelta(seconds=1000):
                 status = _interpro_get_status(jobid)
                 _log.debug("intepro job status: " + status)
 
                 if status in ['RUNNING', 'PENDING', 'STARTED']:
-                    sleep(10)
+                    time.sleep(10)
                 else:
                     break
 
