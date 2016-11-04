@@ -5,24 +5,24 @@ from hommod_rest.services.modelutils import parseDSSP, downloadPDB
 import logging
 _log = logging.getLogger(__name__)
 
-# Secondary structure can either be taken from dssp or yasara.
-# Use yasara when dssp is not available.
-class SecStrProvider(object):
 
-    def __init__(self):
+class SecondaryStructureProvider(object):
+"""
+Secondary structure can either be taken from dssp or yasara.
+Use yasara when dssp is not available.
+"""
+    def __init__(self, dssp_dir=None, yasara_dir=None):
 
-        self.dssp_dir = ''
-        self._yasara_dir = None
+        self._dssp_dir = dssp_dir
+        self._yasara_dir = yasara_dir
 
-    def _check_config(self):
+    @property
+    def dssp_dir(self):
+        return self._dssp_dir
 
-        from flask import current_app as flask_app
-
-        if not self.dssp_dir:
-            self.dssp_dir = flask_app.config ['DSSPDIR']
-
-        if not self.yasara_dir:
-            self.yasara_dir = flask_app.config ['YASARADIR']
+    @dssp_dir.setter
+    def dssp_dir(self, dssp_dir):
+        self._dssp_dir = dssp_dir
 
     @property
     def yasara_dir(self):
@@ -32,19 +32,23 @@ class SecStrProvider(object):
     def yasara_dir(self, yasara_dir):
         self._yasara_dir = yasara_dir
 
-        if not os.path.isdir(yasara_dir):
-            raise ValueError("{} not found".format(yasara_dir))
+        if os.path.isdir(yasara_dir):
+            sys.path.append(os.path.join(yasara_dir, 'pym'))
+            sys.path.append(os.path.join(yasara_dir, 'plg'))
 
-        sys.path.append(os.path.join(yasara_dir, 'pym'))
-        sys.path.append(os.path.join(yasara_dir, 'plg'))
+            import yasaramodule
+            self.yasara = yasaramodule
+            self.yasara.info.mode = 'txt'
 
-        import yasaramodule
-        self.yasara = yasaramodule
-        self.yasara.info.mode = 'txt'
+    def _check_config(self):
+        if not self._dssp_dir:
+            raise Exception("dssp_dir is not set")
 
-    def hasSecStr(self, template):
+        if not self._yasara_dir:
+            raise Exception("yasara_dir is not set")
 
-        _log.info ("checking if %s_%s has secondary structure" % (template.pdbac, template.chainID))
+    def has_secondary_structure(self, template):
+        _log.info("checking if %s_%s has secondary structure" % (template.pdbac, template.chainID))
 
         self._check_config()
 
@@ -73,4 +77,4 @@ class SecStrProvider(object):
 
             return False
 
-secstr = SecStrProvider()
+secstr = SecondaryStructureProvider()

@@ -5,13 +5,14 @@ import hommod_rest.default_settings as config
 import os
 import sys
 
-def test_interaction_pick ():
+
+def test_interaction_pick():
 
     # The interaction picker is made to accept if one or more of the aligned
     # residues is part of an interaction.
 
     alignments = {
-        'A':{
+        'A': {
             'target':
             "MFADRWLFSTNHKDIGTLYLLFGAWAGVLGTALSLLIRAELGQPGNLLGNDHIYNVIVTA" +
             "HAFVMIFFMVMPIMIGGFGNWLVPLMIGAPDMAFPRMNNMSFWLLPPSLLLLLASAMVEA" +
@@ -34,7 +35,7 @@ def test_interaction_pick ():
             "EVLTVDLTTTNLEWLNGCPPPYHTFEEPTYVNLK"
         },
         # This alignment is OK, the missing helix doesn't interact.
-        'B':{
+        'B': {
             'target':
             "MAHAAQVGLQDATSPIMEELITFHDHALMIIFLICFLVLYALFLTLTTKLTNTNISDAQE" +
             "METVWTILPAIILVLIALPSLRILY-MTD-E-V--NDPSLTIKSIGHQWYWTYEYTDYGG" +
@@ -48,7 +49,7 @@ def test_interaction_pick ():
         },
         # This alignment is not OK, the missing helices are the only point of
         # interaction with chain A
-        'C':{
+        'C': {
             'target':
             "------------------------------------------------------------" +
             "------------------------------------------------------------" +
@@ -64,31 +65,27 @@ def test_interaction_pick ():
         },
     }
 
-
-    sys.path.append (os.path.join (config.YASARADIR, "pym"))
-    sys.path.append (os.path.join (config.YASARADIR, "plg"))
+    sys.path.append(os.path.join(config.YASARADIR, "pym"))
+    sys.path.append(os.path.join(config.YASARADIR, "plg"))
     import yasaramodule as yasara
     yasara.info.mode = 'txt'
 
-    obj = yasara.LoadPDB ("1OCO", download='yes') [0]
-
+    obj = yasara.LoadPDB("1OCO", download='yes')[0]
 
     chains = {}
     for chain_id in ['A', 'B']:
-        chains [chain_id] = YasaraChain (yasara, obj, chain_id)
+        chains[chain_id] = YasaraChain(yasara, obj, chain_id)
 
-    picker = InteractionPicker ('B', chains,
-                                {'A': alignments ['A']})
+    picker = InteractionPicker('B', chains,
+                               {'A': alignments['A']})
 
-    assert picker.accepts ('COX2_HUMAN', alignments ['B'])
-
+    assert picker.accepts('COX2_HUMAN', alignments['B'])
 
     chains = {}
     for chain_id in ['A', 'C']:
-        chains [chain_id] = YasaraChain (yasara, obj, chain_id)
+        chains[chain_id] = YasaraChain(yasara, obj, chain_id)
 
-    picker = InteractionPicker ('C', chains,
-                                {'A': alignments ['A']})
+    picker = InteractionPicker('C', chains,
+                               {'A': alignments['A']})
 
-    assert (not picker.accepts ('COX3_HUMAN', alignments ['C']))
-
+    assert (not picker.accepts('COX3_HUMAN', alignments['C']))

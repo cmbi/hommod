@@ -1,33 +1,34 @@
 from hommod_rest.services.align import aligner
 
-from nose.tools import ok_, with_setup
+from nose.tools import with_setup
 import hommod_rest.default_settings as config
 
-def _setup ():
 
-    aligner.clustalExe = config.CLUSTAL
-    aligner.kmadExe = config.KMAD
+def setup():
+    aligner.clustal_exe = config.CLUSTAL
+    aligner.kmad_exe = config.KMAD
 
-def _tear_down ():
+
+def teardown():
     pass
 
-@with_setup(_setup, _tear_down)
-def test_clustal ():
 
+@with_setup(setup, teardown)
+def test_clustal():
     toalign = {"s1": "AAACCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGSDYAN",
                "s2": "TTCCPSIVASNVCRLPGTPEAICATYTGCIIIPGATCPGDYA"}
 
-    aligned = aligner.clustalAlign (toalign)
+    aligned = aligner.clustal_align(toalign)
     assert "s1" in aligned
     assert "s2" in aligned
 
-@with_setup(_setup, _tear_down)
-def test_kmad ():
 
+@with_setup(setup, teardown)
+def test_kmad():
     targetseq = "AAACCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGSDYAN"
-    templateseq    = "TTCCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGDYAN"
+    templateseq = "TTCCPSIVARSNFNVCRLPGTPEAICATYTGCIIIPGATCPGDYAN"
     templatesecstr = " EE SSHHHHHHHHHHHTTT  HHHHHHHHS EE SSS   GGG  "
 
-    aligned = aligner.kmadAlign (templateseq, templatesecstr, targetseq)
+    aligned = aligner.kmad_align(templateseq, templatesecstr, targetseq)
     assert "target" in aligned
     assert "template" in aligned

@@ -74,13 +74,13 @@ def create_app(settings=None):
     return app
 
 
-def create_celery_app (flask_app=None):  # pragma: no cover
+def create_celery_app(flask_app=None):  # pragma: no cover
 
     if flask_app:
         _log.info("Creating celery app with given flask app")
     else:
         _log.info("Creating celery app with new flask app")
-        flask_app = create_app ()
+        flask_app = create_app()
 
     celery = Celery(__name__,
                     backend=flask_app.config['CELERY_RESULT_BACKEND'],
@@ -98,5 +98,28 @@ def create_celery_app (flask_app=None):  # pragma: no cover
     celery.Task = ContextTask
 
     import hommod_rest.tasks
+
+    # Apply config settings
+    from hommod_rest.services.align import aligner
+    aligner.clustal_exe = flask_app.config['CLUSTAL']
+    aligner.kmad_exe = flask_app.config['KMAD']
+
+    from hommod_rest.services.blast import blaster
+    blaster.blastp_exe = flask_app.config['BLASTP']
+    blaster.templates_db = flask_app.config['TEMPLATESDB']
+    blaster.uniprot_db = flask_app.config['UNIPROTDB']
+
+    from hommod_rest.services.interpro import interpro
+    interpro.storage_dir = flask_app.config['INTERPRODIR']
+
+    from hommod_rest.services.secstr import secstr
+    secstr.dssp_dir = flask_app.config['DSSPDIR']
+    secstr.yasara_dir = flask_app.config['YASARADIR']
+
+    from hommod_rest.services.model import modeler
+    modeler.yasara_dir = flask_app.config['YASARADIR']
+    modeler.execution_root_dir = flask_app.config['EXECUTIONDIR']
+    modeler.model_root_dir = flask_app.config['MODELDIR']
+    modeler.template_blacklist = flask_app.config['TEMPLATE_BLACKLIST']
 
     return celery
