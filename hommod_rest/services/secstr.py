@@ -57,23 +57,23 @@ class SecondaryStructureProvider(object):
 
             d = parseDSSP(dssppath)
 
-            _log.info ("from %s:\n%s" % (dssppath, str (d)))
+            _log.info("from %s:\n%s" % (dssppath, str(d)))
 
             return template.chainID in d
         else:
-            pdbfile = os.path.abspath ("%s.pdb" % template.pdbac)
-            open (pdbfile, 'w').write (downloadPDB (template.pdbac))
-            obj = self.yasara.LoadPDB (pdbfile)[0]
+            pdbfile = os.path.abspath("%s.pdb" % template.pdbac)
+            open(pdbfile, 'w').write(downloadPDB(template.pdbac))
+            obj = self.yasara.LoadPDB(pdbfile)[0]
             for ss in self.yasara.SecStrRes('obj %i' % obj):
                 if ss != 'X':
                     self.yasara.DelObj(obj)
 
-                    _log.info ("yasara reported secondary structure for %s_%s" % (template.pdbac, template.chainID))
+                    _log.info("yasara reported secondary structure for %s_%s" % (template.pdbac, template.chainID))
 
                     return True
             self.yasara.DelObj(obj)
 
-            _log.info ("yasara reported no secondary structure for %s_%s" % (template.pdbac, template.chainID))
+            _log.info("yasara reported no secondary structure for %s_%s" % (template.pdbac, template.chainID))
 
             return False
 
