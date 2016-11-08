@@ -21,25 +21,23 @@ sh.setFormatter(formatter)
 _log.addHandler(sh)
 _log.setLevel(logging.DEBUG)
 
-#template: 3hrw
-#    matched main target 7cd68612-3b7d-668d-756a-7f5573b87fa9 with chain B
+# template: 3hrw
+#     matched main target 7cd68612-3b7d-668d-756a-7f5573b87fa9 with chain B
 
 ptargetchain = re.compile(
     r"^matched\s+(main\s+|)target\s+([A-Za-z0-9\-]+)\s+with chain\s+(\w)$")
 
 
 def extract_info(tar_path):
-
     info = {'targets': {}}
 
     tf = tarfile.open(tar_path, 'r')
 
-
     infopath = os.path.join(
-                 os.path.splitext(
-                   os.path.basename(tar_path))[0], 'selected-targets.txt')
+        os.path.splitext(
+            os.path.basename(tar_path))[0], 'selected-targets.txt')
 
-    _log.debug ("extract info from %s" % infopath)
+    _log.debug("extract info from %s" % infopath)
 
     if infopath in tf.getnames():
         for line in tf.extractfile(infopath):
@@ -48,19 +46,17 @@ def extract_info(tar_path):
             if line.startswith('template:'):
                 info['template'] = line.split(':')[1].strip()
             else:
-                i_target = line.find (' target ')
-                i_chain = line.find (' chain ')
+                i_target = line.find(' target ')
+                i_chain = line.find(' chain ')
                 if i_target != -1 and i_chain != -1:
 
-                    target = line [i_target:].split () [1]
-                    chain = line [i_chain:].split () [1]
+                    target = line[i_target:].split()[1]
+                    chain = line[i_chain:].split()[1]
 
-                    _log.debug ("matched target chain line:\n\"%s\"\n" % line +
-                                "chain=\'%s\', target=\'%s\'" % (chain, target))
+                    _log.debug("matched target chain line:\n\"%s\"\n" % line +
+                               "chain=\'%s\', target=\'%s\'" % (chain, target))
                     info['targets'][chain] = target
-
     tf.close()
-
     return info
 
 
@@ -113,10 +109,9 @@ def extract_model(tar_path):
 
 
 def select_best_model(sequence, species, position, template):
-
     bestID = 0.0
     best = None
-    for path in list_models_of (sequence, species, position, template):
+    for path in list_models_of(sequence, species, position, template):
 
         alignment = extract_alignment(path)
 
@@ -127,7 +122,7 @@ def select_best_model(sequence, species, position, template):
                 break
 
         if templateID is None:
-            raise Exception ("no template found in alignment of %s" % path)
+            raise Exception("no template found in alignment of %s" % path)
 
         main_i = -1
         targetseqs = alignment['target'].split('|')
@@ -136,15 +131,17 @@ def select_best_model(sequence, species, position, template):
 
             # target sequence might have been slightly altered during the procedure
             # That's why we must align here.
-            aligned = aligner.clustal_align ({'t':targetseqs[i].replace('-', ''),'m':sequence})
-            pcov, pid = getCoverageIdentity (aligned ['t'], aligned ['m'])
+            aligned = aligner.clustal_align({
+                't': targetseqs[i].replace('-', ''),
+                'm': sequence})
+            pcov, pid = getCoverageIdentity(aligned['t'], aligned['m'])
             if pid > 95.0:
 
                 main_i = i
                 break
 
         if main_i == -1:
-            raise Exception ("main target sequence not found in alignment:\n" +
+            raise Exception("main target sequence not found in alignment:\n" +
                             sequence + " should match one of " +
                             str(targetseqs))
 
@@ -155,13 +152,12 @@ def select_best_model(sequence, species, position, template):
             best = path
             bestID = pid
 
-    _log.debug ("best model for %s %s %i %s is %s" % (idForSeq(sequence),
-                species, position, str(template), best))
+    _log.debug("best model for %s %s %i %s is %s" % (idForSeq(sequence),
+               species, position, str(template), best))
     return best
 
 
 def list_models_of(sequence, species, position, template_id):
-
     h = idForSeq(sequence)
 
     wildcard = os.path.join(flask_app.config['MODELDIR'],
@@ -172,18 +168,18 @@ def list_models_of(sequence, species, position, template_id):
     for f in glob(wildcard):
 
         age = time() - os.path.getmtime(f)
-        if age >= flask_app.config['MAX_MODEL_DAYS']*24*60*60:
+        if age >= flask_app.config['MAX_MODEL_DAYS'] * 24 * 60 * 60:
             continue
 
         name = os.path.splitext(os.path.basename(f))[0]
 
         if template_id:
             _log.debug("checking whether {} is the template of {}".format(
-                        template_id, f))
+                template_id, f))
             f_template_id = extract_template_id(f)
             if f_template_id != template_id:
                 _log.debug("skipping {}, because it does not have {} as template, but {}"
-                            .format(f, template_id, f_template_id))
+                           .format(f, template_id, f_template_id))
                 continue
 
         name_params = name.split('_')
@@ -194,18 +190,19 @@ def list_models_of(sequence, species, position, template_id):
 
         if position >= start and position <= end:
             try:
-                model = extract_model (f)
-                alignment = extract_alignment (f)
+                model = extract_model(f)
+                alignment = extract_alignment(f)
             except:
-                _log.error ("couldn't get model or alignment from %s" % f)
+                _log.error("couldn't get model or alignment from %s" % f)
                 continue
 
-            if len (model) == 0:
-                _log.error ("empty model in %s" % f)
+            if len(model) == 0:
+                _log.error("empty model in %s" % f)
                 continue
 
-            inputtargetseq = sequence [start - 1: end]
-            modeltargetseqs = alignment ['target'].replace ('-', '').replace ('.', '').split ('|')
+            inputtargetseq = sequence[start - 1: end]
+            modeltargetseqs = \
+                alignment['target'].replace('-', '').replace('.', '').split('|')
 
             fragment_present = False
             for modeltargetseq in modeltargetseqs:
@@ -214,11 +211,13 @@ def list_models_of(sequence, species, position, template_id):
                     break
 
             if not fragment_present:
-                _log.error ("sequence mismatch in %s:\nquery target: %s\naligned target: %s" % (f, inputtargetseq, alignment ['target']))
+                _log.error(
+                    "sequence mismatch in %s:\nquery target: %s\naligned target: %s"
+                    % (f, inputtargetseq, alignment['target']))
                 continue
 
-            _log.debug ("add %s to list of models for %s %s %i" % (f, h, species, position))
-            l.append (f)
+            _log.debug("add %s to list of models for %s %s %i" % (f, h, species, position))
+            l.append(f)
 
-    _log.debug ("found %i models for %s %s %i" % (len (l), h, species, position))
+    _log.debug("found %i models for %s %s %i" % (len(l), h, species, position))
     return l
