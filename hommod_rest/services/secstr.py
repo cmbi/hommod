@@ -7,10 +7,10 @@ _log = logging.getLogger(__name__)
 
 
 class SecondaryStructureProvider(object):
-"""
-Secondary structure can either be taken from dssp or yasara.
-Use yasara when dssp is not available.
-"""
+    """
+    Secondary structure can either be taken from dssp or yasara.
+    Use yasara when dssp is not available.
+    """
     def __init__(self, dssp_dir=None, yasara_dir=None):
 
         self._dssp_dir = dssp_dir
