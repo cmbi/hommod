@@ -2,6 +2,7 @@ import logging
 
 _log = logging.getLogger(__name__)
 
+
 class ReverseProxied(object):  # pragma: no cover
     """
     Wrap the application in this middleware and configure the

@@ -1,15 +1,16 @@
 import logging
 
-from flask import Blueprint, jsonify, request, Response, render_template
+from flask import Blueprint, jsonify, request, Response
 
-from hommod_rest.services.utils import(extract_info, extract_alignment,
-                                       extract_model, list_models_of)
+from hommod_rest.services.utils import (extract_info, extract_alignment,
+                                        extract_model, list_models_of)
 from hommod_rest.services.modelutils import TemplateID
 
 _log = logging.getLogger(__name__)
 
 
 bp = Blueprint('hommod', __name__, url_prefix='/api')
+
 
 @bp.route('/update_cache/', methods=['POST'])
 def update_cache():
@@ -27,7 +28,7 @@ def update_cache():
     species_id = request.form.get('species_id', None)
 
     _log.info("endpoints.update_cache request for( sequence: %s, species: %s )"
-               %(sequence, species_id))
+              %(sequence, species_id))
 
     if not(sequence and species_id):
         return jsonify({'error': 'invalid input'}), 400
@@ -38,6 +39,7 @@ def update_cache():
     _log.debug("endpoints: cache will update in job %s" % result.task_id)
 
     return jsonify({'jobid': result.task_id})
+
 
 @bp.route('/has_model/', methods=['POST'])
 def has_model():
@@ -59,7 +61,7 @@ def has_model():
     try:
         position = int(position)
     except:
-        _log.error("endpoints.submit: submit request did not contain an integer position");
+        _log.error("endpoints.submit: submit request did not contain an integer position")
 
         return jsonify({'error': 'expected integer for position'}), 400
 
@@ -83,6 +85,7 @@ def has_model():
         _log.debug("endpoints.has_model: returning false for %s" % str(paths))
         return False
 
+
 @bp.route('/submit/', methods=['POST'])
 def submit():
 
@@ -103,11 +106,10 @@ def submit():
 
     _log.info(("endpoints.submit: request recieved for( " +
                "sequence: %s, species: %s, position: %s, template: %s)")
-               %(sequence, species_id, position, template_id))
+              % (sequence, species_id, position, template_id))
 
     if not(sequence and position and species_id):
-
-        _log.error("endpoints.submit: submit request did not contain all required input data");
+        _log.error("endpoints.submit: submit request did not contain all required input data")
 
         return jsonify({'error': 'invalid input'}), 400
 
@@ -115,7 +117,7 @@ def submit():
     try:
         position = int(position)
     except:
-        _log.error("endpoints.submit: submit request did not contain an integer position");
+        _log.error("endpoints.submit: submit request did not contain an integer position")
 
         return jsonify({'error': 'expected integer for position'}), 400
 
@@ -146,7 +148,7 @@ def status(jobid):
     :return: Either PENDING, STARTED, SUCCESS, FAILURE, RETRY, or REVOKED.
     """
 
-    _log.info ("endpoints.status request for job %s" % jobid)
+    _log.info("endpoints.status request for job %s" % jobid)
 
     from hommod_rest.application import celery
     result = celery.AsyncResult(jobid)
@@ -154,10 +156,10 @@ def status(jobid):
 
     response = {'status': job_status}
     if result.failed():
-        response ['message'] = str (result.traceback)
+        response['message'] = str(result.traceback)
 
-    _log.debug ("endpoints.status: response for job %s: %s" %
-                (jobid, str (job_status)))
+    _log.debug("endpoints.status: response for job %s: %s"
+               % (jobid, str(job_status)))
 
     return jsonify(response)
 
@@ -192,13 +194,13 @@ def get_model_file(jobid):
     if not path:
         # no model could be created
         message = 'no model was created for job %s' % jobid
-        _log.warn (message)
+        _log.warn(message)
         return jsonify({'error': message}), 400
 
     try:
         contents = extract_model(path)
     except Exception as e:
-        error = 'failed to get all data from %s: %s' % (path, str (e))
+        error = 'failed to get all data from %s: %s' % (path, str(e))
         _log.error(error)
         return jsonify({'error': error}), 500
 
@@ -230,7 +232,7 @@ def get_metadata(jobid):
         data = extract_info(path)
         data['alignment'] = extract_alignment(path)
     except Exception as e:
-        error = 'failed to get all data from %s: %s' % (path, str (e))
+        error = 'failed to get all data from %s: %s' % (path, str(e))
         _log.error(error)
         return jsonify({'error': error}), 500
 

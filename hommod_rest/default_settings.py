@@ -29,12 +29,12 @@ MAIL_TO = ["Coos.Baakman@radboudumc.nl", "Jon.Black@radboudumc.nl"]
 TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
 DSSPDIR = '/mnt/cmbi4/dssp/'
 MODELDIR = '/data/models/'
-EXECUTIONDIR = '/data/tmp/' # yasara execution dir
+EXECUTIONDIR = '/data/tmp/'  # yasara execution dir
 INTERPRODIR = '/data/interpro/'
 
 # Executables
-KMAD = '/deps/hommod-kmad/hommod_kmad' # made by Joanna Lange
-BLASTP = '/usr/bin/blastp' # ncbi
+KMAD = '/deps/hommod-kmad/hommod_kmad'  # made by Joanna Lange
+BLASTP = '/usr/bin/blastp'  # ncbi
 CLUSTAL = '/usr/bin/clustalw'
 INTERPROSCAN = '/deps/interproscan/interproscan-5.17-56.0/interproscan.sh'
 YASARADIR = '/deps/yasara/yasara/'

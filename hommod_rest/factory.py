@@ -8,7 +8,7 @@ _log = logging.getLogger(__name__)
 
 
 def create_app(settings=None):
-    _log.info("Creating flask app with settings: %s" % str (settings))
+    _log.info("Creating flask app with settings: %s" % str(settings))
 
     app = Flask(__name__)
     app.config.from_object('hommod_rest.default_settings')
