@@ -8,7 +8,6 @@ _log = logging.getLogger(__name__)
 
 # Uses ncbi blast executables: ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
 class BlastService(object):
-
     def __init__(self, blastp_exe=None, templates_db=None, uniprot_db=None):
         self._blastp_exe = blastp_exe
         self._templates_db = templates_db

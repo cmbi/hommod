@@ -9,7 +9,6 @@ _log = logging.getLogger(__name__)
 
 
 class AlignService(object):
-
     def __init__(self, clustal_exe=None, kmad_exe=None):
         self._clustal_exe = clustal_exe
         self._kmad_exe = kmad_exe
@@ -146,9 +145,9 @@ class AlignService(object):
 
         if not os.path.isfile(alignedpath):
 
-            error = ('alignment file %s not created,' + 
+            error = ('alignment file %s not created,' +
                      'kmad input:\n%s\nkmad error:\n%s') % \
-                            (alignedpath, _input, feedback)
+                    (alignedpath, _input, feedback)
             _log.error(error)
             raise Exception(error)
 
@@ -161,7 +160,7 @@ class AlignService(object):
 
         if aligned['template'].replace('-', '') != pdbSeq:
             error = 'kmad output mismatch:\npdbSeq:' + pdbSeq + \
-                            'aligned:' + aligned['template']
+                    'aligned:' + aligned['template']
             _log.error(error)
             raise Exception(error)
 

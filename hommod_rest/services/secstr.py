@@ -7,10 +7,10 @@ _log = logging.getLogger(__name__)
 
 
 class SecondaryStructureProvider(object):
-"""
-Secondary structure can either be taken from dssp or yasara.
-Use yasara when dssp is not available.
-"""
+    """
+    Secondary structure can either be taken from dssp or yasara.
+    Use yasara when dssp is not available.
+    """
     def __init__(self, dssp_dir=None, yasara_dir=None):
 
         self._dssp_dir = dssp_dir
@@ -57,23 +57,23 @@ Use yasara when dssp is not available.
 
             d = parseDSSP(dssppath)
 
-            _log.info ("from %s:\n%s" % (dssppath, str (d)))
+            _log.info("from %s:\n%s" % (dssppath, str(d)))
 
             return template.chainID in d
         else:
-            pdbfile = os.path.abspath ("%s.pdb" % template.pdbac)
-            open (pdbfile, 'w').write (downloadPDB (template.pdbac))
-            obj = self.yasara.LoadPDB (pdbfile)[0]
+            pdbfile = os.path.abspath("%s.pdb" % template.pdbac)
+            open(pdbfile, 'w').write(downloadPDB(template.pdbac))
+            obj = self.yasara.LoadPDB(pdbfile)[0]
             for ss in self.yasara.SecStrRes('obj %i' % obj):
                 if ss != 'X':
                     self.yasara.DelObj(obj)
 
-                    _log.info ("yasara reported secondary structure for %s_%s" % (template.pdbac, template.chainID))
+                    _log.info("yasara reported secondary structure for %s_%s" % (template.pdbac, template.chainID))
 
                     return True
             self.yasara.DelObj(obj)
 
-            _log.info ("yasara reported no secondary structure for %s_%s" % (template.pdbac, template.chainID))
+            _log.info("yasara reported no secondary structure for %s_%s" % (template.pdbac, template.chainID))
 
             return False
 

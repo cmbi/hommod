@@ -7,12 +7,14 @@ import urllib
 import urllib2
 import platform
 import time
+import datetime
 from glob import glob
 
 import logging
 _log = logging.getLogger(__name__)
 
 _interpro_base_url = 'http://www.ebi.ac.uk/Tools/services/rest/iprscan5'
+
 
 def _interpro_user_agent():
 
@@ -148,7 +150,8 @@ class InterproService (object):
             # Wait for the interpro server to finish:
             jobid = _interpro_submit(sequence)
             start_time = time.time()
-            while (time.time() - start_time) < time.timedelta(seconds=1000):
+            while ((time.time() - start_time) <
+                    datetime.timedelta(seconds=1000).total_seconds()):
                 status = _interpro_get_status(jobid)
                 _log.debug("intepro job status: " + status)
 
