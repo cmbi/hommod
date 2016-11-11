@@ -41,7 +41,7 @@ def _get_midline(alignedseq1, alignedseq2):
     return m
 
 
-def alignmentRepr(aligned, order=[]):
+def alignment_to_string(aligned, order=[]):
     """
     Represents a given alignment dictionary as a string.
     This is used for debugging.
@@ -602,9 +602,10 @@ def _get_range_from(r, template, alignment, pid, pcover):
 
 
 class _Best_Hit_candidate (object):
-    def __init__(self, template, alignment, pid, pcover):
+    def __init__(self, template, alignment, nalign, pid, pcover):
         self.template = template
         self.alignment = alignment
+        self.nalign = nalign
         self.pid = pid
         self.pcover = pcover
 
@@ -627,224 +628,158 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
 
     # Get the domain ranges from interpro:
     # (skip the ones that hit forbidden ranges)
-    sampleRanges = []
+    sample_ranges = []
     for domain in interproDomains:
 
         r = TargetRange(domain.start, domain.end)
         if len(r.findOverlapping(forbiddenRanges)) <= 0:
 
-            sampleRanges.append(TargetRange(domain.start, domain.end))
+            sample_ranges.append(TargetRange(domain.start, domain.end))
 
     # Add the whole sequence too,
     # just in case the interpro file has no domains for us
-    sampleRanges.append(TargetRange(0, len(tarSeq)))
+    sample_ranges.append(TargetRange(0, len(tarSeq)))
 
-    okRanges = []  # ranges that passed the criteria
-    bestRanges = []  # ranges chosen to be modeled
+    ok_ranges = []  # ranges that passed the criteria
+    best_ranges = []  # ranges chosen to be modeled
 
     alignmentDAO = _AlignmentPool(tarSeq)  # allows to access alignments
 
-    checkedRanges = []  # keeps track of all the ranges that we've passed by
-    while len(sampleRanges) > 0:
+    checked_ranges = []  # keeps track of all the ranges that we've passed by
+    while len(sample_ranges) > 0:
 
-        _log.debug("iter with %i sample ranges" % len(sampleRanges))
+        _log.debug("iter with %i sample ranges" % len(sample_ranges))
 
         # merging must reduce the number of blasts/alignments:
-        mergedSampleRanges = mergeSimilar(sampleRanges)
+        merged_sample_ranges = mergeSimilar(sample_ranges)
 
         # Check the largest ranges first. If that yields, then the smaller
         # ones don't matter.
-        for r in sortLargestFirst(mergedSampleRanges):
-
-            if r in checkedRanges:
+        for r in sortLargestFirst(merged_sample_ranges):
+            if r in checked_ranges:
                 continue  # Already passed this one
 
-            checkedRanges.append(r)
+            checked_ranges.append(r)
 
             # Check to see if this range is part of a larger range that also
             # passed the criteria, if so then don't bother blasting this one
             hasLarger = False
-            for i in range(len(bestRanges)):
-                if bestRanges[i].encloses(r):
+            for i in range(len(best_ranges)):
+                if best_ranges[i].encloses(r):
                     hasLarger = True
                     break
             if hasLarger:
                 continue
 
             # Template to pick when there are good choices
-            bestHitForRange = None
+            best_hit_for_range = None
 
             # Template to pick when there's only a highly homologous one, with
             # low coverage
-            lastResortForRange = None
+            last_resort_for_range = None
 
             _log.debug('trying range: %s' % r)
 
-            if yasaraChain:  # template already chosen outside this function
-
-                templateSelected = \
-                    TemplateID(yasaraChain.objname[:4], yasaraChain.chainID)
-
+            if yasaraChain:
+                # template already chosen outside this function
                 # align only against 1 template:
                 try:
-                    aligned = alignmentDAO.getAlignmentFromYasara(
-                        yasaraChain.yasaramodule, r,
-                        yasaraChain.obj, yasaraChain.chainID
-                    )
+                    hit_candidate = _get_hit_for_yasara_chain(r, yasaraChain,
+                                                              alignmentDAO)
                 except Exception:
                     _log.error("alignment failed:\n" + traceback.format_exc())
                     # If kmad fails, then skip this one :(
                     continue
-
-                nalign, pid = getNalignIdentity(
-                    aligned['target'], aligned['template'])
-                pcover = (nalign * 100.0) / (r.end - r.start)
-
-                if _alignment_ok_for_range(r, tarSeq, nalign, pid, pcover):
-
-                    # This range made an OK alignment, so at least store it for
-                    # later usage:
-                    m = _get_range_from(r, templateSelected, aligned,
-                                        pid, pcover)
-                    okRanges.append(m)
-
-                    # Remember to use this alignment for this range:
-                    bestHitForRange = _Best_Hit_candidate(templateSelected,
-                                                          aligned,
-                                                          pid, pcover)
-
-                    _log.debug("domainalign: passing %d - %d alignment with %s:\n%s"
-                               % (r.start, r.end, templateSelected, alignmentRepr(
-                                  aligned, ['target', 'midline', 'template'])))
-                else:
-                    _log.debug(("domainalign: rejecting %d - %d alignment " +
-                                "with %s:\n%s\ncover: %.1f %%, " +
-                                "identity: %.1f %%\n")
-                               % (r.start, r.end, templateSelected,
-                                  alignmentRepr(aligned,
-                                                ['target', 'midline',
-                                                 'template']).strip(),
-                                  pcover, pid))
+                hit_candidates = [hit_candidate]
 
             else:  # No chosen template, check all
 
-                _log.debug('blasting range: %s\n%s' % (r,
-                                                       tarSeq[r.start:r.end]))
                 # iterate over blast hits:
-                hits = filterGoodHits(
-                    blaster.blast_templates(tarSeq[r.start: r.end]))
+                hit_candidates = _get_blast_hits_for_range(r, tarSeq)
 
-                _log.debug('iterating %d blast hits' % len(hits))
-                for hitID in hits:
+            _log.debug('iterating %d hit candidates' % len(hit_candidates))
+            for hit_candidate in hit_candidates:
+                # minimal criteria to make a model:
+                if _alignment_ok_for_range(r, tarSeq,
+                                           hit_candidate.nalign,
+                                           hit_candidate.pid,
+                                           hit_candidate.pcover):
 
-                    pdbid, pdbchain = getTemplatePDBIDandChain(hitID)
-                    if _template_in_blacklist(pdbid):
+                    # This range made an OK alignment, so at least
+                    # store it for later usage:
+                    ok_ranges.append(
+                            _get_range_from(r, hit_candidate.template,
+                                               hit_candidate.alignment,
+                                               hit_candidate.pid,
+                                               hit_candidate.pcover))
+                    _log.debug(
+                        "domainalign: passing %d - %d alignment with %s:\n%s"
+                        % (r.start, r.end, hit_candidate.template,
+                           alignment_to_string(hit_candidate.alignment,
+                                               ['target', 'midline',
+                                                'template'])))
 
-                        _log.debug("not using %s as template" % pdbid +
-                                   ", because it's blacklisted")
-                        continue
+                    # is this one better than previous hits?
+                    if hit_candidate.pcover >= 80 and \
+                            (not best_hit_for_range or 
+                             hit_candidate.pid > best_hit_for_range.pid and
+                             hit_candidate.pcover >= best_hit_for_range.pcover):
 
-                    template = TemplateID(pdbid, pdbchain)
-                    if not secstr.has_secondary_structure(template):
+                        # Remember to use this alignment for this
+                        # range:
+                        best_hit_for_range = hit_candidate
+                    else:
+                        # Only use low-coverage alignments if no other
+                        # options.
+                        last_resort_for_range = hit_candidate
 
-                        _log.warn("domainalign: no secondary structure for %s"
-                                  % template)
-                        continue
+                    # we're done with this hitID, since we made
+                    # a full alignment.
+                    break
+                else:
+                    _log.debug(
+                        ("domainalign: rejecting %d - %d blast hit with %s:\n"
+                         + "%s\ncover: %.1f %%, identity: %.1f %%\n")
+                        % (r.start, r.end, hit_candidate.template,
+                           alignment_to_string(hit_candidate.alignment,
+                                               ['target','midline',
+                                                'template']).strip(),
+                           hit_candidate.pcover, hit_candidate.pid))
 
-                    _log.debug("domainalign: got blast hit %s" % template)
+            if not best_hit_for_range and last_resort_for_range:
+                best_hit_for_range = last_resort_for_range
 
-                    for alignment in hits[hitID]:
-
-                        aligned = {'target': alignment.queryalignment,
-                                   'template': alignment.subjectalignment}
-                        aligned['midline'] = _get_midline(aligned['target'],
-                                                          aligned['template'])
-
-                        nalign = alignment.getNumberResiduesAligned()
-                        pid = alignment.getIdentity()
-                        pcover = (nalign * 100.0) / (r.end - r.start)
-
-                        # minimal criteria to make a model:
-                        if _alignment_ok_for_range(r, tarSeq, nalign, pid, pcover):
-
-                            # This range made an OK alignment, so at least
-                            # store it for later usage:
-                            m = _get_range_from(r, template,
-                                                aligned, pid, pcover)
-                            okRanges.append(m)
-
-                            _log.debug(
-                                "domainalign: passing %d - %d alignment with %s:\n%s"
-                                % (r.start, r.end, template,
-                                   alignmentRepr(aligned,
-                                                 ['target', 'midline',
-                                                  'template'])))
-
-                            # is this one better than previous hits?
-                            if pcover >= 80 and \
-                                    (not bestHitForRange or 
-                                     pid > bestHitForRange.pid and
-                                     pcover >= bestHitForRange.pcover):
-
-                                # Remember to use this alignment for this
-                                # range:
-                                bestHitForRange = _Best_Hit_candidate(template,
-                                                                      aligned,
-                                                                      m.pid,
-                                                                      m.pcover)
-                            else:
-                                # Only use low-coverage alignments if no other
-                                # options.
-                                lastResortForRange = _Best_Hit_candidate(m.template,
-                                                                         aligned,
-                                                                         m.pid,
-                                                                         m.pcover)
-                            # we're done with this hitID, since we made
-                            # a full alignment.
-                            break
-                        else:
-                            _log.debug(
-                                ("domainalign: rejecting %d - %d blast hit with %s:\n"
-                                 + "%s\ncover: %.1f %%, identity: %.1f %%\n")
-                                % (r.start, r.end, template,
-                                   alignmentRepr(aligned,
-                                                 ['target', 'midline',
-                                                  'template']).strip(),
-                                   pcover, pid))
-
-            if not bestHitForRange and lastResortForRange:
-                bestHitForRange = lastResortForRange
-
-            if bestHitForRange:  # we have a best hit for this range
+            if best_hit_for_range:  # we have a best hit for this range
 
                 _log.debug("pick %d - %d best hit %s:\n%s"
-                           % (r.start, r.end, bestHitForRange.template,
-                              alignmentRepr(bestHitForRange.alignment,
+                           % (r.start, r.end, best_hit_for_range.template,
+                              alignment_to_string(best_hit_for_range.alignment,
                                             ['target', 'midline',
                                              'template'])))
 
                 # Remove any smaller ranges that this one encloses:
-                bestRanges = _remove_enclosing(r, bestRanges)
+                best_ranges = _remove_enclosing(r, best_ranges)
 
                 # Memorize this best hit:
-                m = _range_of_alignment_in(bestHitForRange.alignment, tarSeq)
-                m.template = bestHitForRange.template
-                m.alignment = bestHitForRange.alignment
-                m.pid = bestHitForRange.pid
-                m.pcover = bestHitForRange.pcover
-                bestRanges.append(m)
+                m = _range_of_alignment_in(best_hit_for_range.alignment,
+                                           tarSeq)
+                m.template = best_hit_for_range.template
+                m.alignment = best_hit_for_range.alignment
+                m.pid = best_hit_for_range.pid
+                m.pcover = best_hit_for_range.pcover
+                best_ranges.append(m)
 
         # After iterating the sample ranges once, prepare for the next round:
-        sampleRanges = _clean_ranges_search_space(checkedRanges,
-                                                  sampleRanges,
-                                                  okRanges,
+        sample_ranges = _clean_ranges_search_space(checked_ranges,
+                                                  sample_ranges,
+                                                  ok_ranges,
                                                   alignmentDAO)
 
     # Removed the metaphoric question marks from all the sample ranges.
     # Populate the returned list of alignments to model with:
     returnAlignments = []
-    bestRanges.sort()
-    for r in bestRanges:
+    best_ranges.sort()
+    for r in best_ranges:
         nalign, pid = getNalignIdentity(r.alignment['target'],
                                         r.alignment['template'])
 
@@ -858,6 +793,60 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
 
     return returnAlignments
 
+
+def _get_hit_for_yasara_chain(_range, yasaraChain, alignmentDAO):
+    template = TemplateID(yasaraChain.objname[:4], yasaraChain.chainID)
+
+    # align only against 1 template:
+    aligned = alignmentDAO.getAlignmentFromYasara(
+        yasaraChain.yasaramodule, _range,
+        yasaraChain.obj, yasaraChain.chainID
+    )
+
+    nalign, pid = getNalignIdentity(aligned['target'], aligned['template'])
+    pcover = (nalign * 100.0) / (_range.end - _range.start)
+
+    hit_for = _Best_Hit_candidate(template, aligned, nalign, pid, pcover)
+    return hit_for
+
+def _get_blast_hits_for_range(r, tarSeq):
+    hits = []
+
+    _log.debug('blasting range: %s\n%s' % (r, tarSeq[r.start:r.end]))
+    # iterate over blast hits:
+    blast_hits = filterGoodHits(blaster.blast_templates(
+                                                    tarSeq[r.start: r.end]))
+
+    _log.debug('iterating %d blast hits' % len(hits))
+    for hitID in blast_hits:
+        pdbid, pdbchain = getTemplatePDBIDandChain(hitID)
+        if _template_in_blacklist(pdbid):
+            _log.debug("not using %s as template" % pdbid +
+                       ", because it's blacklisted")
+            continue
+
+        template = TemplateID(pdbid, pdbchain)
+        if not secstr.has_secondary_structure(template):
+            _log.warn("domainalign: no secondary structure for %s" % template)
+            continue
+
+        _log.debug("domainalign: got blast hit %s" % template)
+
+        for alignment in blast_hits[hitID]:
+            aligned = {'target': alignment.queryalignment,
+                       'template': alignment.subjectalignment}
+            aligned['midline'] = _get_midline(aligned['target'],
+                                              aligned['template'])
+
+            nalign = alignment.getNumberResiduesAligned()
+            pid = alignment.getIdentity()
+            pcover = (nalign * 100.0) / (r.end - r.start)
+
+            hit_for = _Best_Hit_candidate(template, aligned, nalign, pid,
+                                          pcover)
+            hits.append(hit_for)
+
+    return hits
 
 def _range_of_alignment_in(alignment, tarSeq):
     # We need to translate the alignment's range to the right,
@@ -888,14 +877,14 @@ def _remove_enclosing(r, ranges):
     return ranges
 
 
-def _clean_ranges_search_space(checkedRanges, sampleRanges, okRanges,
+def _clean_ranges_search_space(checked_ranges, sample_ranges, ok_ranges,
                                alignmentDAO):
 
     # See if we can merge ranges that have
     # the same template in their blast hits:
-    checkedRanges = removeDoubles(checkedRanges + sampleRanges)
-    sampleRanges = []
-    dictSharedHits = findSharedHits(okRanges)
+    checked_ranges = removeDoubles(checked_ranges + sample_ranges)
+    sample_ranges = []
+    dictSharedHits = findSharedHits(ok_ranges)
     for template in dictSharedHits:
 
         ranges = dictSharedHits[template]
@@ -917,7 +906,7 @@ def _clean_ranges_search_space(checkedRanges, sampleRanges, okRanges,
                 # - the merge has not already been done
                 # - the intersecting parts of the ranges align to
                 #   the template in exactly the same way
-                if dist < 10 and merged not in checkedRanges:
+                if dist < 10 and merged not in checked_ranges:
 
                     try:
                         alignment1 = alignmentDAO.getAlignment(
@@ -943,9 +932,9 @@ def _clean_ranges_search_space(checkedRanges, sampleRanges, okRanges,
 
                     if isectTempSeq1 == isectTempSeqM and \
                             isectTempSeq2 == isectTempSeqM:
-                        sampleRanges.append(merged)
+                        sample_ranges.append(merged)
 
-    return sampleRanges
+    return sample_ranges
 
 
 def alignmentsOfSameTemplateCompatible(alignment1, alignment2):
