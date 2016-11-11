@@ -32,15 +32,6 @@ source = urllib.urlopen(
 pNuc=re.compile(r'[actgu\-]+')
 pProt=re.compile(r'[ABCDEFGHIJKLMNOPQRSTUVWXYZ\-]+')
 
-# Make a list of regular expressions to recognize unallowed HET-Groups
-reUnallowedHetGroups=[]
-for hetGroupName in open(os.path.join(scriptdir, 'unallowed-hetgroups'), 'r'):
-
-    hetGroupName=hetGroupName[:-1]  # Remove the newline character
-    if len(hetGroupName.strip())>0:
-        pattern=re.compile(hetGroupName)
-        reUnallowedHetGroups.append(pattern)
-
 errorTemplates = []
 with open(os.path.join(scriptdir, 'blacklisted_templates'), 'r') as f:
     errorTemplates = f.read().lower().split()
@@ -90,20 +81,6 @@ while len(line) > 0:
     elif s[0].strip()=='Resolution' and section=='Exp-Method':
 
         resolution = float(s[1])
-
-    elif s[0].strip()=='Name' and section=='HET-Groups':
-
-        hetgroupname=s[1].strip()
-
-        for pattern in reUnallowedHetGroups:
-
-            m=pattern.search(hetgroupname)
-            if m:
-                # Go to next entry:
-                while line.strip() != '//' and len(line) > 0:
-                    line=source.readline()
-
-                break
 
     elif s[0].strip()=='Sequence':
 
