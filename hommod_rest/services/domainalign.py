@@ -781,9 +781,10 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                                                   'template'])))
 
                             # is this one better than previous hits?
-                            if pcover >= 80.0 and \
+                            if pcover >= 80 and \
                                     (not bestHitForRange or 
-                                     pid > bestHitForRange.pid):
+                                     pid > bestHitForRange.pid and
+                                     pcover >= bestHitForRange.pcover):
 
                                 # Remember to use this alignment for this
                                 # range:
@@ -844,7 +845,8 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
     returnAlignments = []
     bestRanges.sort()
     for r in bestRanges:
-        nalign, pid = getNalignIdentity(aligned['target'], aligned['template'])
+        nalign, pid = getNalignIdentity(r.alignment['target'],
+                                        r.alignment['template'])
 
         if pid >= minIdentity(nalign):
             returnAlignments.append((r, r.template, r.alignment))
