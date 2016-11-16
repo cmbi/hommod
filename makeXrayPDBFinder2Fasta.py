@@ -2,7 +2,7 @@
 
 import sys
 import os
-import urllib
+import urllib2
 import re
 
 scriptdir=os.path.abspath(os.path.dirname(sys.argv[0]))
@@ -25,7 +25,7 @@ if len(sys.argv)!=2:
 outFile=sys.argv[1]
 
 # Parse entire set of available sequences:
-source = urllib.urlopen(
+source = urllib2.urlopen(
     'ftp://ftp.cmbi.ru.nl/pub/molbio/data/pdbfinder2/PDBFIND2.TXT')
 
 # First gather all sequences from the pdbFinder:
