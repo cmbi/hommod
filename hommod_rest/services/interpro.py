@@ -3,8 +3,8 @@ from filelock import FileLock
 from modelutils import idForSeq
 import xml.etree.ElementTree as xmlElementTree
 import bz2
-import urllib
 import urllib2
+from urllib import urlencode
 import platform
 import time
 import datetime
@@ -38,7 +38,7 @@ def _interpro_user_agent():
 
 def _interpro_post(url, data):
 
-    requestData = urllib.urlencode(data)
+    requestData = urlencode(data)
 
     # Set the HTTP User-agent.
     user_agent = _interpro_user_agent()

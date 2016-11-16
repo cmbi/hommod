@@ -10,7 +10,6 @@ from StringIO import StringIO
 
 from time import time
 from suds import client
-from urllib import urlopen
 
 from modelutils import (getChainCAsSeqSecStr, getNalignIdentity, downloadPDB,
                         getCoverageIdentity, YasaraChain,
