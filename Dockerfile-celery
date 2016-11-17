@@ -17,6 +17,7 @@ ADD install_yasara_16.4.6 /deps/yasara/install_yasara
 RUN chmod 755 /deps/yasara/install_yasara ; sync && \
     ./install_yasara -norun && \
 rm install_yasara
+COPY yasara.ini /deps/yasara/yasara/yasara.ini
 
 ENV PATH $PATH:/deps/yasara/yasara
 ENV C_FORCE_ROOT true
