@@ -3,7 +3,8 @@
 import re
 import os
 import subprocess
-import urllib
+from StringIO import StringIO
+from gzip import GzipFile
 import xml.etree.ElementTree as xmlElementTree
 from math import exp
 from time import sleep
@@ -542,7 +543,7 @@ def getPDBReportEntry(pdbid):
     """
     url = 'ftp://ftp.cmbi.ru.nl/pub/molbio/data/pdbreport/%s/%s/pdbout.txt' \
           % (pdbid[1:3], pdbid)
-    return urllib.urlopen(url).read()
+    return urlopen(url).read()
 
 
 def getRCSBSeqs(ac):
@@ -555,7 +556,7 @@ def getRCSBSeqs(ac):
         currentChain = None
 
         url = 'http://www.rcsb.org/pdb/files/fasta.txt?structureIdList=' + ac
-        for line in urllib.urlopen(url):
+        for line in urlopen(url):
             if line.startswith('>'):
                 currentChain = line.split('|')[0].split(':')[1]
                 seqs[currentChain] = ''
@@ -579,7 +580,7 @@ def getUniprotSeq(ac):
     try:
         seq = ''
         url = 'http://www.uniprot.org/uniprot/' + ac + '.fasta'
-        r = urllib.urlopen(url)
+        r = urlopen(url)
         for line in r.readlines()[1:]:
             seq += line.strip()
 
@@ -587,6 +588,16 @@ def getUniprotSeq(ac):
     except IOError:
         sleep(1)
         return getRCSBSeqs(ac)
+
+
+def get_pdb_contents(pdbid):
+    part = pdbid[1:3]
+    pdb_url = (
+        'ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/%s/pdb%s.ent.gz'
+        % (part, pdbid))
+
+    pdbbuf = StringIO(urlopen(pdb_url).read())
+    return GzipFile(fileobj=pdbbuf).read()
 
 
 def filterGoodHits(hits):
