@@ -27,6 +27,7 @@ MAIL_TO = ["Coos.Baakman@radboudumc.nl", "Jon.Black@radboudumc.nl"]
 
 # Folders
 TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
+PDBFINDER2 = '/mnt/cmbi4/pdbfinder2/PDBFIND2.TXT'
 DSSPDIR = '/mnt/cmbi4/dssp/'
 MODELDIR = '/data/models/'
 EXECUTIONDIR = '/data/tmp/'  # yasara execution dir

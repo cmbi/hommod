@@ -2,103 +2,100 @@
 
 import sys
 import os
-import urllib
+import urllib2
 import re
 
-scriptdir=os.path.abspath(os.path.dirname(sys.argv[0]))
+settings = {}
+filename = 'hommod_rest/default_settings.py'
+with open(filename) as config_file:
+    exec(compile(config_file.read(), filename, 'exec'), settings)
+env_settings = {}
+filename = os.environ['HOMMOD_REST_SETTINGS']
+with open(filename) as config_file:
+    exec(compile(config_file.read(), filename, 'exec'), env_settings)
+settings.update(env_settings)
+settings = {k:v for k, v in settings.iteritems() if k.isupper()}
 
-# parent directory has modelutils.py
-sys.path.append(os.path.dirname(scriptdir))
+
+def has_dssp(pdbid):
+    return os.path.isfile(os.path.join(settings['DSSPDIR'], '%s.dssp' % pdbid))
 
 
 def writeFasta(seqs, path):
-
-    f=open(path, 'w')
-    for key in seqs.keys():
+    f = open(path, 'w')
+    for key in seqs:
         f.write('>%s\n%s\n' % (key, seqs[key]))
     f.close()
 
-if len(sys.argv)!=2:
-    print 'Usage: %s [output file]' % sys.argv[0]
-    sys.exit(0)
 
-outFile=sys.argv[1]
+def gather(blacklisted_templates):
+    # First gather all sequences from the pdbFinder:
+    pNuc = re.compile(r'[actgu\-]+')
+    pProt = re.compile(r'[ABCDEFGHIJKLMNOPQRSTUVWXYZ\-]+')
 
-# Parse entire set of available sequences:
-source = urllib.urlopen(
-    'ftp://ftp.cmbi.ru.nl/pub/molbio/data/pdbfinder2/PDBFIND2.TXT')
+    seqs = {}
+    chain_id = None
+    pdbid = None
+    section = None
+    method = None
+    resolution = None
 
-# First gather all sequences from the pdbFinder:
-pNuc=re.compile(r'[actgu\-]+')
-pProt=re.compile(r'[ABCDEFGHIJKLMNOPQRSTUVWXYZ\-]+')
+    # Parse entire set of available sequences:
+    with open(settings['PDBFINDER2'], 'r') as source:
+        for line in source:
+            if line.startswith('//'):  # comment
+                continue
+            i = line.find(':')
+            if i < 0:  # no colon
+                continue
+            line_key = line[:i].strip()
+            line_value = line[i + 1:].strip()
 
-errorTemplates = []
-with open(os.path.join(scriptdir, 'blacklisted_templates'), 'r') as f:
-    errorTemplates = f.read().lower().split()
+            if not line[0].isspace():
+                section = line_key.strip()  # Chain, HET-Groups, Exp-Method, etc.
 
-seqs={}
-hetatoms={}
+            if line_key == 'ID':
+                pdbid = line_value.lower()
 
-chainID=None
-pdbID=None
-section=None
-expMethod=None
-resolution=None
+            elif line_key == 'Chain':
+                chain_id = line_value
 
-line = source.readline()
-while len(line) > 0:
+            elif line_key == 'Exp-Method':
+                method = line_value
 
-    s=line.split(':')
+            elif line_key == 'Resolution' and section == 'Exp-Method':
+                resolution = float(line_value)
 
-    if not line[0].isspace():
-        section=s[0].strip()  # Chain, HET-Groups, Exp-Method, etc.
+            elif line_key == 'Sequence':
+                seq = line_value
 
-    if s[0].strip()=='ID':
-        pdbID=s[1].strip().lower()
+                if len(seq) > 0 and method == 'X' and has_dssp(pdbid) and \
+                        not pdbid in blacklisted_templates and \
+                        pProt.match(seq) and not pNuc.match(seq):
 
-        if pdbID in errorTemplates:
+                    # Generate key, unique for pdb file and chain id:
+                    fasta_key = 'pdb|%s|%s' % (pdbid.upper(), chain_id)
 
-            # Go to next entry:
-            while line.strip()!='//':
-                line=source.readline()
+                    # Take the longest sequence in the chain:
+                    if fasta_key not in seqs or \
+                            len(seqs[fasta_key]) < len(seq):
+                        seqs[fasta_key] = seq.replace('-', 'X')
+        source.close()
 
-    elif s[0].strip()=='Chain':
+    return seqs
 
-        chainID=s[1].strip()
 
-    elif s[0].strip()=='Exp-Method':
+if __name__ == "__main__":
 
-        expMethod=s[1].strip()
+    if len(sys.argv) != 2:
+        print 'Usage: %s [output file]' % sys.argv[0]
+        sys.exit(0)
 
-        if expMethod!='X':
+    out_file = sys.argv[1]
 
-            # Go to next entry:
-            while line.strip() != '//' and len(line) > 0:
-                line=source.readline()
+    blacklisted_templates = []
+    with open(settings['TEMPLATE_BLACKLIST'], 'r') as f:
+        blacklisted_templates = f.read().lower().split()
 
-            expMethod=None
-
-    elif s[0].strip()=='Resolution' and section=='Exp-Method':
-
-        resolution = float(s[1])
-
-    elif s[0].strip()=='Sequence':
-
-        seq=s[1].strip()
-
-        if len(seq)>0 and expMethod=='X' and pProt.match(seq) and not pNuc.match(seq):
-
-            # Generate key, unique for pdb file and chain id:
-            key='pdb|%s|%s' % (pdbID.upper(), chainID)
-#            key='%s:%s|PDBID|CHAIN|SEQUENCE'%(pdbID.upper(),chainID)
-
-            # Take the longest sequence in the chain:
-            if key not in seqs or len(seqs[key])<len(seq):
-
-                seqs[key] = seq.replace('-', 'X')
-
-    line=source.readline()
-
-source.close()
-
-writeFasta(seqs, outFile)
+    seqs = gather(blacklisted_templates)
+    writeFasta(seqs, out_file)
