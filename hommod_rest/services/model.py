@@ -384,7 +384,14 @@ class Modeler(object):
         # YASARA also cleans when starting a modeling run, but
         # we need to make sure that we have the molecule in its
         # final state, before we start reading from it.
-        self.yasara.CleanObj(tempobj)
+        try:
+            self.yasara.CleanObj(tempobj)
+        except RuntimeError:
+            # When yasara connection suddenly breaks without a reason,
+            # look for errorexit.txt
+            if os.path.isfile('errorexit.txt'):
+                with open('errorexit.txt', 'r') as f:
+                    raise Exception(f.read())
 
         # Make sure there are no chains with sequence XXXXXXXXXXXXXXXXXX,
         # Otherwise, yasara would remove the entire chain.

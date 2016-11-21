@@ -99,3 +99,10 @@ class TestTasks:
         _log.debug("Recieved model path: \'%s\'" % path)
 
         assert (len(path) > 0)
+
+    def test_model_high_memory(self):
+        from hommod_rest.tasks import create_model
+        path = create_model(
+                "QRNLRKYLQLRTWPWYKLWQKVKPLLNVSRIEDEIARLEEKAKKAEELHAAEVKVRKELE",
+                "DROME", 820, TemplateID("3JBH", 'A'))
+        assert (len(path) > 0)
