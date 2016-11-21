@@ -12,19 +12,16 @@ from hashlib import md5
 from urllib2 import urlopen
 
 
-def isCodedAA(aa1lettercode):
-    return aa1lettercode in 'ACDEFGHIKLMNPQRSTVWY'
-
 # Convertors for amino acid three letter codes <-> one letter codes:
 aa123 = {
     'A': 'ALA', 'C': 'CYS', 'D': 'ASP', 'E': 'GLU', 'F': 'PHE', 'G': 'GLY',
     'H': 'HIS', 'I': 'ILE', 'K': 'LYS', 'L': 'LEU', 'M': 'MET', 'N': 'ASN',
     'P': 'PRO', 'Q': 'GLN', 'R': 'ARG', 'S': 'SER', 'T': 'THR', 'V': 'VAL',
-    'W': 'TRP', 'Y': 'TYR'
+    'W': 'TRP', 'Y': 'TYR', 'O': 'PYL', 'U': 'SEC'
 }
 
 aa321 = {}
-for onelettercode in aa123.keys():
+for onelettercode in aa123:
     aa321[aa123[onelettercode]] = onelettercode
 
 
@@ -35,25 +32,6 @@ def get_aa321(aa):
         return aa321[aa]
     else:
         return 'X'
-
-
-# returns true if the two lists have at least one matching element.
-def overlap(list1, list2):
-    for item in list1:
-        if item in list2:
-            return True
-    return False
-
-
-# Returns only one sequence from the fasta file, with its id.
-# Useful when working with single sequence fastas.
-def parseFirstFastaSequence(filename):
-
-    fasta = parseFasta(open(filename, 'r'))
-
-    ID = fasta.keys()[0]
-
-    return (ID, fasta[ID])
 
 
 # Converts fasta text to a dictionary of sequences.
@@ -463,25 +441,6 @@ def getPercentageIdentity(alignedseq1, alignedseq2):
     return pid
 
 
-def getNResiduesAligned(alignedseq1, alignedseq2):
-    """
-    Returns just the number of aligned residues
-    """
-    nalign = 0
-    for i in range(len(alignedseq1)):
-
-        aa1 = alignedseq1[i].upper()
-        aa2 = alignedseq2[i].upper()
-
-        if aa1.isalpha() and aa2.isalpha():
-            nalign += 1
-
-    return nalign
-
-# alias
-getSequenceIdentity = getPercentageIdentity
-
-
 def filterMinLength(minlength, sequenceDictionary):
     """
     Removes the sequences shorter than 'minLength'
@@ -505,26 +464,6 @@ def seqWithoutGaps(seq):
     return s
 
 
-def selectBestReplacementLoop(lenDeletion, loopsDict):
-    """
-    Determines which of the loops in loopsDict fits the deletion best and
-    returns its key in loopsDict.
-    This function simply looks at how well the length of the loop matches the
-    length of the deletion.
-    """
-    bestAC = None
-    bestLooplen = 0
-    for ac in loopsDict:
-        looplen = len(seqWithoutGaps(loopsDict[ac]))
-
-        if not bestAC or \
-           abs(looplen - lenDeletion) < abs(bestLooplen - lenDeletion):
-            bestAC = ac
-            bestLooplen = looplen
-
-    return bestAC
-
-
 def idForSeq(seq):
     """
     Generates an unique id for a given sequence.
@@ -535,41 +474,6 @@ def idForSeq(seq):
             h[12: 16] + '-' +
             h[16: 20] + '-' +
             h[20:])
-
-
-def getPDBReportEntry(pdbid):
-    """
-    Gets the pdbreport text for a pdb entry:
-    """
-    url = 'ftp://ftp.cmbi.ru.nl/pub/molbio/data/pdbreport/%s/%s/pdbout.txt' \
-          % (pdbid[1:3], pdbid)
-    return urlopen(url).read()
-
-
-def getRCSBSeqs(ac):
-    """
-    Gets the seqres sequences from the rcsb website.
-    Don't use this in high frequencies, because the website can't handle it!
-    """
-    try:
-        seqs = {}
-        currentChain = None
-
-        url = 'http://www.rcsb.org/pdb/files/fasta.txt?structureIdList=' + ac
-        for line in urlopen(url):
-            if line.startswith('>'):
-                currentChain = line.split('|')[0].split(':')[1]
-                seqs[currentChain] = ''
-            else:
-                seqs[currentChain] += line.strip()
-
-        if len(seqs) <= 0:
-            raise Exception("No sequences at rcsb entry \'" + ac + "\'")
-
-        return seqs
-    except IOError:
-        sleep(1)
-        return getRCSBSeqs(ac)
 
 
 def getUniprotSeq(ac):
@@ -587,7 +491,7 @@ def getUniprotSeq(ac):
         return seq
     except IOError:
         sleep(1)
-        return getRCSBSeqs(ac)
+        return getUniprotSeq(ac)
 
 
 def get_pdb_contents(pdbid):
@@ -890,3 +794,67 @@ def parseBlastResults(lines):
         hits[hitID] = alis
 
     return hits
+
+
+def get_target_covered_range(alignment, template_seq):
+    """
+    This function must return the start and end position of the range
+    in the target sequence, covered by the given template. It assumes that the
+    alignment has the sequence ids 'target' and 'template' The alignment target
+    sequence is assumed to be the full target sequence.
+    """
+
+    # template_seq must match its alignment['template'],
+    # but alignment['template'] may be a substring of template_seq:
+    if templateseq != alignment['template'].replace('-', ''):
+        raise Exception(
+                'mismatch between alignment and template sequence:\n%s\n%s'
+                % (alignment['template'], templateseq))
+
+    # Determine alignment['target']'s start and end positions in alignment:
+    target_start = 0
+    while not alignment['target'][target_start].isalpha():
+        target_start += 1
+
+    target_end = target_start
+    while target_end < len(alignment['target']) and \
+            alignment['target'][target_end].isalpha():
+        target_end += 1
+
+    # Determine where alignment['template'] starts, relative to
+    # alignment['target']:
+    covered_range_start = len(alignment['template'][:target_start]
+                              .replace('-',''))
+    covered_range_end = (len(templateseq) -
+            len(alignment['template'][target_end:].replace('-', '')))
+
+    return (covered_range_start, covered_range_end)
+
+
+def alignment_format(alignment, key_order, midline=True):
+    """
+    represents alignment in printable format
+    """
+    if len(key_order) <= 0:
+        return ""
+
+    s = ''
+    m = 100
+    for i in range(0, len(aligned[key_order[0]]), m):
+        for j in range(len(key_order)):
+            key = key_order[j]
+            n = min(aligned[key], m)
+            if j > 0 and midline:
+                prev_key = key_order[i - 1]
+                for k in range(i, n):
+                    if aligned[prev_key][k] == aligned[key][k]:
+                        s += aligned[key][k]
+                    else
+                        s += ' '
+                s += '\n'
+            for k in range(i, n):
+                s += aligned[key][k]
+            s += '\n'
+        s += '\n'
+
+    return s

@@ -9,7 +9,7 @@ from hommod_rest.services.align import aligner
 
 from modelutils import (get_aa321, getNalignIdentity, filterGoodHits,
                         parseDSSP,
-                        minIdentity,
+                        minIdentity, alignment_format,
                         TemplateID, getTemplatePDBIDandChain)
 
 _log = logging.getLogger(__name__)
@@ -27,45 +27,12 @@ def _template_in_blacklist(pdbid):
     return modeler._template_in_blacklist(pdbid)
 
 
-def _get_midline(alignedseq1, alignedseq2):
-    """
-    This generates the midline string for an alignment.
-    It's used for debugging purposes.
-    """
-    m = ''
-    for i in range(len(alignedseq1)):
-        if alignedseq1[i] == alignedseq2[i]:
-            m += alignedseq1[i]
-        else:
-            m += ' '
-    return m
-
-
-def alignment_to_string(aligned, order=[]):
-    """
-    Represents a given alignment dictionary as a string.
-    This is used for debugging.
-    """
-    s = ''
-
-    if len(order) <= 0:
-        order = aligned.keys()
-    k = order[0]
-    for i in range(0, len(aligned[k]), 100):
-        f = i + 100
-        if f > len(aligned[k]):
-            f = len(aligned[k])
-        for key in order:
-            s += aligned[key][i:f] + '\n'
-        s += '\n'
-
-    return s
-
-
 def _map_gaps(gapped, gapless):
     """
     maps the sequence of 'gapless' onto 'gapped', keeping the gaps, but
     replacing the amino acids in sequential order.
+
+    This is useful for adding secondary structure sequences to an alignment.
     """
     s = ''
     i = 0
@@ -271,17 +238,6 @@ def mergeSimilar(ranges):
     return ranges
 
 
-def removeFromList(subj, toremove):
-    """
-    Returns the given list without the elements in 'toremove'.
-    """
-    r = []
-    for x in subj:
-        if x not in toremove:
-            r.append(x)
-    return r
-
-
 def removeDoubles(ranges):
     """
     Returns the given list, with duplicates removed.
@@ -348,10 +304,13 @@ def findSharedHits(ranges):
     return r
 
 
-# stores alignments for easy access.
-# Lookup alignment by range object and template (structure + chain id)
 class _AlignmentPool(object):
+    """
+    stores alignments for easy access.
+    Lookup alignment by range object and template (structure + chain id)
 
+    This is mainly made for performance reasons.
+    """
     def __init__(self, targetSequence):
         self.pool = {}
         self.targetSequence = targetSequence
@@ -364,28 +323,8 @@ class _AlignmentPool(object):
         if _range not in self.pool:
             self.pool[_range] = {}
         if templateID not in self.pool[_range]:
-            self.pool[_range][templateID] = \
-                makeDSSPAlignment(
+            self.pool[_range][templateID] = makeAlignment(
                     self.targetSequence[_range.start: _range.end], template)
-
-        return self.pool[_range][templateID]
-
-    # For lookup by yasara object:
-    def getAlignmentFromYasara(self, yasara, _range, yasaraObj, yasaraChain):
-
-        templateID = 'y-' + \
-                     str(TemplateID(
-                         yasara.ListObj(str(yasaraObj),
-                                        'OBJNAME')[0], yasaraChain))
-
-        if _range not in self.pool:
-            self.pool[_range] = {}
-        if templateID not in self.pool[_range]:
-            self.pool[_range][templateID] = \
-                makeYasaraAlignment(
-                    yasara,
-                    self.targetSequence[_range.start:_range.end],
-                    yasaraObj, yasaraChain)
 
         return self.pool[_range][templateID]
 
@@ -398,48 +337,13 @@ def hasTemplateSeq(alignment, templateSeq):
     return alignment['template'].replace('-', '') == templateSeq
 
 
-def makeYasaraAlignment(yasara, domainSeq, yasaraObject, yasaraChainID):
-    """
-    Produces an alignment from a yasara object as template seq.
-    """
-    cas = []
-    for s in yasara.ListAtom('CA and protein and obj %i and mol %s' %
-                             (yasaraObject, yasaraChainID)):
-        cas.append(int(s))
-
-    pdbSeq = ''
-    pdbSecStr = ''
-    for ca in cas:
-        pdbSeq += get_aa321(yasara.ListRes('atom %i' % ca, 'RESNAME')[0])
-        pdbSecStr += yasara.SecStrRes('atom %i' % ca)[0]
-
-    aligned = aligner.kmad_align(pdbSeq, pdbSecStr, domainSeq)
-    aligned['secstr'] = _map_gaps(aligned['template'], pdbSecStr)
-    aligned['midline'] = _get_midline(aligned['template'], aligned['target'])
-
-    if not hasTemplateSeq(aligned, pdbSeq):
-        raise Exception(
-            'Yasara alignment: aligned seq doesn\'t match template seq:\n' +
-            aligned['template'] + '\n' + pdbSeq
-        )
-
-    return aligned
-
-
-def makeDSSPAlignment(domainSeq, template):
+def makeAlignment(domainSeq, template):
     """
     Produces an alignment, using the dssp file as template.
     """
-    dssppath = '/mnt/cmbi4/dssp/%s.dssp' % template.pdbac.lower()
-
-    d = parseDSSP(dssppath)
-    if template.chainID not in d:
-        raise Exception('No chain %s in %s' % (template.chainID, dssppath))
-    pdbSeq, pdbSecStr, pdbDisulfid = d[template.chainID]
-
+    pdbSeq, pdbSecStr = secstr.get_sequence_secondary_structure(template.pdbac)
     aligned = aligner.kmad_align(pdbSeq, pdbSecStr, domainSeq)
     aligned['secstr'] = _map_gaps(aligned['template'], pdbSecStr)
-    aligned['midline'] = _get_midline(aligned['template'], aligned['target'])
 
     if not hasTemplateSeq(aligned, pdbSeq):
         raise Exception(
@@ -510,29 +414,6 @@ def getTemplateSeqAtTargetPositions(alignment, startInTarget, endInTarget):
     return alignment['template'][start: end]
 
 
-def getTargetCoveredRange(alignment, templateseq):
-    """
-    For a given alignment and matching template sequence, this function returns
-    the corresponding template range that is covered by the target.
-    """
-    if templateseq != alignment['template'].replace('-', ''):
-        raise Exception('mismatch between alignment and template sequence')
-
-    coveredRangeStart = 0
-    while not alignment['target'][coveredRangeStart].isalpha():
-        coveredRangeStart += 1
-    coveredRangeEnd = coveredRangeStart
-    while alignment['target'][coveredRangeEnd].isalpha():
-        coveredRangeEnd += 1
-
-    coveredRangeStart = \
-        len(alignment['template'][:coveredRangeStart].replace('-', ''))
-    coveredRangeEnd = len(templateseq) - \
-        len(alignment['template'][coveredRangeEnd:].replace('-', ''))
-
-    return (coveredRangeStart, coveredRangeEnd)
-
-
 def pickAlignments(templateYasaraChain, targetSeqs, targetsInterproRanges, picker):
     """
     Generates alignments using the 'getAlignments' function and filters out
@@ -583,7 +464,6 @@ def getForbiddenRanges(interproDomains):
 def _alignment_ok_for_range(r, tarSeq, nalign, pid, pcover):
     # bHH: highly homologous to the whole target sequence
     bHH = pid >= 80.0 and r.length() == len(tarSeq)
-
     return pid >= minIdentity(nalign) and (pcover >= 80.0 or bHH)
 
 
@@ -715,9 +595,8 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                     _log.debug(
                         "domainalign: passing %d - %d alignment with %s:\n%s"
                         % (r.start, r.end, hit_candidate.template,
-                           alignment_to_string(hit_candidate.alignment,
-                                               ['target', 'midline',
-                                                'template'])))
+                           alignment_format(hit_candidate.alignment,
+                                               ['target', 'template'])))
 
                     # is this one better than previous hits?
                     if hit_candidate.pcover >= 80 and \
@@ -741,9 +620,8 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                         ("domainalign: rejecting %d - %d blast hit with %s:\n"
                          + "%s\ncover: %.1f %%, identity: %.1f %%\n")
                         % (r.start, r.end, hit_candidate.template,
-                           alignment_to_string(hit_candidate.alignment,
-                                               ['target','midline',
-                                                'template']).strip(),
+                           alignment_format(hit_candidate.alignment,
+                                            ['target', 'template']).strip(),
                            hit_candidate.pcover, hit_candidate.pid))
 
             if not best_hit_for_range and last_resort_for_range:
@@ -753,9 +631,8 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
 
                 _log.debug("pick %d - %d best hit %s:\n%s"
                            % (r.start, r.end, best_hit_for_range.template,
-                              alignment_to_string(best_hit_for_range.alignment,
-                                            ['target', 'midline',
-                                             'template'])))
+                              alignment_format(best_hit_for_range.alignment,
+                                               ['target', 'template'])))
 
                 # Remove any smaller ranges that this one encloses:
                 best_ranges = _remove_enclosing(r, best_ranges)
@@ -835,8 +712,6 @@ def _get_blast_hits_for_range(r, tarSeq):
         for alignment in blast_hits[hitID]:
             aligned = {'target': alignment.queryalignment,
                        'template': alignment.subjectalignment}
-            aligned['midline'] = _get_midline(aligned['target'],
-                                              aligned['template'])
 
             nalign = alignment.getNumberResiduesAligned()
             pid = alignment.getIdentity()
@@ -939,7 +814,7 @@ def _clean_ranges_search_space(checked_ranges, sample_ranges, ok_ranges,
 
 def alignmentsOfSameTemplateCompatible(alignment1, alignment2):
     """
-    This function checks to be sure tha two alignments are compatible
+    This function checks to be sure that two alignments are compatible
     i.e. they don't overlap.
     """
     span1 = _get_relative_span(alignment1['target'], alignment1['template'])
