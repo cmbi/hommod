@@ -806,10 +806,10 @@ def get_target_covered_range(alignment, template_seq):
 
     # template_seq must match its alignment['template'],
     # but alignment['template'] may be a substring of template_seq:
-    if templateseq != alignment['template'].replace('-', ''):
+    if template_seq != alignment['template'].replace('-', ''):
         raise Exception(
                 'mismatch between alignment and template sequence:\n%s\n%s'
-                % (alignment['template'], templateseq))
+                % (alignment['template'], template_seq))
 
     # Determine alignment['target']'s start and end positions in alignment:
     target_start = 0
@@ -825,7 +825,7 @@ def get_target_covered_range(alignment, template_seq):
     # alignment['target']:
     covered_range_start = len(alignment['template'][:target_start]
                               .replace('-',''))
-    covered_range_end = (len(templateseq) -
+    covered_range_end = (len(template_seq) -
             len(alignment['template'][target_end:].replace('-', '')))
 
     return (covered_range_start, covered_range_end)
@@ -833,27 +833,27 @@ def get_target_covered_range(alignment, template_seq):
 
 def alignment_format(alignment, key_order, midline=True):
     """
-    represents alignment in printable format
+    converts alignment to printable format
     """
     if len(key_order) <= 0:
         return ""
 
     s = ''
     m = 100
-    for i in range(0, len(aligned[key_order[0]]), m):
+    for i in range(0, len(alignment[key_order[0]]), m):
         for j in range(len(key_order)):
             key = key_order[j]
-            n = min(aligned[key], m)
+            n = min(alignment[key], m)
             if j > 0 and midline:
-                prev_key = key_order[i - 1]
+                prev_key = key_order[j - 1]
                 for k in range(i, n):
-                    if aligned[prev_key][k] == aligned[key][k]:
-                        s += aligned[key][k]
-                    else
+                    if alignment[prev_key][k] == alignment[key][k]:
+                        s += alignment[key][k]
+                    else:
                         s += ' '
                 s += '\n'
             for k in range(i, n):
-                s += aligned[key][k]
+                s += alignment[key][k]
             s += '\n'
         s += '\n'
 

@@ -62,18 +62,15 @@ class SecondaryStructureProvider(object):
             return template.chainID in d
         else:
             obj = self.yasara.LoadPDB(template.pdbac, download='yes')[0]
-            for ss in self.yasara.SecStrRes('obj %i and mol %s'
-                                            % (obj, template.chainID)):
-                if ss != 'X':
-                    self.yasara.DelObj(obj)
-
-                    _log.info("yasara reported secondary structure for %s_%s" % (template.pdbac, template.chainID))
-
-                    return True
+            secstr = self.yasara.SecStrRes('obj %i and mol %s'
+                                           % (obj, template.chainID))
             self.yasara.DelObj(obj)
+            for ss in secstr:
+                if ss != 'X':
+                    _log.info("yasara reported secondary structure for %s_%s" % (template.pdbac, template.chainID))
+                    return True
 
             _log.info("yasara reported no secondary structure for %s_%s" % (template.pdbac, template.chainID))
-
             return False
 
     def get_sequence_secondary_structure(self, template):
@@ -90,7 +87,7 @@ class SecondaryStructureProvider(object):
         else:
             obj = self.yasara.LoadPDB(template.pdbac, download='yes')[0]
             sequence = self.yasara.SequenceMol('obj %i and mol %s'
-                                               % (obj, template.chainID))
+                                               % (obj, template.chainID))[0]
             secstr = self.yasara.SecStrRes('obj %i and mol %s'
                                            % (obj, template.chainID))
             self.yasara.DelObj(obj)

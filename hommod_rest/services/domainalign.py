@@ -341,7 +341,7 @@ def makeAlignment(domainSeq, template):
     """
     Produces an alignment, using the dssp file as template.
     """
-    pdbSeq, pdbSecStr = secstr.get_sequence_secondary_structure(template.pdbac)
+    pdbSeq, pdbSecStr = secstr.get_sequence_secondary_structure(template)
     aligned = aligner.kmad_align(pdbSeq, pdbSecStr, domainSeq)
     aligned['secstr'] = _map_gaps(aligned['template'], pdbSecStr)
 
@@ -675,10 +675,7 @@ def _get_hit_for_yasara_chain(_range, yasaraChain, alignmentDAO):
     template = TemplateID(yasaraChain.objname[:4], yasaraChain.chainID)
 
     # align only against 1 template:
-    aligned = alignmentDAO.getAlignmentFromYasara(
-        yasaraChain.yasaramodule, _range,
-        yasaraChain.obj, yasaraChain.chainID
-    )
+    aligned = alignmentDAO.getAlignment(_range, template)
 
     nalign, pid = getNalignIdentity(aligned['target'], aligned['template'])
     pcover = (nalign * 100.0) / (_range.end - _range.start)
