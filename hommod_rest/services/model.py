@@ -10,12 +10,11 @@ from StringIO import StringIO
 
 from time import time
 from suds import client
-from urllib import urlopen
 
 from modelutils import (getChainCAsSeqSecStr, getNalignIdentity, downloadPDB,
                         getCoverageIdentity, YasaraChain,
                         identifyDeletedRegions, getPercentageIdentity,
-                        filterMinLength, minIdentity,
+                        filterMinLength, minIdentity, get_pdb_contents,
                         getUniprotSeq, idForSeq, getTemplateSequence)
 
 from interaction import listInteractingChains, InteractionPicker
@@ -333,6 +332,8 @@ class Modeler(object):
         # Count the number of molecules in unoligomerized state:
         nMolsUnoligomerized = \
             len(self.yasara.ListMol('obj %i protein' % tempobj, 'MOL'))
+        if nMolsUnoligomerized <= 0:
+            raise Exception("No protein chains found in %s" % tempac)
 
         if oligomerize:
             try:
@@ -432,19 +433,14 @@ class Modeler(object):
 
         pdbac = main_template_id.pdbac.lower()
         chainID = main_template_id.chainID
-        part = pdbac[1:3]
-
-        pdb_url = 'ftp://ftp.wwpdb.org/pub/pdb/data/structures/divided/pdb/%s/pdb%s.ent.gz' % (part, pdbac)
 
         model_path = os.path.join(model_dir, 'target.pdb')
         alignmentFastaPath = os.path.join(model_dir, 'align.fasta')
         selectedTargetsPath = \
             os.path.join(model_dir, 'selected-targets.txt')
-
         try:
             # Download and decompress pdb file:
-            pdbbuf = StringIO(urlopen(pdb_url).read())
-            open(model_path, 'w').write(GzipFile(fileobj=pdbbuf).read())
+            open(model_path, 'w').write(get_pdb_contents(pdbac))
 
             # Document the match:
             open(selectedTargetsPath, 'w') \
@@ -461,15 +457,12 @@ class Modeler(object):
             f.write('>%s_%s\n' % (pdbac, chainID))
             f.write(main_domain_alignment['template'] + '\n')
             f.close()
-
-        except Exception as e:
-
+        except:
             # Clean up files of failed operation:
             for path in [model_path, alignmentFastaPath, selectedTargetsPath]:
                 if os.path.isfile(path):
                     os.remove(path)
-
-            raise e
+            raise
 
     # This function builds a model for one alignment.
     # It must be given a directory to work in,
