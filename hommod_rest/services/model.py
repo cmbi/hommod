@@ -231,9 +231,7 @@ class Modeler(object):
 
         self.yasara.Clear()
 
-        pdbfile = os.path.abspath('%s.pdb' % tempac)
-        open(pdbfile, 'w').write(downloadPDB(tempac))
-        tempobj = self.yasara.LoadPDB(pdbfile)[0]
+        tempobj = self.yasara.LoadPDB(tempac, download='yes')[0]
         self.yasara.DelObj('not %i' % tempobj)
 
         # Count the number of molecules in unoligomerized state:
@@ -257,7 +255,7 @@ class Modeler(object):
                 # oligomerisation might throw an exception,
                 # in which case we must restore the old situation
                 self.yasara.Clear()
-                tempobj = self.yasara.LoadPDB(pdbfile)[0]
+                tempobj = self.yasara.LoadPDB(tempac, download='yes')[0]
 
             # Count the number of molecules in oligomerized state:
             nMolsOligomerized = len(
@@ -268,7 +266,7 @@ class Modeler(object):
             if nMolsOligomerized < nMolsUnoligomerized:
 
                 self.yasara.Clear()
-                tempobj = self.yasara.LoadPDB(pdbfile)[0]
+                tempobj = self.yasara.LoadPDB(tempac, download='yes')[0]
 
         # If BuildSymRes throws an exception, we just continue
         try:
@@ -672,12 +670,12 @@ class Modeler(object):
 
         # Start the modeling run:
         self.model_with_alignment(alignmentFastaPath, tempobj)
-
         if not os.path.isfile("target.yob"):
             raise Exception("yasara modeling run did not complete for %s %s (%d - %d)\n%s\n\n"
                             % (uniprot_species_name, main_template_id,
                                main_domain_range.start, main_domain_range.end,
                                main_target_sequence) +
+                            "\'target.yob\' is missing\n" +
                             "Please check yasara's output for further details")
 
         # Save the model in PDB format:
