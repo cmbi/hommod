@@ -61,20 +61,40 @@ class SecondaryStructureProvider(object):
 
             return template.chainID in d
         else:
-            pdbfile = os.path.abspath("%s.pdb" % template.pdbac)
-            open(pdbfile, 'w').write(downloadPDB(template.pdbac))
-            obj = self.yasara.LoadPDB(pdbfile)[0]
-            for ss in self.yasara.SecStrRes('obj %i' % obj):
-                if ss != 'X':
-                    self.yasara.DelObj(obj)
-
-                    _log.info("yasara reported secondary structure for %s_%s" % (template.pdbac, template.chainID))
-
-                    return True
+            obj = self.yasara.LoadPDB(template.pdbac, download='yes')[0]
+            secstr = self.yasara.SecStrRes('obj %i and mol %s'
+                                           % (obj, template.chainID))
             self.yasara.DelObj(obj)
+            for ss in secstr:
+                if ss != 'X':
+                    _log.info("yasara reported secondary structure for %s_%s" % (template.pdbac, template.chainID))
+                    return True
 
             _log.info("yasara reported no secondary structure for %s_%s" % (template.pdbac, template.chainID))
-
             return False
+
+    def get_sequence_secondary_structure(self, template):
+        self._check_config()
+
+        dssppath = '%s/%s.dssp' % (self.dssp_dir, template.pdbac.lower())
+        if os.path.isfile(dssppath):
+            d = parseDSSP(dssppath)
+            if template.chainID not in d:
+                raise Exception('No chain %s in %s' % (template.chainID,
+                                                       dssppath))
+            seq, secstr, disulifids = d[template.chainID]
+            return seq, secstr
+        else:
+            obj = self.yasara.LoadPDB(template.pdbac, download='yes')[0]
+            sequence = self.yasara.SequenceMol('obj %i and mol %s'
+                                               % (obj, template.chainID))[0]
+            secstr = self.yasara.SecStrRes('obj %i and mol %s'
+                                           % (obj, template.chainID))
+            self.yasara.DelObj(obj)
+            if 'X' in secstr:
+                raise Exception(
+                        "yasara reported secondary structure %s for %s_%s"
+                        % (secstr, template.pdbac, template.chainID))
+            return seq, secstr
 
 secstr = SecondaryStructureProvider()

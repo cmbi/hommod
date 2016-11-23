@@ -10,43 +10,7 @@ import logging
 
 _log = logging.getLogger(__name__)
 
-
-def getTargetCoveredRange(alignment, templateseq):
-    """
-    This function must return the start and end position of the range
-    in the target sequence, covered by the given template. It assumes that the
-    alignment has the sequence ids 'target' and 'template' The alignment target
-    sequence is assumed to be the full target sequence.
-    """
-    # templateseq must match its alignment ['template'],
-    # but alignment ['template'] may be a substring of templateseq:
-    if templateseq != alignment['template'].replace('-', ''):
-        raise Exception(
-            'mismatch between alignment and template sequence\nseq:' +
-            templateseq + '\nali:' + alignment['template']
-        )
-
-    # Determine alignment['target']'s start and end positions in alignment:
-    targetStart = 0
-    while not alignment['target'][targetStart].isalpha():
-
-        targetStart += 1
-
-    targetEnd = targetStart
-    while (targetEnd < len(alignment['target']) and
-           alignment['target'][targetEnd].isalpha()):
-
-        targetEnd += 1
-
-    # Determine where alignment['template'] starts, relative to alignment['target']:
-    coveredRangeStart = len(alignment['template'][:targetStart]
-                            .replace('-', ''))
-
-    coveredRangeEnd = (len(templateseq) -
-                       len(alignment['template'][targetEnd:]
-                           .replace('-', '')))
-
-    return (coveredRangeStart, coveredRangeEnd)
+from hommod_rest.services.modelutils import get_target_covered_range
 
 
 def listInteractingChains(yasaraChain):
@@ -113,8 +77,8 @@ class InteractionPicker (domainalign.Picker):
             iCAs = interactionYasaraChain.CAs
             iseq = interactionYasaraChain.seq
 
-            sstart, send = getTargetCoveredRange(subjectChainAlignment, sseq)
-            istart, iend = getTargetCoveredRange(
+            sstart, send = get_target_covered_range(subjectChainAlignment, sseq)
+            istart, iend = get_target_covered_range(
                 self.interactionChainAlignments[chainID], iseq
             )
 

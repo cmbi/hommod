@@ -1,7 +1,7 @@
 import os
 from nose.tools import eq_, ok_, with_setup
 
-from hommod_rest.services.model import findOrthologsToSeq
+from hommod_rest.services.model import find_orthologs_to_sequence
 from hommod_rest.services.blast import blaster
 import hommod_rest.default_settings as config
 
@@ -23,7 +23,7 @@ def _tear_down():
 
 @with_setup(_setup, _tear_down)
 def test_1OCO_BOVIN():
-    orthologs = findOrthologsToSeq(
+    orthologs = find_orthologs_to_sequence(
         "MFINRWLFSTNHKDIGTLYLLFGAWAGMVGTALSLLIRAELGQPGTLLGDDQI"
         "YNVVVTAHAFVMIFFMVMPIMIGGFGNWLVPLMIGAPDMAFPRMNNMSFWLLP"
         "PSFLLLLASSMVEAGAGTGWTVYPPLAGNLAHAGASVDLTIFSLHLAGVSSIL"
