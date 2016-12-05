@@ -125,5 +125,6 @@ class TestTasks:
             "IFRKNGFDFVIDENAPVTERAKLISLPTSKNWTFGPQDVDELIFMLSDSPGVMCRPSRVKQM" +
             "FASRACRKSVMIGTALNTSEMKKLITHMGEMDHPWNCPHGRPTMRHIANLGVISQN",
             "HUMAN", 470, TemplateID("1R6F", 'A'))
-        assert (len(path) > 0)
+        # Alignment is poor, shouldn't produce any model!
+        assert (len(path) <= 0)
 
