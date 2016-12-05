@@ -86,8 +86,8 @@ class SecondaryStructureProvider(object):
             return seq, secstr
         else:
             obj = self.yasara.LoadPDB(template.pdbac, download='yes')[0]
-            sequence = self.yasara.SequenceMol('obj %i and mol %s'
-                                               % (obj, template.chainID))[0]
+            seq = self.yasara.SequenceMol('obj %i and mol %s'
+                                          % (obj, template.chainID))[0]
             secstr = self.yasara.SecStrRes('obj %i and mol %s'
                                            % (obj, template.chainID))
             self.yasara.DelObj(obj)
