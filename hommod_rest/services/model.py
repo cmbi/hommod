@@ -274,6 +274,17 @@ class Modeler(object):
         except Exception as e:
             _log.warn('Cannot execute BuildSymRes on {}: {}'.format(tempac,
                                                                     e.args[0]))
+        # YASARA also cleans when starting a modeling run, but
+        # we need to make sure that we have the molecule in its
+        # final state, before we start reading from it.
+        try:
+            self.yasara.CleanObj(tempobj)
+        except RuntimeError:
+            # When yasara connection suddenly breaks without a reason,
+            # look for errorexit.txt
+            if os.path.isfile('errorexit.txt'):
+                with open('errorexit.txt', 'r') as f:
+                    raise Exception(f.read())
 
         # Make sure there's only one chain for each chain identifier:
         chain_order = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
@@ -286,18 +297,6 @@ class Modeler(object):
                                                 (chain_order[i], tempobj), "ATOMNUM")
                 # Call JoinMol on the last molecule in YASARA's order:
                 self.yasara.JoinMol("atom %s" % atomnums[-1])
-
-        # YASARA also cleans when starting a modeling run, but
-        # we need to make sure that we have the molecule in its
-        # final state, before we start reading from it.
-        try:
-            self.yasara.CleanObj(tempobj)
-        except RuntimeError:
-            # When yasara connection suddenly breaks without a reason,
-            # look for errorexit.txt
-            if os.path.isfile('errorexit.txt'):
-                with open('errorexit.txt', 'r') as f:
-                    raise Exception(f.read())
 
         # Make sure there are no chains with sequence XXXXXXXXXXXXXXXXXX,
         # Otherwise, yasara would remove the entire chain.
