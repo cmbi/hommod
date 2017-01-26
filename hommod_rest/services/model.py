@@ -29,6 +29,11 @@ import domainalign
 _log = logging.getLogger(__name__)
 
 
+pFullyGapped = re.compile(r"^[\-\.]+$")
+def is_fully_gapped(aligned_seq):
+    return pFullyGapped.match(aligned_seq) is not None
+
+
 # Record on how long certain modeling steps took,
 # for performance monitoring:
 def time_log(text):
@@ -376,6 +381,16 @@ class Modeler(object):
     def _build_for_domain(self, model_dir, main_target_id, uniprot_species_name,
                           main_template_id, main_target_sequence, main_domain_range):
 
+        if main_domain_range.start >= main_domain_range.end:
+            raise Exception("invalid main domain range: %d - %d" %
+                    (main_domain_range.start, main_domain_range.end))
+        if main_domain_range.start < 0 or \
+                main_domain_range.end > len(main_target_sequence):
+            raise Exception(
+                    "main domain range: %d - %d exceeds sequence length(%d)" %
+                    (main_domain_range.start, main_domain_range.end,
+                     len(main_target_sequence)))
+
         self._check_init()
         _log.info("building model %s range %s on template %s" %
                   (main_template_id, str(main_domain_range), str(main_template_id)))
@@ -447,6 +462,10 @@ class Modeler(object):
             alignments[chainID] = aligner \
                 .kmad_align(templateChainSeq,
                             templateChainSecStr, mainDomainSeq)
+            if is_fully_gapped(alignments[chainID]['target']):
+                raise Exception(
+                         "fully gapped main target alignment returned by kmad")
+
             open(selectedTargetsPath, 'a') \
                 .write('\tmodeling main target %s on chain %s\n' %
                        (main_target_id, chainID))
@@ -647,6 +666,9 @@ class Modeler(object):
         # Delete chains that weren't aligned, assuming there's no
         # interaction with the main target's homologs:
         for chainID in chain_order:
+            if is_fully_gapped(alignments[chainID]['target']):
+                alignments.pop(chainID)
+
             if chainID not in alignments:
 
                 _log.debug("deleting not-interacting chain {} of {}"

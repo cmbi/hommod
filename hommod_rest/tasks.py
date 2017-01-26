@@ -22,6 +22,9 @@ def create_model(sequence, species_id, residue_number, template_id):
                                                             species_id,
                                                             residue_number,
                                                             template_id))
+    if residue_number < 0 or residue_number > len(sequence):
+        raise Exception("residue number %d out of sequence range" %
+                        residue_number)
 
     paths = list_models_of(sequence, species_id, residue_number, template_id)
 
