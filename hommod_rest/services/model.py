@@ -221,6 +221,44 @@ class Modeler(object):
         return self.yasara.SequenceMol('%s obj %i protein' %
                                        (chain, tempobj))[0]
 
+    def _check_fix_chain_breaks(self, obj, chain):
+        residues = {}
+        res_order = []
+        for s in self.yasara.ListAtom(
+                        "obj %i and mol %s and Protein" % (obj, chain),
+                        "RESNUM ATOMNAME"):
+
+            # resnum is a string here, because it includes insertion codes!
+            resnum, atomname = s.split()
+            if resnum not in residues:
+                residues[resnum] = []
+                res_order.append(resnum)
+            residues[resnum].append(atomname)
+
+        prevresnum = None
+        for resnum in res_order:
+            incomplete = False
+            for atomname in ['N', 'CA', 'C']:
+                if atomname not in residues[resnum]:
+                    incomplete = True
+                    break
+
+            # Delete residues with incomplete backbone:
+            if incomplete:
+                self.yasara.DelRes(resnum)
+                continue
+
+            if prevresnum is not None:
+                # Connect all peptide bonds, even if N-C distance is huge.
+                self.yasara.AddBond(
+                    "obj %i mol %s res %s atom C" % (obj, chain, prevresnum),
+                    "obj %i mol %s res %s atom N" % (obj, chain, resnum),
+                    order=1.0
+                )
+
+            prevresnum = resnum
+
+
     # This function loads the template into yasara and also
     # takes some other actions:
     #    * oligomerization (can be switched off)
@@ -291,6 +329,8 @@ class Modeler(object):
                                                 (chain_order[i], tempobj), "ATOMNUM")
                 # Call JoinMol on the last molecule in YASARA's order:
                 self.yasara.JoinMol("atom %s" % atomnums[-1])
+
+            self._check_fix_chain_breaks(tempobj, chain_order[i])
 
         # YASARA also cleans when starting a modeling run, but
         # we need to make sure that we have the molecule in its
