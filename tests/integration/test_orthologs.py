@@ -12,7 +12,7 @@ mydir = os.path.dirname(__file__)
 
 
 def _setup():
-    blaster.uniprot_db = os.path.join(mydir, "data/mini")  # small version
+    blaster.uniprot_db = config.UNIPROTDB
     blaster.templates_db = config.TEMPLATESDB
     blaster.blastp_exe = config.BLASTP
 

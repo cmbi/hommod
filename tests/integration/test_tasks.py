@@ -100,13 +100,6 @@ class TestTasks:
 
         assert (len(path) > 0)
 
-    def test_model_high_memory(self):
-        from hommod_rest.tasks import create_model
-        path = create_model(
-                "QRNLRKYLQLRTWPWYKLWQKVKPLLNVSRIEDEIARLEEKAKKAEELHAAEVKVRKELE",
-                "DROME", 820, TemplateID("3JBH", 'A'))
-        assert (len(path) > 0)
-
     def test_model_1R6F_A(self):
         from hommod_rest.tasks import create_model
         path = create_model(
@@ -126,4 +119,3 @@ class TestTasks:
                 "IDENAPVTERAKLISLPTSKNWTFGPQDVDELIFMLSDSPGVMCRPSRVKQMFASRAC" +
                 "RKSVMIGTALNTSEMKKLITHMGEMDHPWNCPHGRPTMRHIANLGVISQN",
                 "HUMAN", 470, TemplateID("1R6F", 'A'))
-
