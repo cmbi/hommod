@@ -60,6 +60,13 @@ def extract_info(tar_path):
     return info
 
 
+def touch_file(path):
+    with open(path, 'rb') as f:
+        content = f.read()
+    with open(path, 'wb') as f:
+        f.write(content)
+
+
 def extract_template_id(tar_path):
 
     info = extract_info(tar_path)
@@ -106,6 +113,14 @@ def extract_model(tar_path):
     tf.close()
 
     return contents
+
+
+def get_oldest_hg_sequence():
+
+    fastadir = flask_app.config['HGFASTADIR']
+    fastas = sorted([os.path.join(fastadir, filename)
+        for filename in os.listdir(fastadir)], key=os.path.getmtime)
+    return fastas[0]
 
 
 def select_best_model(sequence, species, position, template):

@@ -12,6 +12,10 @@ class TestTasks:
         self.app = create_app({'TESTING': True, 'CELERY_ALWAYS_EAGER': True})
         self.celery = create_celery_app(self.app)
 
+    def test_remodel_oldest_hg(self):
+        from hommod_rest.tasks import remodel_oldest_hg
+        remodel_oldest_hg()
+
     def test_create_model(self):
         # Best pick a simple model which doesn't take much time ..
         from hommod_rest.tasks import create_model

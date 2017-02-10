@@ -2,10 +2,30 @@ import logging
 
 from celery import current_app as celery_app
 
+from hommod_rest.services.modelutils import parseFasta, writeFasta
 from hommod_rest.services.model import modeler
-from hommod_rest.services.utils import list_models_of, select_best_model
+from hommod_rest.services.utils import (list_models_of, select_best_model,
+                                        get_oldest_hg_sequence, touch_file)
 
 _log = logging.getLogger(__name__)
+
+
+@celery_app.on_after_configure.connect()
+def setup_periodic_tasks(sender, **kwargs):
+    sender.add_periodic_task(3600.0, remodel_oldest_hg.s())
+
+
+@celery_app.task()
+def remodel_oldest_hg():
+    fasta_path = get_oldest_hg_sequence()
+    with open(fasta_path, 'r') as f:
+        fasta = parseFasta(f.read())
+
+    sequence = fasta.values()[0]
+
+    touch_file(fasta_path)
+
+    modeler.modelProc(sequence, 'HUMAN', overwrite=True)
 
 
 @celery_app.task()
