@@ -13,7 +13,13 @@ CELERY_QUEUES = (
 )
 CELERY_TRACK_STARTED = True
 CELERY_RESULT_BACKEND = 'redis://hommodrest_redis_1/1'
-
+CELERYBEAT_SCHEDULE = {
+    # 1 Every Hour
+    'remove_old_reports': {
+        'task': 'hommod_rest.tasks.remodel_oldest_hg',
+        'schedule': 3600.0,
+    },
+}
 
 # Time it takes for a model to get outdated:
 MAX_MODEL_DAYS = 100

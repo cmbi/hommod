@@ -10,16 +10,11 @@ from hommod_rest.services.utils import (list_models_of, select_best_model,
 _log = logging.getLogger(__name__)
 
 
-@celery_app.on_after_configure.connect()
-def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(3600.0, remodel_oldest_hg.s())
-
-
 @celery_app.task()
 def remodel_oldest_hg():
     fasta_path = get_oldest_hg_sequence()
     with open(fasta_path, 'r') as f:
-        fasta = parseFasta(f.read())
+        fasta = parseFasta(f)
 
     sequence = fasta.values()[0]
 
