@@ -1,4 +1,5 @@
 from kombu import Exchange, Queue
+from celery.schedules import crontab
 
 DEBUG = False
 TESTING = False
@@ -17,7 +18,7 @@ CELERYBEAT_SCHEDULE = {
     # 1 Every Hour
     'remove_old_reports': {
         'task': 'hommod_rest.tasks.remodel_oldest_hg',
-        'schedule': 3600.0,
+        'schedule': crontab(minute=0, hour='*'),
     },
 }
 

@@ -14,11 +14,25 @@ services:
     volumes:
       - "/srv/hommod:/data"
 
-  celery:
+  celery-beat:
     build:
       context: .
       dockerfile: Dockerfile-celery
-    command: celery -A hommod_rest.application:celery worker -b
+    command: celery -A hommod_rest.application:celery beat
+    depends_on:
+      - redis
+      - rabbitmq
+    environment:
+      - HOMMOD_REST_SETTINGS=/usr/src/app/prd_settings.py
+    volumes:
+      - "/srv/hommod:/data"
+      - "/srv/data:/mnt/cmbi4"
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
+    command: celery -A hommod_rest.application:celery worker
     depends_on:
       - redis
       - rabbitmq
