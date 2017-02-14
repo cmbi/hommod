@@ -7,7 +7,7 @@ from celery import current_app as celery_app
 from hommod_rest.services.modelutils import parseFasta, writeFasta
 from hommod_rest.services.model import modeler
 from hommod_rest.services.utils import (list_models_of, select_best_model,
-                                        get_oldest_hg_sequence, touch_file)
+                                        get_oldest_hg_sequence)
 
 _log = logging.getLogger(__name__)
 
