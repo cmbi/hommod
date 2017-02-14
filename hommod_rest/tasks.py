@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import logging
 
 from celery import current_app as celery_app
@@ -18,7 +20,8 @@ def remodel_oldest_hg():
 
     sequence = fasta.values()[0]
 
-    touch_file(fasta_path)
+    # Touch the fasta first:
+    Path(fasta_path).touch()
 
     modeler.modelProc(sequence, 'HUMAN', overwrite=True)
 

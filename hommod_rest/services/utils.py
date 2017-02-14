@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-from pathlib import Path
-
 from flask import current_app as flask_app
 
 from hommod_rest.services.modelutils import (parseFasta, getCoverageIdentity,
@@ -60,10 +58,6 @@ def extract_info(tar_path):
                     info['targets'][chain] = target
     tf.close()
     return info
-
-
-def touch_file(path):
-    Path(path).touch()
 
 
 def extract_template_id(tar_path):
