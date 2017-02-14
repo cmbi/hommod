@@ -16,7 +16,7 @@ CELERY_TRACK_STARTED = True
 CELERY_RESULT_BACKEND = 'redis://hommodrest_redis_1/1'
 CELERYBEAT_SCHEDULE = {
     # 1 Every Hour
-    'remove_old_reports': {
+    'remodel_oldest_hg': {
         'task': 'hommod_rest.tasks.remodel_oldest_hg',
         'schedule': crontab(minute=0, hour='*'),
     },
