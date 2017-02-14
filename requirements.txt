@@ -28,3 +28,4 @@ requests==2.6.0
 six==1.10.0
 suds==0.4
 Werkzeug==0.10.4
+pathlib==1.0.1

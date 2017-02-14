@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from pathlib import Path
+
 from flask import current_app as flask_app
 
 from hommod_rest.services.modelutils import (parseFasta, getCoverageIdentity,
@@ -61,14 +63,10 @@ def extract_info(tar_path):
 
 
 def touch_file(path):
-    with open(path, 'rb') as f:
-        content = f.read()
-    with open(path, 'wb') as f:
-        f.write(content)
+    Path(path).touch()
 
 
 def extract_template_id(tar_path):
-
     info = extract_info(tar_path)
     if 'template' in info and '_' in info['template']:
         try:
@@ -85,7 +83,6 @@ def extract_template_id(tar_path):
 
 
 def extract_alignment(tar_path):
-
     alignment = {}
 
     tf = tarfile.open(tar_path, 'r')
@@ -101,7 +98,6 @@ def extract_alignment(tar_path):
 
 
 def extract_model(tar_path):
-
     contents = ''
     tf = tarfile.open(tar_path, 'r')
 
@@ -116,7 +112,6 @@ def extract_model(tar_path):
 
 
 def get_oldest_hg_sequence():
-
     fastadir = flask_app.config['HGFASTADIR']
     fastas = sorted([os.path.join(fastadir, filename)
         for filename in os.listdir(fastadir)], key=os.path.getmtime)
