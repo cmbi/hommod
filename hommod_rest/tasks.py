@@ -20,7 +20,8 @@ def remodel_oldest_hg():
 
     sequence = fasta.values()[0]
 
-    # Touch the fasta first:
+    # Touch the fasta first, setting the modification time to now.
+    # This puts this fasta to the back of the sorted file list next time.
     Path(fasta_path).touch()
 
     modeler.modelProc(sequence, 'HUMAN', overwrite=True)
