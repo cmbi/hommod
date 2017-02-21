@@ -160,7 +160,9 @@ class InterproService (object):
                 else:
                     break
 
-            if status != 'FINISHED':
+            if status == 'RUNNING':
+                raise Exception("inteproscan job timed out")
+            elif status != 'FINISHED':
                 raise Exception("inteproscan job status = " + status)
 
             xmlstr = _interpro_get_result(jobid)

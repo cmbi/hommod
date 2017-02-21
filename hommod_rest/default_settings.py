@@ -1,4 +1,5 @@
 from kombu import Exchange, Queue
+from celery.schedules import crontab
 
 DEBUG = False
 TESTING = False
@@ -13,7 +14,13 @@ CELERY_QUEUES = (
 )
 CELERY_TRACK_STARTED = True
 CELERY_RESULT_BACKEND = 'redis://hommodrest_redis_1/1'
-
+CELERYBEAT_SCHEDULE = {
+    # 1 Every Hour
+    'remodel_oldest_hg': {
+        'task': 'hommod_rest.tasks.remodel_oldest_hg',
+        'schedule': crontab(minute=0, hour='*'),
+    },
+}
 
 # Time it takes for a model to get outdated:
 MAX_MODEL_DAYS = 100
@@ -29,6 +36,7 @@ MAIL_TO = ["Coos.Baakman@radboudumc.nl", "Jon.Black@radboudumc.nl"]
 TEMPLATE_BLACKLIST = "/data/blacklisted_templates"
 PDBFINDER2 = '/mnt/cmbi4/pdbfinder2/PDBFIND2.TXT'
 DSSPDIR = '/mnt/cmbi4/dssp/'
+HGFASTADIR = '/mnt/cmbi4/hg-fasta/'
 MODELDIR = '/data/models/'
 EXECUTIONDIR = '/data/tmp/'  # yasara execution dir
 INTERPRODIR = '/data/interpro/'

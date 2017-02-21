@@ -18,7 +18,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-celery
-    command: celery -A hommod_rest.application:celery worker
+    command: celery -A hommod_rest.application:celery worker -B
     depends_on:
       - redis
       - rabbitmq

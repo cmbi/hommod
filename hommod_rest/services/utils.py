@@ -61,7 +61,6 @@ def extract_info(tar_path):
 
 
 def extract_template_id(tar_path):
-
     info = extract_info(tar_path)
     if 'template' in info and '_' in info['template']:
         try:
@@ -78,7 +77,6 @@ def extract_template_id(tar_path):
 
 
 def extract_alignment(tar_path):
-
     alignment = {}
 
     tf = tarfile.open(tar_path, 'r')
@@ -94,7 +92,6 @@ def extract_alignment(tar_path):
 
 
 def extract_model(tar_path):
-
     contents = ''
     tf = tarfile.open(tar_path, 'r')
 
@@ -106,6 +103,13 @@ def extract_model(tar_path):
     tf.close()
 
     return contents
+
+
+def get_oldest_hg_sequence():
+    fastadir = flask_app.config['HGFASTADIR']
+    fastas = sorted([os.path.join(fastadir, filename)
+        for filename in os.listdir(fastadir)], key=os.path.getmtime)
+    return fastas[0]
 
 
 def select_best_model(sequence, species, position, template):

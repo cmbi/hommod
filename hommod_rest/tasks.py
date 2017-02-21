@@ -1,11 +1,30 @@
+from pathlib import Path
+
 import logging
 
 from celery import current_app as celery_app
 
+from hommod_rest.services.modelutils import parseFasta, writeFasta
 from hommod_rest.services.model import modeler
-from hommod_rest.services.utils import list_models_of, select_best_model
+from hommod_rest.services.utils import (list_models_of, select_best_model,
+                                        get_oldest_hg_sequence)
 
 _log = logging.getLogger(__name__)
+
+
+@celery_app.task()
+def remodel_oldest_hg():
+    fasta_path = get_oldest_hg_sequence()
+    with open(fasta_path, 'r') as f:
+        fasta = parseFasta(f)
+
+    sequence = fasta.values()[0]
+
+    # Touch the fasta first, setting the modification time to now.
+    # This puts this fasta to the back of the sorted file list next time.
+    Path(fasta_path).touch()
+
+    modeler.modelProc(sequence, 'HUMAN', overwrite=True)
 
 
 @celery_app.task()
