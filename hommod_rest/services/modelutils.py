@@ -843,7 +843,7 @@ def alignment_format(alignment, key_order, midline=True):
     for i in range(0, len(alignment[key_order[0]]), m):
         for j in range(len(key_order)):
             key = key_order[j]
-            n = min(len(alignment[key]), m)
+            n = min(len(alignment[key]), i + m)
             if j > 0 and midline:
                 prev_key = key_order[j - 1]
                 for k in range(i, n):

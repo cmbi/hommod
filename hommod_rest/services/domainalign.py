@@ -369,6 +369,11 @@ def getCoveredTargetRange(alignment):
     while not alignment['target'][targetEnd].isalpha():
         targetEnd -= 1
 
+    nTargetGapBetween = 0
+    for i in range(targetStart, targetEnd + 1):
+        if not alignment['target'][i].isalpha():
+            nTargetGapBetween += 1
+
     start = targetStart
     aaStart = 0
     while not alignment['template'][start].isalpha():
@@ -383,7 +388,8 @@ def getCoveredTargetRange(alignment):
             aaEnd += 1
         end -= 1
 
-    return TargetRange(targetStart + aaStart, targetEnd - aaEnd)
+    return TargetRange(targetStart + aaStart,
+                       targetEnd - aaEnd - nTargetGapBetween)
 
 
 def getTemplateSeqAtTargetPositions(alignment, startInTarget, endInTarget):
@@ -640,6 +646,8 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                 # Memorize this best hit:
                 m = _range_of_alignment_in(best_hit_for_range.alignment,
                                            tarSeq)
+                _log.debug("alignment reduces range %d %d to %d %d" %
+                           (r.start, r.end, m.start, m.end))
                 m.template = best_hit_for_range.template
                 m.alignment = best_hit_for_range.alignment
                 m.pid = best_hit_for_range.pid
