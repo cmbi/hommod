@@ -7,8 +7,8 @@ import urllib2
 from urllib import urlencode
 import platform
 import time
-import datetime
 from glob import glob
+import datetime
 
 import logging
 _log = logging.getLogger(__name__)
@@ -97,13 +97,14 @@ class InterproDomain(object):
         self.end = end
         self.ac = ac
 
-_MAX_INTERPRO_JOBS = 30
-
 
 # Uses interproscan to obtain data: https://code.google.com/p/interproscan/wiki/HowToDownload
 class InterproService (object):
-    def __init__(self, storage_dir=None):
+    def __init__(self, storage_dir=None, max_jobs=30,
+                 job_timeout=datetime.timedelta(seconds=1000)):
         self._storage_dir = storage_dir
+        self._max_jobs = max_jobs
+        self._job_timeout = job_timeout
 
     @property
     def storage_dir(self):
@@ -112,6 +113,22 @@ class InterproService (object):
     @storage_dir.setter
     def storage_dir(self, storage_dir):
         self._storage_dir = storage_dir
+
+    @property
+    def max_jobs(self):
+        return self._max_jobs
+
+    @max_jobs.setter
+    def max_jobs(self, max_jobs):
+        self._max_jobs = max_jobs
+
+    @property
+    def job_timeout(self):
+        return self._job_timeout
+
+    @job_timeout.setter
+    def job_timeout(self, job_timeout):
+        self._job_timeout = job_timeout
 
     def _checkinit(self):
         if not self._storage_dir:
@@ -144,14 +161,14 @@ class InterproService (object):
         # at the same time. So use a lock file:
         with FileLock(self._interpro_lockfile_path(sequence_id)) as lock:
             # Wait for a place in line to start an interpro job
-            while self._interpro_count_lockfiles() >= _MAX_INTERPRO_JOBS:
+            while self._interpro_count_lockfiles() >= self._max_jobs:
                 time.sleep(10)
 
             # Wait for the interpro server to finish:
             jobid = _interpro_submit(sequence)
             start_time = time.time()
             while ((time.time() - start_time) <
-                    datetime.timedelta(seconds=1000).total_seconds()):
+                    self._job_timeout.total_seconds()):
                 status = _interpro_get_status(jobid)
                 _log.debug("intepro job status: " + status)
 

@@ -111,6 +111,8 @@ def create_celery_app(flask_app=None):  # pragma: no cover
 
     from hommod_rest.services.interpro import interpro
     interpro.storage_dir = flask_app.config['INTERPRODIR']
+    interpro.max_jobs = flask_app.config['MAX_INTERPRO_JOBS']
+    interpro.job_timeout = flask_app.config['INTERPRO_TIMEOUT']
 
     from hommod_rest.services.secstr import secstr
     secstr.dssp_dir = flask_app.config['DSSPDIR']
