@@ -361,35 +361,28 @@ def getCoveredTargetRange(alignment):
     then it will return the range, representing the part of the target, that is
     covered by the template.
     """
-    targetStart = 0
-    while not alignment['target'][targetStart].isalpha():
-        targetStart += 1
+    # First, be sure to skip all gaps in the target in the alignment.
+    # Only preserve template gaps.
+    aligned_template = ''
+    for i in range(len(alignment['target'])):
+        if alignment['target'][i].isalpha():
+            aligned_template += alignment['template'][i]
 
-    targetEnd = len(alignment['target']) - 1
-    while not alignment['target'][targetEnd].isalpha():
-        targetEnd -= 1
+    # See where the coverage starts:
+    cov_start = 0
+    while not aligned_template[cov_start].isalpha():
+        cov_start += 1
+        if cov_start >= len(aligned_template):
+            raise Exception("no aligned residues")
 
-    nTargetGapBetween = 0
-    for i in range(targetStart, targetEnd + 1):
-        if not alignment['target'][i].isalpha():
-            nTargetGapBetween += 1
+    # See where the coverage ends:
+    cov_end = len(aligned_template)
+    while not aligned_template[cov_end - 1]:
+        cov_end -= 1
+        if cov_end <= 0:
+            raise Exception("no aligned residues")
 
-    start = targetStart
-    aaStart = 0
-    while not alignment['template'][start].isalpha():
-        if alignment['target'][start].isalpha():
-            aaStart += 1
-        start += 1
-
-    end = targetEnd
-    aaEnd = 0
-    while not alignment['template'][end].isalpha():
-        if alignment['target'][end].isalpha():
-            aaEnd += 1
-        end -= 1
-
-    return TargetRange(targetStart + aaStart,
-                       targetEnd - aaEnd - nTargetGapBetween)
+    return TargetRange(cov_start, cov_end)
 
 
 def getTemplateSeqAtTargetPositions(alignment, startInTarget, endInTarget):
@@ -476,7 +469,7 @@ def _alignment_ok_for_range(r, tarSeq, nalign, pid, pcover):
 def _get_range_from(r, template, alignment, pid, pcover):
 
     if pcover < 80.0:
-        m = getCoveredTargetRange(alignment)
+        m = getCoveredTargetRange(alignment) + r.start
     else:
         m = TargetRange(r.start, r.end)
 
@@ -669,12 +662,11 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
                                         r.alignment['template'])
 
         if pid >= minIdentity(nalign):
+            _log.debug("returning alignment with range %d-%d" % (r.start, r.end))
             returnAlignments.append((r, r.template, r.alignment))
         else:
             _log.debug("throwing away earlier matched %d-%d with %s, because of low identity" %
                        (r.start, r.end, r.template))
-
-    _log.debug("domainalign: returning %i alignments" % len(returnAlignments))
 
     return returnAlignments
 
