@@ -1,5 +1,6 @@
 from kombu import Exchange, Queue
 from celery.schedules import crontab
+import datetime
 
 DEBUG = False
 TESTING = False
@@ -25,6 +26,10 @@ CELERYBEAT_SCHEDULE = {
 # Time it takes for a model to get outdated:
 MAX_MODEL_DAYS = 100
 
+# Time to wait for interpro jobs
+INTERPRO_TIMEOUT = datetime.timedelta(seconds=1800)
+
+MAX_INTERPRO_JOBS = 30
 
 # Email logging settings
 MAIL_SERVER = "131.174.165.22"
