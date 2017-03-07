@@ -7,14 +7,14 @@ TESTING = False
 
 # Celery
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
-CELERY_BROKER_URL = 'amqp://guest@hommodrest_rabbitmq_1'
+CELERY_BROKER_URL = 'amqp://guest@hommodapi_rabbitmq_1'
 CELERY_DEFAULT_QUEUE = 'hommod'
 CELERYD_CONCURRENCY = 20
 CELERY_QUEUES = (
     Queue('hommod', Exchange('hommod'), routing_key='hommod'),
 )
 CELERY_TRACK_STARTED = True
-CELERY_RESULT_BACKEND = 'redis://hommodrest_redis_1/1'
+CELERY_RESULT_BACKEND = 'redis://hommodapi_redis_1/1'
 CELERYBEAT_SCHEDULE = {
     # 1 Every Hour
     'remodel_oldest_hg': {
@@ -34,7 +34,7 @@ MAX_INTERPRO_JOBS = 30
 # Email logging settings
 MAIL_SERVER = "131.174.165.22"
 MAIL_SMTP_PORT = 25
-MAIL_FROM = "hommod-rest@cmbi.umcn.nl"
+MAIL_FROM = "hommod-api@cmbi.umcn.nl"
 MAIL_TO = ["Coos.Baakman@radboudumc.nl", "Jon.Black@radboudumc.nl"]
 
 # Folders
