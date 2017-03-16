@@ -10,7 +10,8 @@ import logging
 
 _log = logging.getLogger(__name__)
 
-from hommod_rest.services.modelutils import get_target_covered_range
+from hommod_rest.services.modelutils import (get_target_covered_range,
+                                             alignment_format)
 
 
 def listInteractingChains(yasaraChain):
@@ -64,8 +65,16 @@ class InteractionPicker (domainalign.Picker):
 
     def accepts(self, targetID, subjectChainAlignment):
 
+        _log.debug("looking for interactions with subject chain %s using alignment\n%s"
+                   % (self.subjectChainID,
+                      alignment_format(subjectChainAlignment,
+                                       ['target', 'template'])))
+
         # Check all interacting chains' alignments for interactions:
         for chainID in self.interactionChainAlignments:
+
+            _log.debug("checking for interaction between subject chain %s and chain %s"
+                       %(self.subjectChainID, chainID))
 
             # Determine which residues in the chains are covered by a target sequence:
             subjectYasaraChain = self.yasaraChains[self.subjectChainID]
