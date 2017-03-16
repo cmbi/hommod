@@ -328,6 +328,22 @@ class _AlignmentPool(object):
 
         return self.pool[_range][templateID]
 
+    def getAlignmentYasara(self, _range, yasaraChain):
+        if _range not in self.pool:
+            self.pool[_range] = {}
+        if yasaraChain not in self.pool[_range]:
+            domainSeq = self.targetSequence[_range.start: _range.end]
+            alignment = aligner.kmad_align(yasaraChain.seq,
+                                           yasaraChain.secstr,
+                                           domainSeq)
+            if not hasTemplateSeq(alignment, yasaraChain.seq):
+                raise Exception(
+                    'aligned seq doesn\'t match yasara seq:\n' +
+                    alignment['template'] + '\n' + yasaraChain.seq
+                )
+            self.pool[_range][yasaraChain] = alignment
+
+        return self.pool[_range][yasaraChain]
 
 def hasTemplateSeq(alignment, templateSeq):
     """
@@ -675,7 +691,12 @@ def _get_hit_for_yasara_chain(_range, yasaraChain, alignmentDAO):
     template = TemplateID(yasaraChain.objname[:4], yasaraChain.chainID)
 
     # align only against 1 template:
-    aligned = alignmentDAO.getAlignment(_range, template)
+    aligned = alignmentDAO.getAlignmentYasara(_range, yasaraChain)
+
+    _log.debug("alignment for yasara chain with sequence:\n%s\nis:\n%s"
+               % (yasaraChain.seq,
+                  alignment_format(aligned,
+                                   ['target', 'template'])))
 
     nalign, pid = getNalignIdentity(aligned['target'], aligned['template'])
     pcover = (nalign * 100.0) / (_range.end - _range.start)
