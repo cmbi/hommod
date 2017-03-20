@@ -316,23 +316,23 @@ class _AlignmentPool(object):
         self.targetSequence = targetSequence
 
     # For lookup by pdbid:
-    def getAlignment(self, _range, template):
+    def getAlignment(self, range_, template):
 
         templateID = str(template)
 
-        if _range not in self.pool:
-            self.pool[_range] = {}
-        if templateID not in self.pool[_range]:
-            self.pool[_range][templateID] = makeAlignment(
-                    self.targetSequence[_range.start: _range.end], template)
+        if range_ not in self.pool:
+            self.pool[range_] = {}
+        if templateID not in self.pool[range_]:
+            self.pool[range_][templateID] = makeAlignment(
+                    self.targetSequence[range_.start: range_.end], template)
 
-        return self.pool[_range][templateID]
+        return self.pool[range_][templateID]
 
-    def getAlignmentYasara(self, _range, yasaraChain):
-        if _range not in self.pool:
-            self.pool[_range] = {}
-        if yasaraChain not in self.pool[_range]:
-            domainSeq = self.targetSequence[_range.start: _range.end]
+    def getAlignmentYasara(self, range_, yasaraChain):
+        if range_ not in self.pool:
+            self.pool[range_] = {}
+        if yasaraChain not in self.pool[range_]:
+            domainSeq = self.targetSequence[range_.start: range_.end]
             alignment = aligner.kmad_align(yasaraChain.seq,
                                            yasaraChain.secstr,
                                            domainSeq)
@@ -341,9 +341,9 @@ class _AlignmentPool(object):
                     'aligned seq doesn\'t match yasara seq:\n' +
                     alignment['template'] + '\n' + yasaraChain.seq
                 )
-            self.pool[_range][yasaraChain] = alignment
+            self.pool[range_][yasaraChain] = alignment
 
-        return self.pool[_range][yasaraChain]
+        return self.pool[range_][yasaraChain]
 
 def hasTemplateSeq(alignment, templateSeq):
     """
@@ -446,7 +446,7 @@ def pickAlignments(templateYasaraChain, targetSeqs, targetsInterproRanges, picke
     for targetID in targetsInterproRanges.keys():
 
         triples = []
-        for _range, templateID, alignment in \
+        for range_, templateID, alignment in \
                 getAlignments(
                     targetsInterproRanges[targetID],
                     targetSeqs[targetID], templateYasaraChain
@@ -454,7 +454,7 @@ def pickAlignments(templateYasaraChain, targetSeqs, targetsInterproRanges, picke
 
             if picker.accepts(targetID, alignment):
 
-                triples.append((_range, templateID, alignment))
+                triples.append((range_, templateID, alignment))
 
         if len(triples) > 0:
             alignmentTriples[targetID] = triples
@@ -687,11 +687,11 @@ def getAlignments(interproDomains, tarSeq, yasaraChain=None):
     return returnAlignments
 
 
-def _get_hit_for_yasara_chain(_range, yasaraChain, alignmentDAO):
+def _get_hit_for_yasara_chain(range_, yasaraChain, alignmentDAO):
     template = TemplateID(yasaraChain.objname[:4], yasaraChain.chainID)
 
     # align only against 1 template:
-    aligned = alignmentDAO.getAlignmentYasara(_range, yasaraChain)
+    aligned = alignmentDAO.getAlignmentYasara(range_, yasaraChain)
 
     _log.debug("alignment for yasara chain with sequence:\n%s\nis:\n%s"
                % (yasaraChain.seq,
@@ -699,7 +699,7 @@ def _get_hit_for_yasara_chain(_range, yasaraChain, alignmentDAO):
                                    ['target', 'template'])))
 
     nalign, pid = getNalignIdentity(aligned['target'], aligned['template'])
-    pcover = (nalign * 100.0) / (_range.end - _range.start)
+    pcover = (nalign * 100.0) / (range_.end - range_.start)
 
     hit_for = _Best_Hit_candidate(template, aligned, nalign, pid, pcover)
     return hit_for
