@@ -123,3 +123,13 @@ class TestTasks:
                 "IDENAPVTERAKLISLPTSKNWTFGPQDVDELIFMLSDSPGVMCRPSRVKQMFASRAC" +
                 "RKSVMIGTALNTSEMKKLITHMGEMDHPWNCPHGRPTMRHIANLGVISQN",
                 "HUMAN", 470, TemplateID("1R6F", 'A'))
+
+    def test_model_3UX9_A(self):
+        from hommod_rest.tasks import create_model
+        path = create_model(
+            "MASPFALLMVLVVLSCKSSCSLGCDLPETHSLDNRRTLMLLAQMSRISPSSCLMDRHDFGFP" +
+            "QEEFDGNQFQKAPAISVLHELIQQIFNLFTTKDSSAAWDEDLLDKFCTELYQQLNDLEACVM" +
+            "QEERVGETPLMNADSILAVKKYFRRITLYLTEKKYSPCAWEVVRAEIMRSLSLSTNLQERLR" +
+            "RKE", "HUMAN", 100, TemplateID("3UX9", 'A'))
+
+        assert (len(path) > 0)
