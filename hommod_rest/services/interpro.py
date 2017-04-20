@@ -101,7 +101,7 @@ class InterproDomain(object):
 # Uses interproscan to obtain data: https://code.google.com/p/interproscan/wiki/HowToDownload
 class InterproService (object):
     def __init__(self, storage_dir=None, max_jobs=30,
-                 job_timeout=datetime.timedelta(hours=2)):
+        job_timeout=datetime.timedelta(hours=2)):
         self._storage_dir = storage_dir
         self._max_jobs = max_jobs
         self._job_timeout = job_timeout
@@ -169,7 +169,15 @@ class InterproService (object):
             start_time = time.time()
             while ((time.time() - start_time) <
                     self._job_timeout.total_seconds()):
-                status = _interpro_get_status(jobid)
+                try:
+                    status = _interpro_get_status(jobid)
+                except urllib2.HTTPError as err:
+                    if err.code == 500:
+                        _log.warn("ignoring 500 response code from interpro server")
+                        continue
+                    else:
+                        raise err
+
                 _log.debug("intepro job status: " + status)
 
                 if status in ['RUNNING', 'PENDING', 'STARTED']:
