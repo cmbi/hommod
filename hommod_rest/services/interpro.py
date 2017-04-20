@@ -101,7 +101,7 @@ class InterproDomain(object):
 # Uses interproscan to obtain data: https://code.google.com/p/interproscan/wiki/HowToDownload
 class InterproService (object):
     def __init__(self, storage_dir=None, max_jobs=30,
-                 job_timeout=datetime.timedelta(seconds=3600)):
+                 job_timeout=datetime.timedelta(hours=2)):
         self._storage_dir = storage_dir
         self._max_jobs = max_jobs
         self._job_timeout = job_timeout

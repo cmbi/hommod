@@ -27,7 +27,7 @@ CELERYBEAT_SCHEDULE = {
 MAX_MODEL_DAYS = 100
 
 # Time to wait for interpro jobs
-INTERPRO_TIMEOUT = datetime.timedelta(seconds=1800)
+INTERPRO_TIMEOUT = datetime.timedelta(hours=2)
 
 MAX_INTERPRO_JOBS = 30
 
