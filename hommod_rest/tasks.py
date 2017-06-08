@@ -1,8 +1,10 @@
+import os
 from pathlib import Path
 
 import logging
 
 from celery import current_app as celery_app
+from flask import current_app as flask_app
 
 from hommod_rest.services.modelutils import parseFasta, writeFasta
 from hommod_rest.services.model import modeler
@@ -24,8 +26,13 @@ def remodel_oldest_hg():
     # This puts this fasta to the back of the sorted file list next time.
     Path(fasta_path).touch()
 
-    modeler.modelProc(sequence, 'HUMAN', overwrite=True)
+    model_paths = modeler.modelProc(sequence, 'HUMAN', overwrite=True)
 
+    for model_path in model_paths:
+        new_path = os.path.join(flask_app.config['HGMODELDIR'],
+            os.path.basename(model_path)
+        )
+        os.rename(model_path, new_path)
 
 @celery_app.task()
 def create_models_seq(sequence, species_id):
