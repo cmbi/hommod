@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 
 import logging
@@ -28,11 +29,16 @@ def remodel_oldest_hg():
 
     model_paths = modeler.modelProc(sequence, 'HUMAN', overwrite=True)
 
+    out_paths = []
     for model_path in model_paths:
         new_path = os.path.join(flask_app.config['HGMODELDIR'],
             os.path.basename(model_path)
         )
-        os.rename(model_path, new_path)
+        _log.debug("move {} to {}".format(model_path, new_path))
+        shutil.move(model_path, new_path)
+        out_paths.append(new_path)
+
+    return out_paths
 
 @celery_app.task()
 def create_models_seq(sequence, species_id):

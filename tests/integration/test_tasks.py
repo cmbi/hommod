@@ -1,5 +1,10 @@
+import os
+from time import time
+
 from hommod_rest.factory import create_app, create_celery_app
 from hommod_rest.services.modelutils import TemplateID
+
+import hommod_rest.default_settings as settings
 
 import logging
 _log = logging.getLogger(__name__)
@@ -14,7 +19,18 @@ class TestTasks:
 
     def test_remodel_oldest_hg(self):
         from hommod_rest.tasks import remodel_oldest_hg
-        remodel_oldest_hg()
+
+        model_paths = []
+        while len(model_paths) <= 0:
+            model_paths = remodel_oldest_hg()
+
+        for path in model_paths:
+
+            # Verify that the model was placed in the model dir.
+            assert (os.path.dirname(path).strip('/') == settings.HGMODELDIR.strip('/'))
+
+            # Verify that the model has been created less than an hour ago.
+            assert ((time() - os.path.getmtime(path)) < 3600)
 
     def test_create_model(self):
         # Best pick a simple model which doesn't take much time ..
