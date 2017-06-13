@@ -225,7 +225,7 @@ class Modeler(object):
         residues = {}
         res_order = []
         for s in self.yasara.ListAtom(
-                        "obj %i and mol %s and Protein" % (obj, chain),
+                        "obj %i and mol %s and aminoacid" % (obj, chain),
                         "RESNUM ATOMNAME"):
 
             # resnum is a string here, because it includes insertion codes!
