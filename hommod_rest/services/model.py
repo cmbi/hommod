@@ -226,7 +226,7 @@ class Modeler(object):
                                        (chain, tempobj))[0]
 
     def _check_fix_chain_breaks(self, obj, chain):
-        residues = {}
+        residues_atoms = {}
         res_order = []
         for s in self.yasara.ListAtom(
                         "obj %i and mol %s and aminoacid" % (obj, chain),
@@ -234,22 +234,24 @@ class Modeler(object):
 
             # resnum is a string here, because it includes insertion codes!
             resnum, atomname = s.split()
-            if resnum not in residues:
-                residues[resnum] = []
+            if resnum not in residues_atoms:
+                residues_atoms[resnum] = []
                 res_order.append(resnum)
-            residues[resnum].append(atomname)
+            residues_atoms[resnum].append(atomname)
 
         prevresnum = None
         for resnum in res_order:
             incomplete = False
             for atomname in ['N', 'CA', 'C']:
-                if atomname not in residues[resnum]:
+                if atomname not in residues_atoms[resnum]:
+                    _log.debug("residue {} of mol {} misses atom {}, it has only {}"
+                               .format(resnum, chain, atomname, residues_atoms[resnum]))
                     incomplete = True
                     break
 
             # Delete residues with incomplete backbone:
             if incomplete:
-                self.yasara.DelRes(resnum)
+                self.yasara.DelRes("obj %i and mol %s and res %s" % (obj, chain, resnum))
                 continue
 
             if prevresnum is not None:
@@ -321,7 +323,6 @@ class Modeler(object):
         except Exception as e:
             _log.warn('Cannot execute BuildSymRes on {}: {}'.format(tempac,
                                                                     e.args[0]))
-
         # Make sure there's only one chain for each chain identifier:
         chain_order = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
         for i in range(len(chain_order)):
