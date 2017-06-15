@@ -72,6 +72,8 @@ def write_alignment_fasta(chain_order, alignments_by_chain, template_ac, path):
     f.write('>target\n')
     n = 0
     for chain in chain_order:
+        if chain not in alignments_by_chain:
+            continue
         if n > 0:
             f.write('|')
         f.write(alignments_by_chain[chain]['target'])
@@ -81,6 +83,8 @@ def write_alignment_fasta(chain_order, alignments_by_chain, template_ac, path):
     f.write('>%s\n' % template_ac)
     n = 0
     for chain in chain_order:
+        if chain not in alignments_by_chain:
+            continue
         if n > 0:
             f.write('|')
         f.write(alignments_by_chain[chain]['template'])
@@ -366,8 +370,11 @@ class Modeler(object):
 
             if nocc > 1:
                 self._add_template_to_blacklist(tempac)
-                _log.error("chain %s in %s occurs more than once after cleaning" % (chain, tempac))
-                raise Exception("chain %s in %s occurs more than once after cleaning" % (chain, tempac))
+                seqs = self.yasara.SequenceMol('obj %i and mol %s' % (tempobj, chain))
+                _log.error("chain {} in {} occurs more than once after cleaning: {}"
+                           .format(chain, tempac, seqs))
+                raise Exception("chain {} in {} occurs more than once after cleaning: {}"
+                                .format(chain, tempac, seqs))
 
         _log.info("initialized yasara template with %d chains" % len(chain_order))
 
@@ -706,7 +713,8 @@ class Modeler(object):
         # Delete chains that weren't aligned, assuming there's no
         # interaction with the main target's homologs:
         for chainID in chain_order:
-            if is_fully_gapped(alignments[chainID]['target']):
+            if chainID in alignments and \
+                    is_fully_gapped(alignments[chainID]['target']):
                 alignments.pop(chainID)
 
             if chainID not in alignments:
