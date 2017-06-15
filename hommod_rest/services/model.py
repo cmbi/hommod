@@ -72,6 +72,8 @@ def write_alignment_fasta(chain_order, alignments_by_chain, template_ac, path):
     f.write('>target\n')
     n = 0
     for chain in chain_order:
+        if chain not in alignments_by_chain:
+            continue
         if n > 0:
             f.write('|')
         f.write(alignments_by_chain[chain]['target'])
@@ -81,6 +83,8 @@ def write_alignment_fasta(chain_order, alignments_by_chain, template_ac, path):
     f.write('>%s\n' % template_ac)
     n = 0
     for chain in chain_order:
+        if chain not in alignments_by_chain:
+            continue
         if n > 0:
             f.write('|')
         f.write(alignments_by_chain[chain]['template'])
@@ -222,7 +226,7 @@ class Modeler(object):
                                        (chain, tempobj))[0]
 
     def _check_fix_chain_breaks(self, obj, chain):
-        residues = {}
+        residues_atoms = {}
         res_order = []
         for s in self.yasara.ListAtom(
                         "obj %i and mol %s and aminoacid" % (obj, chain),
@@ -230,22 +234,24 @@ class Modeler(object):
 
             # resnum is a string here, because it includes insertion codes!
             resnum, atomname = s.split()
-            if resnum not in residues:
-                residues[resnum] = []
+            if resnum not in residues_atoms:
+                residues_atoms[resnum] = []
                 res_order.append(resnum)
-            residues[resnum].append(atomname)
+            residues_atoms[resnum].append(atomname)
 
         prevresnum = None
         for resnum in res_order:
             incomplete = False
             for atomname in ['N', 'CA', 'C']:
-                if atomname not in residues[resnum]:
+                if atomname not in residues_atoms[resnum]:
+                    _log.debug("residue {} of mol {} misses atom {}, it has only {}"
+                               .format(resnum, chain, atomname, residues_atoms[resnum]))
                     incomplete = True
                     break
 
             # Delete residues with incomplete backbone:
             if incomplete:
-                self.yasara.DelRes(resnum)
+                self.yasara.DelRes("obj %i and mol %s and res %s" % (obj, chain, resnum))
                 continue
 
             if prevresnum is not None:
@@ -317,7 +323,6 @@ class Modeler(object):
         except Exception as e:
             _log.warn('Cannot execute BuildSymRes on {}: {}'.format(tempac,
                                                                     e.args[0]))
-
         # Make sure there's only one chain for each chain identifier:
         chain_order = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
         for i in range(len(chain_order)):
@@ -366,8 +371,11 @@ class Modeler(object):
 
             if nocc > 1:
                 self._add_template_to_blacklist(tempac)
-                _log.error("chain %s in %s occurs more than once after cleaning" % (chain, tempac))
-                raise Exception("chain %s in %s occurs more than once after cleaning" % (chain, tempac))
+                seqs = self.yasara.SequenceMol('obj %i and mol %s' % (tempobj, chain))
+                _log.error("chain {} in {} occurs more than once after cleaning: {}"
+                           .format(chain, tempac, seqs))
+                raise Exception("chain {} in {} occurs more than once after cleaning: {}"
+                                .format(chain, tempac, seqs))
 
         _log.info("initialized yasara template with %d chains" % len(chain_order))
 
@@ -706,7 +714,8 @@ class Modeler(object):
         # Delete chains that weren't aligned, assuming there's no
         # interaction with the main target's homologs:
         for chainID in chain_order:
-            if is_fully_gapped(alignments[chainID]['target']):
+            if chainID in alignments and \
+                    is_fully_gapped(alignments[chainID]['target']):
                 alignments.pop(chainID)
 
             if chainID not in alignments:
