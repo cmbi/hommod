@@ -13,7 +13,7 @@ RUN ./autogen.sh && ./configure && make -j
 RUN apt-get install -y libgl1-mesa-glx
 RUN mkdir -p /deps/yasara
 WORKDIR /deps/yasara
-ADD install_yasara_16.4.6 /deps/yasara/install_yasara
+ADD install_yasara_* /deps/yasara/install_yasara
 RUN chmod 755 /deps/yasara/install_yasara ; sync && \
     ./install_yasara -norun && \
 rm install_yasara
