@@ -930,8 +930,11 @@ class Modeler(object):
                     # If the complete template sequence fully matches the target, then
                     # there's no need to build the model.
 
-                    template_seq = getTemplateSequence(main_template_id.pdbac, main_template_id.chainID)
-                    if template_seq == main_domain_alignment['template']:
+                    nalign, pid = getNalignIdentity(main_domain_alignment['target'],
+                                                    main_domain_alignment['template'])
+                    template_seq = getTemplateSequence(main_template_id.pdbac,
+                                                       main_template_id.chainID)
+                    if pid >= 100.0 and template_seq == main_domain_alignment['template']:
 
                         _log.debug("now calling _collect_template for %s %s (%d - %d)\n>target\n%s\n>template\n%s"
                                    % (uniprot_species_name, main_template_id,
