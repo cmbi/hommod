@@ -8,11 +8,13 @@ services:
       dockerfile: Dockerfile-frontend
     command: gunicorn -k gevent -b 0.0.0.0:7001 hommod_rest.application:app
     environment:
+      - LOG_FILENAME=/var/log/hommod/hommod-web.log
       - HOMMOD_REST_SETTINGS=/usr/src/app/prd_settings.py
     ports:
       - "7001:7001"
     volumes:
       - "/srv/hommod:/data"
+      - "/var/log/hommod:/var/log/hommod"
 
   celery:
     build:
@@ -23,10 +25,12 @@ services:
       - redis
       - rabbitmq
     environment:
+      - LOG_FILENAME=/var/log/hommod/hommod-celery.log
       - HOMMOD_REST_SETTINGS=/usr/src/app/prd_settings.py
     volumes:
       - "/srv/hommod:/data"
       - "/srv/data:/mnt/chelonium"
+      - "/var/log/hommod:/var/log/hommod"
 
   databanks:
     build:
