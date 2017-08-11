@@ -17,26 +17,31 @@ _log = logging.getLogger(__name__)
 
 @celery_app.task()
 def remodel_oldest_hg():
-    fasta_path = get_oldest_hg_sequence()
-    with open(fasta_path, 'r') as f:
-        fasta = parseFasta(f)
-
-    sequence = fasta.values()[0]
-
-    # Touch the fasta first, setting the modification time to now.
-    # This puts this fasta to the back of the sorted file list next time.
-    Path(fasta_path).touch()
-
-    model_paths = modeler.modelProc(sequence, 'HUMAN', overwrite=True)
 
     out_paths = []
-    for model_path in model_paths:
-        new_path = os.path.join(flask_app.config['HGMODELDIR'],
-            os.path.basename(model_path)
-        )
-        _log.debug("move {} to {}".format(model_path, new_path))
-        shutil.move(model_path, new_path)
-        out_paths.append(new_path)
+    while len(out_paths) <= 0:
+
+        fasta_path = get_oldest_hg_sequence()
+        with open(fasta_path, 'r') as f:
+            fasta = parseFasta(f)
+
+        sequence = fasta.values()[0]
+
+        # Touch the fasta first, setting the modification time to now.
+        # This puts this fasta to the back of the sorted file list next time.
+        Path(fasta_path).touch()
+
+        model_paths = modeler.modelProc(sequence, 'HUMAN', overwrite=True)
+
+        for model_path in model_paths:
+            new_path = os.path.join(flask_app.config['HGMODELDIR'],
+                os.path.basename(model_path)
+            )
+            _log.debug("move {} to {}".format(model_path, new_path))
+            shutil.move(model_path, new_path)
+            out_paths.append(new_path)
+
+            Path(new_path).touch()
 
     return out_paths
 
