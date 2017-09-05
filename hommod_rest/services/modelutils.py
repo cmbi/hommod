@@ -179,8 +179,9 @@ def getChainCAsSeqSecStr(yasara, obj, chain):
 
         atomstring += ' ' + ss[0]
 
-    for s in yasara.SecStrRes(atomstring):
-        secStr += s
+    if len(CAs) > 0:
+        for s in yasara.SecStrRes(atomstring):
+            secStr += s
 
     return (CAs, seq, secStr)
 
