@@ -71,7 +71,7 @@ def has_model():
     else:
         template_id = None
 
-    _log.info("endpoints.has_model request recieved for( " +
+    _log.debug("endpoints.has_model request recieved for( " +
               "sequence: %s, species: %s, position: %s ,template %s)"
               %(sequence, species_id, position, template_id))
 
@@ -148,7 +148,7 @@ def status(jobid):
     :return: Either PENDING, STARTED, SUCCESS, FAILURE, RETRY, or REVOKED.
     """
 
-    _log.info("endpoints.status request for job %s" % jobid)
+    _log.debug("endpoints.status request for job %s" % jobid)
 
     from hommod_rest.application import celery
     result = celery.AsyncResult(jobid)
@@ -186,7 +186,7 @@ def get_model_file(jobid):
     :return: The pdb file created by the job. If the job status is not SUCCESS, this method returns an error.
     """
 
-    _log.info("endpoints: model request for job %s" % jobid)
+    _log.debug("endpoints: model request for job %s" % jobid)
 
     from hommod_rest.application import celery
     result = celery.AsyncResult(jobid)
