@@ -7,6 +7,12 @@ if ! [ -f /data/blacklisted_templates ] ; then
     cp blacklisted_templates /data/blacklisted_templates
 fi
 
+build_models () {
+
+    python models-fasta.py /data/models /data/fasta/models.fa
+    makeblastdb -in /data/fasta/models.fa -dbtype prot -out /data/blast/models
+}
+
 build_templates () {
 
     python makeXrayPDBFinder2Fasta.py /data/fasta/templates.fa
@@ -35,6 +41,7 @@ build_trembl () {
     makeblastdb -in /data/fasta/uniprot_trembl.fasta -dbtype prot -out /data/blast/uniprot_trembl
 }
 
+build_models &
 build_templates &
 build_trembl &
 build_sprot &
