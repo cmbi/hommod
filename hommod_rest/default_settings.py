@@ -55,6 +55,7 @@ INTERPROSCAN = '/deps/interproscan/interproscan-5.17-56.0/interproscan.sh'
 YASARADIR = '/deps/yasara/yasara/'
 
 # Blast databases
+MODELSDB = '/data/blast/models'
 TEMPLATESDB = '/data/blast/templates'
 UNIPROTDB = '/data/blast/uniprot'
 TEMPLATESFASTA = '/data/fasta/templates.fa'

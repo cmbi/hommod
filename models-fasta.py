@@ -73,15 +73,10 @@ def get_sequences(tar_path):
     return seqs
 
 
-if len(sys.argv) != 3:
-    print("Usage: %s [models dir] [output fasta]" % sys.argv[0])
-    sys.exit(1)
-
-with open(sys.argv[2], 'w') as f:
-    for path in glob('%s/*.tgz' % sys.argv[1]):
-        name = os.path.splitext(os.path.basename(path))[0]
-
-        seqs = get_sequences(path)
-        for chain in seqs:
-            f.write('>%s_%s\n%s\n' % (name, chain, seqs[chain]))
+with open(sys.argv[-1], 'w') as f:
+    for d in sys.argv[:-1]:
+        for path in glob('%s/*.tgz' % d):
+            seqs = get_sequences(path)
+            for chain in seqs:
+                f.write('>%s|%s\n%s\n' % (path, chain, seqs[chain]))
 

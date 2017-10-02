@@ -9,7 +9,7 @@ fi
 
 build_models () {
 
-    python models-fasta.py /data/models /data/fasta/models.fa
+    python models-fasta.py /data/models /mnt/chelonium/hg/models /data/fasta/models.fa
     makeblastdb -in /data/fasta/models.fa -dbtype prot -out /data/blast/models
 }
 

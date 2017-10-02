@@ -8,10 +8,11 @@ _log = logging.getLogger(__name__)
 
 # Uses ncbi blast executables: ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
 class BlastService(object):
-    def __init__(self, blastp_exe=None, templates_db=None, uniprot_db=None):
+    def __init__(self, blastp_exe=None, templates_db=None, uniprot_db=None, models_db=None):
         self._blastp_exe = blastp_exe
         self._templates_db = templates_db
         self._uniprot_db = uniprot_db
+        self._models_db = models_db
 
     @property
     def blastp_exe(self):
@@ -37,6 +38,14 @@ class BlastService(object):
     def uniprot_db(self, uniprot_db):
         self._uniprot_db = uniprot_db
 
+    @property
+    def models_db(self):
+        return self._models_db
+
+    @models_db.setter
+    def models_db(self, models_db):
+        self._models_db = models_db
+
     def _checkinit(self):
         if not self.templates_db:
             raise Exception("templates_db not set")
@@ -46,6 +55,19 @@ class BlastService(object):
 
         if not self.blastp_exe:
             raise Exception("blastp_exe not set")
+
+        if not self.models_db:
+            raise Exception("models_db not set")
+
+    def blast_models(self, seq):
+        """
+        Blast against a database of models
+        """
+
+        self._checkinit()
+        _log.info("performing template blast for\n%s" %seq)
+
+        return self._blast(seq, self.models_db)
 
     def blast_templates(self, seq):
         """
