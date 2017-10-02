@@ -76,7 +76,9 @@ def get_sequences(tar_path):
 with open(sys.argv[-1], 'w') as f:
     for d in sys.argv[:-1]:
         for path in glob('%s/*.tgz' % d):
-            seqs = get_sequences(path)
-            for chain in seqs:
-                f.write('>%s|%s\n%s\n' % (path, chain, seqs[chain]))
-
+            try:
+                seqs = get_sequences(path)
+                for chain in seqs:
+                    f.write('>%s|%s\n%s\n' % (path, chain, seqs[chain]))
+            except:
+                continue
