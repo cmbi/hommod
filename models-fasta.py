@@ -33,6 +33,7 @@ dict_aa3to1 = {
     'ASN': 'N',
     'PYL': 'O',
     'PRO': 'P',
+    'GLN': 'Q',
     'ARG': 'R',
     'SER': 'S',
     'THR': 'T',
