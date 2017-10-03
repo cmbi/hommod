@@ -20,6 +20,7 @@ def setup():
     interpro.storage_dir = config.INTERPRODIR
     blaster.uniprot_db = os.path.join(mydir, "data/mini")  # small version
     blaster.templates_db = config.TEMPLATESDB
+    blaster.models_db = config.MODELSDB
     blaster.blastp_exe = config.BLASTP
     secstr.dssp_dir = config.DSSPDIR
     secstr.yasara_dir = config.YASARADIR

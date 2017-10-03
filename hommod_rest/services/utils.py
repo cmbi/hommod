@@ -5,6 +5,7 @@ from flask import current_app as flask_app
 from hommod_rest.services.modelutils import (parseFasta, getCoverageIdentity,
                                              idForSeq, TemplateID)
 from hommod_rest.services.align import aligner
+from hommod_rest.services.blast import blaster
 from time import time
 
 import re
@@ -115,7 +116,7 @@ def get_oldest_hg_sequence():
 def select_best_model(sequence, species, position, template):
     bestID = 0.0
     best = None
-    for path in list_models_of(sequence, species, position, template):
+    for path in blast_models(sequence, species, position, template):
 
         alignment = extract_alignment(path)
 
@@ -161,15 +162,57 @@ def select_best_model(sequence, species, position, template):
     return best
 
 
+def blast_models(sequence, species, position, template_id):
+
+    approved = []
+
+    hits = blaster.blast_models(sequence)
+    for hitID in hits:
+
+        path, chain = hitID.split('|')
+
+        name = os.path.splitext(os.path.basename(path))[0]
+
+        if ('_' + species + '_') not in name:
+            continue
+
+        if not os.path.isfile(path):
+            continue
+
+        info = extract_info(path)
+
+        if info['template'].split('_') != template_id.pdbac:
+            continue
+
+        for alignment in hits[hitID]:
+            if position < alignment.querystart or position > alignment.queryend:
+                continue
+
+            length = alignment.queryend - alignment.querystart
+            if length < 20:
+                continue
+
+            # must be 100% identity
+            if alignment.queryalignment != alignment.subjectalignment:
+                continue
+
+            approved.append(path)
+            break
+
+    return approved
+
 def list_models_of(sequence, species, position, template_id):
     h = idForSeq(sequence)
 
     wildcard = os.path.join(flask_app.config['MODELDIR'],
                             '%s_%s_*-*.tgz' % (h, species))
-    _log.debug("looking for " + wildcard)
+    hg_wildcard = os.path.join(flask_app.config['HGMODELDIR'],
+                               '%s_%s_*-*.tgz' % (h, species))
+
+    _log.debug("looking for " + wildcard + " and " + hg_wildcard)
 
     l = []
-    for f in glob(wildcard):
+    for f in glob(wildcard).extend(glob(hg_wildcard)):
 
         age = time() - os.path.getmtime(f)
         if age >= flask_app.config['MAX_MODEL_DAYS'] * 24 * 60 * 60:

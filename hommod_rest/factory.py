@@ -116,6 +116,7 @@ def create_celery_app(flask_app=None):  # pragma: no cover
     blaster.blastp_exe = flask_app.config['BLASTP']
     blaster.templates_db = flask_app.config['TEMPLATESDB']
     blaster.uniprot_db = flask_app.config['UNIPROTDB']
+    blaster.models_db = flask_app.config['MODELSDB']
 
     from hommod_rest.services.interpro import interpro
     interpro.storage_dir = flask_app.config['INTERPRODIR']
