@@ -39,6 +39,7 @@ services:
     command: bash /usr/src/app/schedule_updates.bash
     volumes:
       - "/srv/hommod:/data"
+      - "/srv/data:/mnt/chelonium"
 
   redis:
     image: redis
