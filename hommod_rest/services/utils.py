@@ -181,7 +181,7 @@ def blast_models(sequence, species, position, template_id):
 
         info = extract_info(path)
 
-        if template_id is not None and info['template'].split('_') != template_id.pdbac:
+        if template_id is not None and info['template'].split('_')[0] != template_id.pdbac:
             continue
 
         for alignment in hits[hitID]:
