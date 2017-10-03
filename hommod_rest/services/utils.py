@@ -188,6 +188,10 @@ def blast_models(sequence, species, position, template_id):
             if position < alignment.querystart or position > alignment.queryend:
                 continue
 
+            length = alignment.queryend - alignment.querystart
+            if length < 20:
+                continue
+
             if not alignment.queryalignment[position - alignment.querystart].isalpha():
                 continue
 
