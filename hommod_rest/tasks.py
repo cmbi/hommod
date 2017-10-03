@@ -9,7 +9,7 @@ from flask import current_app as flask_app
 
 from hommod_rest.services.modelutils import parseFasta, writeFasta
 from hommod_rest.services.model import modeler
-from hommod_rest.services.utils import (list_models_of, select_best_model,
+from hommod_rest.services.utils import (blast_models, select_best_model,
                                         get_oldest_hg_sequence)
 
 _log = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ def create_model(sequence, species_id, residue_number, template_id):
         raise Exception("residue number %d out of sequence range" %
                         residue_number)
 
-    paths = list_models_of(sequence, species_id, residue_number, template_id)
+    paths = blast_models(sequence, species_id, residue_number, template_id)
 
     _log.debug("create_model: {} present models for {} {} {} {}"
                .format(len(paths), sequence, species_id, residue_number,
