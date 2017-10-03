@@ -192,7 +192,8 @@ def blast_models(sequence, species, position, template_id):
             if length < 20:
                 continue
 
-            if not alignment.queryalignment[position - alignment.querystart].isalpha():
+            # must be 100% identity
+            if alignment.queryalignment != alignment.subjectalignment:
                 continue
 
             approved.append(path)
