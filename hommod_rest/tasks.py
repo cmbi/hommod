@@ -99,3 +99,5 @@ def create_model(sequence, species_id, residue_number, template_id):
         _log.error("create_model: 0 models created for  {} {} {} {}"
                    .format(sequence, species_id, residue_number, template_id))
         return ''
+
+    return paths[0]
