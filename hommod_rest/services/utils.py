@@ -113,11 +113,10 @@ def get_oldest_hg_sequence():
     return fastas[0]
 
 
-def select_best_model(sequence, species, position, template):
+def select_best_model(user_sequence, paths):
     bestID = 0.0
     best = None
-    for path in (list_models_of(sequence, species, position, template) +
-                 blast_models(sequence, species, position, template)):
+    for path in paths:
 
         alignment = extract_alignment(path)
 
@@ -139,7 +138,7 @@ def select_best_model(sequence, species, position, template):
             # That's why we must align here.
             aligned = aligner.clustal_align({
                 't': targetseqs[i].replace('-', ''),
-                'm': sequence})
+                'm': user_sequence})
             pcov, pid = getCoverageIdentity(aligned['t'], aligned['m'])
             if pid > 95.0:
 
@@ -148,7 +147,7 @@ def select_best_model(sequence, species, position, template):
 
         if main_i == -1:
             raise Exception("main target sequence not found in alignment:\n" +
-                            sequence + " should match one of " +
+                            user_sequence + " should match one of " +
                             str(targetseqs))
 
         pcov, pid = \
@@ -158,8 +157,6 @@ def select_best_model(sequence, species, position, template):
             best = path
             bestID = pid
 
-    _log.debug("best model for %s %s %i %s is %s" % (idForSeq(sequence),
-               species, position, str(template), best))
     return best
 
 
