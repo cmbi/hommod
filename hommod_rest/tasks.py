@@ -84,8 +84,7 @@ def create_model(sequence, species_id, residue_number, template_id):
         _log.debug("create_model: selecting best model for {} {} {} {} out of {}"
                    .format(sequence, species_id, residue_number, template_id, paths))
 
-        best_model = select_best_model(sequence, species_id, residue_number,
-                                       template_id)
+        best_model = select_best_model(sequence, paths)
 
         _log.debug("create_model: ending job with " +
                    "best model {} found for {} {} {} {}"
