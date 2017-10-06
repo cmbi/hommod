@@ -65,7 +65,7 @@ class BlastService(object):
         """
 
         self._checkinit()
-        _log.info("performing template blast for\n%s" %seq)
+        _log.info("performing model blast for\n%s" %seq)
 
         return self._blast(seq, self.models_db)
 
