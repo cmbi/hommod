@@ -116,7 +116,8 @@ def get_oldest_hg_sequence():
 def select_best_model(sequence, species, position, template):
     bestID = 0.0
     best = None
-    for path in blast_models(sequence, species, position, template):
+    for path in (list_models_of(sequence, species, position, template) +
+                 blast_models(sequence, species, position, template)):
 
         alignment = extract_alignment(path)
 
@@ -212,7 +213,7 @@ def list_models_of(sequence, species, position, template_id):
     _log.debug("looking for " + wildcard + " and " + hg_wildcard)
 
     l = []
-    for f in glob(wildcard).extend(glob(hg_wildcard)):
+    for f in (glob(wildcard) + glob(hg_wildcard)):
 
         age = time() - os.path.getmtime(f)
         if age >= flask_app.config['MAX_MODEL_DAYS'] * 24 * 60 * 60:

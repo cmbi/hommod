@@ -255,3 +255,11 @@ class TestTasks:
             "HUMAN", 360, None)
         assert(len(path) > 0)
 
+    def test_blood_clotting(self):
+        from hommod_rest.tasks import create_model
+        path = create_model(
+"MGNKQTIFTEEQLDNYQDCTFFNKKDILKLHARFYELAPNLVPMDYRKSPIVHVPMSLIIQMPELRENPFKE" +
+"RIVEAFSEDGEGNLTFNDFVDMFSVLCESAPRELKANYAFKIYDFNTDNFICKEDLEMTLARLTKSELEEDE" +
+"VVLVCDKVIEEADLDGDGKLGFADFEDMIAKAPDFLSTFHIRI", "HUMAN", 52, TemplateID("1DGU", 'A'))
+        assert(len(path) > 0)
+
