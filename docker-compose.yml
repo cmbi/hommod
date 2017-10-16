@@ -14,6 +14,7 @@ services:
       - "7001:7001"
     volumes:
       - "/srv/hommod:/data"
+      - "/srv/data:/mnt/chelonium"
       - "/var/log/hommod:/var/log/hommod"
 
   celery:
