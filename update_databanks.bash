@@ -15,7 +15,7 @@ build_models () {
 
 build_templates () {
 
-    python makeXrayPDBFinder2Fasta.py /data/fasta/templates.fa
+    python makeTemplatesFasta.py /data/fasta/templates.fa
     makeblastdb -in /data/fasta/templates.fa -dbtype prot -out /data/blast/templates
 }
 
