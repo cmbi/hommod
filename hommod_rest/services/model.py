@@ -340,6 +340,7 @@ class Modeler(object):
         # YASARA also cleans when starting a modeling run, but
         # we need to make sure that we have the molecule in its
         # final state, before we start reading from it.
+        self.yasara.LogAs('clean.log')
         try:
             self.yasara.CleanObj(tempobj)
         except RuntimeError:
@@ -348,6 +349,12 @@ class Modeler(object):
             if os.path.isfile('errorexit.txt'):
                 with open('errorexit.txt', 'r') as f:
                     raise Exception(f.read())
+
+        # Some error messages can only be found in the log:
+        with open('clean.log', 'r') as f:
+            for line in f:
+                if 'ERROR' in line:
+                    raise Exception(line)
 
         # Make sure there are no chains with sequence XXXXXXXXXXXXXXXXXX,
         # Otherwise, yasara would remove the entire chain.
@@ -742,12 +749,16 @@ class Modeler(object):
         # Start the modeling run:
         self.model_with_alignment(alignmentFastaPath, tempobj)
         if not os.path.isfile("target.yob"):
-            raise Exception("yasara modeling run did not complete for %s %s (%d - %d)\n%s\n\n"
-                            % (uniprot_species_name, main_template_id,
-                               main_domain_range.start, main_domain_range.end,
-                               main_target_sequence) +
-                            "\'target.yob\' is missing\n" +
-                            "Please check yasara's output for further details")
+            if os.path.isfile("errorexit.txt"):
+                with open("errorexit.txt", 'r') as f:
+                    raise Exception(f.read())
+            else:
+                raise Exception("yasara modeling run did not complete for %s %s (%d - %d)\n%s\n\n"
+                                % (uniprot_species_name, main_template_id,
+                                   main_domain_range.start, main_domain_range.end,
+                                   main_target_sequence) +
+                                "\'target.yob\' is missing\n" +
+                                "Please check yasara's output for further details")
 
         # Save the model in PDB format:
         self.yasara.SavePDB(tempobj, model_path)
@@ -1131,6 +1142,7 @@ class Modeler(object):
 
         self.yasara.Processors(1)
 
+        self.yasara.LogAs('model.log')
         self.yasara.ExperimentHomologyModeling(
             templateobj=tempobj,
             alignfile=alignmentFastaPath,
@@ -1146,6 +1158,11 @@ class Modeler(object):
         )
         self.yasara.Experiment("On")
         self.yasara.Wait("Expend")
+
+        with open('model.log', 'r') as log:
+            for line in log:
+                if 'ERROR' in line:
+                    raise Exception(line)
 
         _log.info("yasara modeling run ended for alignment %s"
                   % alignmentFastaPath)
