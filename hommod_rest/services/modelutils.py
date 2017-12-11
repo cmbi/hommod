@@ -171,7 +171,7 @@ def getChainCAsSeqSecStr(yasara, obj, chain):
 
     atomstring = "atom"
     for s in yasara.ListAtom(
-            'CA and obj %i and mol %s and protein' % (obj, chain),
+            'CA and obj %i and mol %s and aminoacid' % (obj, chain),
             'ATOMNUM RESNAME'):
         ss = s.split()
         CAs.append(int(ss[0]))

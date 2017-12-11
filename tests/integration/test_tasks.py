@@ -282,4 +282,14 @@ class TestTasks:
 "LEVLERGAYTQVIFLARNNTIVNELVRVTSEGAGLQLQKVTVLGVATAPQQVLSNGVPVSNFTYSPDTKVLD" +
 "ICVSLLMGEQFLVSWC", "HUMAN", 100, TemplateID("5KZW", 'A'))
         except Exception as e:
-            assert "has more bonds than this chemical element can form" in str(e)
+             assert "has more bonds than this chemical element can form" in str(e)
+
+
+    def test_3FDM(self):
+        from hommod_rest.tasks import create_model
+        path = create_model(
+"MDGSGEQPRGGGPTSSEQIMKTGALLLQGFIQDRAGRMGGEAPELALDPVPQDASTKKLSECLKRIGDELDS" +
+"NMELQRMIAAVDTDSPREVFFRVAADMFSDGNFNWGRVVALFYFASKLVLKALCTKVPELIRTIMGWTLDFL" +
+"RERLLGWIQDQGGWDGLLSYFGTPTWQTVTIFVAGVLTASLTIWKKMG", "HUMAN", 100,
+                            TemplateID("3FDM", 'A'))
+        assert(len(path) > 0)
