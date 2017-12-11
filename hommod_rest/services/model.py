@@ -194,8 +194,8 @@ class Modeler(object):
 
         # chain_order is the order that yasara maintains.
 
-        chain_order = self.yasara.ListMol('obj %i protein' % tempobj, 'MOL')
-        s = self.yasara.SequenceMol('obj %i protein' % tempobj)
+        chain_order = self.yasara.ListMol('obj %i and protein' % tempobj, 'MOL')
+        s = self.yasara.SequenceMol('obj %i and protein' % tempobj)
 
         uniquechain_order = []
         template_chain_sequences = {}
@@ -204,7 +204,7 @@ class Modeler(object):
             seq = ''
 
             for s in self.yasara.SequenceMol(
-                    'obj %i mol %s protein' % (tempobj, chain)):
+                    'obj %i and mol %s and protein' % (tempobj, chain)):
                 seq += s
 
             # Some templates have two protein chains with the same ID:
@@ -473,8 +473,8 @@ class Modeler(object):
         # Remove funny insertions/deletions from main target:
         main_target_sequence = \
             adjust_target(main_target_sequence,
-                                 template_chain_sequences[main_template_id.chainID],
-                                 uniprot_species_name)
+                          template_chain_sequences[main_template_id.chainID],
+                          uniprot_species_name)
 
         _log.debug("template sequences after _set_template:\n " +
                    str(template_chain_sequences))
@@ -556,8 +556,7 @@ class Modeler(object):
                     candidateChainInteractsWith[chainID].append(c)
 
             if len(candidateChainInteractsWith) <= 0:
-
-                # No more interacting chains to add.
+                _log.debug("No more interacting chains to add, quitting loop")
                 break
 
             # iterate over chains that might interact with the chains
@@ -712,11 +711,7 @@ class Modeler(object):
                     .write('\tmodeling target %s on chain %s\n'
                            % (selectedTarget, chainID))
 
-        time_targets = time()
-
-        time_log("took %d seconds to pick targets for template\n" % (time_targets - time_start))
-
-        # < end of interaction finding iter
+            # < end of interaction finding for-loop
 
         # Delete chains that weren't aligned, assuming there's no
         # interaction with the main target's homologs:
@@ -737,38 +732,60 @@ class Modeler(object):
                     .write('\tdeleting not-interacting ' +
                            'chain %s from template\n' % chainID)
 
-        # The set of chains might have changed:
-        chain_order, template_chain_sequences = \
-            self.get_chain_order_and_sequences(tempobj)
+        while True:
+            # The set of chains might have changed:
+            chain_order, template_chain_sequences = \
+                self.get_chain_order_and_sequences(tempobj)
 
-        # Make the alignment file for yasara:
-        write_alignment_fasta(
-            chain_order, alignments, main_template_id.pdbac,
-            alignmentFastaPath)
+            _log.debug("Writing down alignments for chain order: {}".format(chain_order))
 
-        # Start the modeling run:
-        self.model_with_alignment(alignmentFastaPath, tempobj)
-        if not os.path.isfile("target.yob"):
-            if os.path.isfile("errorexit.txt"):
-                with open("errorexit.txt", 'r') as f:
-                    raise Exception(f.read())
-            else:
-                raise Exception("yasara modeling run did not complete for %s %s (%d - %d)\n%s\n\n"
-                                % (uniprot_species_name, main_template_id,
-                                   main_domain_range.start, main_domain_range.end,
-                                   main_target_sequence) +
-                                "\'target.yob\' is missing\n" +
-                                "Please check yasara's output for further details")
+            # Make the alignment file for yasara:
+            write_alignment_fasta(
+                chain_order, alignments, main_template_id.pdbac,
+                alignmentFastaPath)
 
-        # Save the model in PDB format:
-        self.yasara.SavePDB(tempobj, model_path)
+            # Start the modeling run:
+            self.model_with_alignment(alignmentFastaPath, tempobj)
 
-        _log.info("sucessfully created " + model_path)
+            if os.path.isfile("target.yob"):
 
-        time_model = time()
+                # Save the model in PDB format:
+                self.yasara.SavePDB(tempobj, model_path)
+                _log.info("sucessfully created " + model_path)
 
-        time_log("yasara modeling run took %d seconds\n"
-                 % (time_model - time_targets))
+                return
+            else:  # target.yob is missing
+
+                new_chain_order, new_template_chain_sequences = \
+                    self.get_chain_order_and_sequences(tempobj)
+
+                if len(new_chain_order) <= 0:
+                    raise RuntimeError("yasara experiment removed all chains")
+
+                elif new_chain_order != chain_order or new_template_chain_sequences != template_chain_sequences:
+                    _log.debug("the chains have been modified during the experiment, retrying..")
+
+                    # Redo the alignments with the new chains:
+                    for chainID in new_chain_order:
+                        tempCAs, templateChainSeq, templateChainSecStr = \
+                            getChainCAsSeqSecStr(self.yasara, tempobj, chainID)
+
+                        alignments[chainID] = aligner.kmad_align(
+                            templateChainSeq, templateChainSecStr,
+                            alignments[chainID]['target'])
+
+                    continue
+
+                elif os.path.isfile("errorexit.txt"):
+                    with open("errorexit.txt", 'r') as f:
+                        raise RuntimeError(f.read())
+                else:
+                    raise RuntimeError("yasara modeling run did not complete for %s %s (%d - %d)\n%s\n\n"
+                                       % (uniprot_species_name, main_template_id,
+                                          main_domain_range.start, main_domain_range.end,
+                                          main_target_sequence) +
+                                       "\'target.yob\' is missing\n" +
+                                       "Please check yasara's output for further details")
 
     def modelProc(self, main_target_sequence, uniprot_species_name, requireRes=None,
                   overwrite=False, chosenTemplateID=None):
@@ -827,8 +844,6 @@ class Modeler(object):
             self.yasara.Exit()
             self.yasara.start()
 
-        time_start = time()
-
         # Blast and filter alignments that satisfy the given set of
         # domain ranges. No halfway cut domains are alowed!
         if chosenTemplateID:
@@ -841,11 +856,6 @@ class Modeler(object):
         else:
             maintarget_alignments = \
                 domainalign.getAlignments(ranges, main_target_sequence)
-
-        time_after_alignments = time()
-
-        time_log("took %i seconds to compute and filter alignments\n"
-                 % (time_after_alignments - time_start))
 
         if len(maintarget_alignments) <= 0:
             _log.warn('no alignments found for sequence:\n' + main_target_sequence)
