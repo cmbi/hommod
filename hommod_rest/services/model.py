@@ -606,8 +606,8 @@ class Modeler(object):
                     # If we have targets with extremely high coverage,
                     # then we don't need interpro
                     alignment = aligner.kmad_align(
-                        yasaraChain.seq,
-                        yasaraChain.secstr,
+                        templateChainSeq,
+                        templateChainSecStr,
                         potentialtarget_seqs[targetID])
 
                     pcov, pid = getCoverageIdentity(
@@ -696,14 +696,14 @@ class Modeler(object):
                 # It's solved here:
                 if chainID not in alignments:
 
-                    _log.debug("putting poly-A on chain {} of {}"
-                               .format(chainID, main_template_id.pdbac))
+                    _log.debug("putting poly-A on chain {} of {}, sequence=\n\"{}\""
+                               .format(chainID, main_template_id.pdbac, templateChainSeq))
 
                     # Place alanines in the target sequence, with same
                     # length as templare chain:
                     alignments[chainID] = {
-                        'template': yasaraChain.seq,
-                        'target': 'A' * len(yasaraChain.seq)}
+                        'template': templateChainSeq,
+                        'target': 'A' * len(templateChainSeq)}
                     selectedTarget = 'poly-A'
                     self.yasara.OccupMol(chainID, 0.0)
 
