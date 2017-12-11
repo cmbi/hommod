@@ -1,6 +1,6 @@
 from hommod_rest.services.align import aligner
 
-from nose.tools import with_setup
+from nose.tools import with_setup, eq_
 import hommod_rest.default_settings as config
 
 
@@ -32,3 +32,13 @@ def test_kmad():
     aligned = aligner.kmad_align(templateseq, templatesecstr, targetseq)
     assert "target" in aligned
     assert "template" in aligned
+
+
+@with_setup(setup, teardown)
+def test_kmad_X():
+    targetseq = "AAAAAAAAAAAAAAA"
+    templateseq = "XAXRXLXKXGDAFNR"
+    templatesecstr = "               "
+
+    aligned = aligner.kmad_align(templateseq, templatesecstr, targetseq)
+    eq_(aligned['template'].replace('-',''), templateseq)
