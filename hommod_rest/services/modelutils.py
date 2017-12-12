@@ -420,6 +420,10 @@ def getNalignIdentity(alignedseq1, alignedseq2):
     """
     Returns #aligned residue & Identity
     """
+
+    if len(alignedseq1) != len(alignedseq2):
+        raise ValueError("\"{}\" and \"{}\" aren\'t the same length".format(alignedseq1, alignedseq2))
+
     nid = 0
     nalign = 0
     for i in range(len(alignedseq1)):
