@@ -182,6 +182,8 @@ class InterproService (object):
 
                 if status in ['RUNNING', 'PENDING', 'STARTED']:
                     time.sleep(10)
+                elif status == 'NOT_FOUND':
+                    jobid = _interpro_submit(sequence)
                 else:
                     break
 
