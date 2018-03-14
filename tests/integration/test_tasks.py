@@ -1,8 +1,11 @@
 import os
 from time import time
 
+from nose.tools import eq_
+
 from hommod_rest.factory import create_app, create_celery_app
-from hommod_rest.services.modelutils import TemplateID
+from hommod_rest.services.modelutils import TemplateID, idForSeq
+from hommod_rest.services.utils import extract_info
 
 import hommod_rest.default_settings as settings
 
@@ -317,6 +320,29 @@ class TestTasks:
         "HUMAN", 900, TemplateID("5NX2", 'A'))
         assert(len(path) > 0)
 
+    def test_5K7L(self):
+        sequence = "MLKSLTVKFNKVNPMEGRMEKKLCPNLSSLSQPTIAQGDNQSEKEPLRSRTPI" + \
+                   "TFEKSHSKEDNSTGENSLRDFTPNPDPECRAELTRTMAEMEKTRTGKERPVSF" + \
+                   "KTKVLETSIINEYTDAHLHNLVERMRERTALYKKTLTEEENFPEVEASSQTAM" + \
+                   "STNISPKQENNSKLKEHQDTFSFKPQRVPVKEHLRRMILPRSIDSYTDRVYLL" + \
+                   "WLLLVTIAYNWNCWLLPVRLVFPCQTPDNKNYWIITDIVCDIIYLCDILLIQP" + \
+                   "RLQFVRGGEIIVDSNELKRNYRSSTKFRMDVASLLPFEVLYIFFGVNPIFRAN" + \
+                   "RILKYTSFFEFNHHLESIMDKAYVYRVIRTTGYLLFLLHINACVYYWASDYEG" + \
+                   "IGSTKWVYNGEGNKYLRCFYWAVRTLITIGGLPEPQTSFEIVFQFLNFFSGVF" + \
+                   "VFSSLIGQMRDVIGAATANQNYFQACMDHIIAYMNKYSIPQSVQYRVRTWLEY" + \
+                   "TWNSQRILDESNLLENLPTAMQLSIALDINFSIIDKVELFKGCDTQMIYDLLL" + \
+                   "RLKSTIYLPGDFVCKKGEIGKEMYIIKHGEVQVLGGPDGAQVLVTLKAGSVFG" + \
+                   "EISLLAKGGGNRRTADVVAHGFANLLTLDKKTLQEILLHYPTSKKLLMKKAKI" + \
+                   "LLSQKGKTTQAIPARPGPAFLFPPKEETPRMLKVLLGNTGKVDLGRLLKGKRK" + \
+                   "TTTQK"
+        sequence_id = idForSeq(sequence)
+
+        from hommod_rest.tasks import create_model
+        path = create_model(sequence, "HUMAN", 231, TemplateID("5K7L", 'A'))
+
+        info = extract_info(path)
+        eq_(info['targets']['A'], sequence_id)
+
     def test_4as1(self):
         from hommod_rest.tasks import create_model
         path = create_model(
@@ -334,3 +360,4 @@ class TestTasks:
 "PHVTSEIWAGLALVPRKLCAHYTWDASVLLQAWPAVDPEFLQQPEVVQMAVLINNKACGKIPVPQQVARDQD" +
 "KVHEFVLQSELGVRLLQGRSIKKSFLSPRTALINFLVQD", "HUMAN", 113, TemplateID("4AS1", 'A'))
         assert(len(path) > 0)
+

@@ -498,8 +498,8 @@ class Modeler(object):
         # Add the first alignments,
         # involving the main target sequence:
         # (the main target might be selected for more than one template sequence)
-        for chainID in pick_template_chains_for(
-                template_chain_sequences, main_target_sequence):
+        main_target_chain_ids = pick_template_chains_for(template_chain_sequences, main_target_sequence, main_template_id)
+        for chainID in main_target_chain_ids:
 
             # Of coarse, we've already made an alignment previously
             # while determining the covered domain. However, we want
@@ -1401,7 +1401,7 @@ def group_identicals(d):
     return grouped
 
 
-def pick_template_chains_for(chain_sequences, target_seq):
+def pick_template_chains_for(chain_sequences, target_seq, chosen_template_id):
     """
     This function is used for choosing which chains of the template will be
     used to model the main target sequence on.
@@ -1410,8 +1410,7 @@ def pick_template_chains_for(chain_sequences, target_seq):
     """
 
     identicalChains = group_identicals(chain_sequences)
-    hit_chain = select_highest_identity(target_seq,
-                                        filterMinLength(30, chain_sequences))
+    hit_chain = chosen_template_id.chainID
 
     for group in identicalChains:
         if hit_chain in group:
