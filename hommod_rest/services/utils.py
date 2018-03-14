@@ -146,7 +146,7 @@ def select_best_model(user_sequence, paths):
                 break
 
         if main_i == -1:
-            raise Exception("main target sequence not found in alignment:\n" +
+            raise Exception("main target sequence not found in " + path + " alignment:\n" +
                             user_sequence + " should match one of " +
                             str(targetseqs))
 

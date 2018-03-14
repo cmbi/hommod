@@ -226,6 +226,10 @@ class Modeler(object):
                                        (chain, tempobj))[0]
 
     def _check_fix_chain_breaks(self, obj, chain):
+
+        # Fix any incomplete backbone:
+        self.yasara.CleanObj(obj)
+
         residues_atoms = {}
         res_order = []
         for s in self.yasara.ListAtom(
@@ -255,7 +259,7 @@ class Modeler(object):
                 continue
 
             if prevresnum is not None:
-                # Connect all peptide bonds, even if N-C distance is huge.
+                # Connect all peptide bonds, even if C-N distance is huge.
                 self.yasara.AddBond(
                     "obj %i mol %s res %s atom C" % (obj, chain, prevresnum),
                     "obj %i mol %s res %s atom N" % (obj, chain, resnum),
@@ -758,6 +762,10 @@ class Modeler(object):
 
                 new_chain_order, new_template_chain_sequences = \
                     self.get_chain_order_and_sequences(tempobj)
+
+                for chain_id in new_chain_order:
+                    if new_chain_order.count(chain_id) > 1:
+                        raise RuntimeError("Chain {} has been split during the experiment".format(chain_id))
 
                 if len(new_chain_order) <= 0:
                     raise RuntimeError("yasara experiment removed all chains")
