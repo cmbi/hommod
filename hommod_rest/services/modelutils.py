@@ -473,7 +473,7 @@ def idForSeq(seq):
     """
     Generates an unique id for a given sequence.
     """
-    h = md5(seq).hexdigest()
+    h = md5(seq.encode('ascii')).hexdigest()
     return (h[:8] + '-' +
             h[8: 12] + '-' +
             h[12: 16] + '-' +

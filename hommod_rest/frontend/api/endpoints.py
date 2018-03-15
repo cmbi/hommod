@@ -31,8 +31,12 @@ def update_cache():
     _log.info("endpoints.update_cache request for( sequence: %s, species: %s )"
               %(sequence, species_id))
 
-    if not(sequence and species_id):
-        return jsonify({'error': 'invalid input'}), 400
+    if sequence is None or species_id is None:
+        return jsonify({'error': 'sequence and species are required'}), 400
+
+    if not sequence.isalpha() or not species_id.isalpha():
+        return jsonify({'error': 'sequence and species should be alphabetic strings'}), 400
+
 
     from hommod_rest.tasks import create_models_seq
     result = create_models_seq.apply_async((sequence, species_id))
@@ -60,6 +64,12 @@ def get_model_if_exists():
     position = request.form.get('position', None)
     template_id = request.form.get('template_id', None)
 
+    if sequence is None or species_id is None:
+        return jsonify({'error': 'sequence and species are required'}), 400
+
+    if not sequence.isalpha() or not species_id.isalpha():
+        return jsonify({'error': 'sequence and species should be alphabetic strings'}), 400
+
     if position is not None:
         try:
             position = int(position)
@@ -73,7 +83,10 @@ def get_model_if_exists():
         else:
             return jsonify({'error': "expected 'pdbid'-'chain' for the template"}), 400
 
-    paths = list_models_of(sequence, species_id, position, template_id)
+    try:
+        paths = list_models_of(sequence, species_id, position, template_id)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
     _log.debug("got paths {}".format(paths))
 
@@ -103,6 +116,12 @@ def has_model():
     position = request.form.get('position', None)
     species_id = request.form.get('species_id', None)
     template_id = request.form.get('template_id', None)
+
+    if sequence is None or species_id is None:
+        return jsonify({'error': 'sequence and species are required'}), 400
+
+    if not sequence.isalpha() or not species_id.isalpha():
+        return jsonify({'error': 'sequence and species should be alphabetic strings'}), 400
 
     try:
         position = int(position)
@@ -153,10 +172,11 @@ def submit():
                "sequence: %s, species: %s, position: %s, template: %s)")
               % (sequence, species_id, position, template_id))
 
-    if not(sequence and position and species_id):
-        _log.error("endpoints.submit: submit request did not contain all required input data")
+    if sequence is None or species_id is None:
+        return jsonify({'error': 'sequence and species are required'}), 400
 
-        return jsonify({'error': 'invalid input'}), 400
+    if not sequence.isalpha() or not species_id.isalpha():
+        return jsonify({'error': 'sequence and species should be alphabetic strings'}), 400
 
     species_id = species_id.upper()
     try:

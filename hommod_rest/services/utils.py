@@ -242,7 +242,12 @@ def get_model_path(model_id):
 
 
 def list_models_of(sequence, species, position, template_id):
+
+    _log.debug("list_models_of {} {}".format(sequence, species))
+
     seq_id = idForSeq(sequence)
+
+    _log.debug("list_models_of {} {}".format(seq_id, species))
 
     wildcard = os.path.join(flask_app.config['MODELDIR'],
                             '%s_%s_*-*.tgz' % (seq_id, species))
