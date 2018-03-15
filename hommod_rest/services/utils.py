@@ -58,6 +58,9 @@ def extract_info(tar_path):
                                "chain=\'%s\', target=\'%s\'" % (chain, target))
                     info['targets'][chain] = target
     tf.close()
+
+    _log.debug("got info {}".format(info))
+
     return info
 
 
@@ -78,6 +81,9 @@ def extract_template_id(tar_path):
 
 
 def extract_alignment(tar_path):
+
+    _log.debug("extract alignment from %s" % tar_path)
+
     alignment = {}
 
     tf = tarfile.open(tar_path, 'r')
@@ -89,10 +95,14 @@ def extract_alignment(tar_path):
 
     tf.close()
 
+    _log.debug("got model alignment {}".format(alignment))
+
     return alignment
 
 
 def extract_model(tar_path):
+    _log.debug("extract model from %s" % tar_path)
+
     contents = ''
     tf = tarfile.open(tar_path, 'r')
 
@@ -102,6 +112,8 @@ def extract_model(tar_path):
         contents = tf.extractfile(pdbpath).read()
 
     tf.close()
+
+    _log.debug("got model contents")
 
     return contents
 
@@ -199,18 +211,50 @@ def blast_models(sequence, species, position, template_id):
 
     return approved
 
+
+def get_model_path(model_id):
+    path = os.path.join(flask_app.config['MODELDIR'], '%s.tgz' % model_id)
+    hg_path = os.path.join(flask_app.config['HGMODELDIR'], '%s.tgz' % model_id)
+
+    _log.debug("checking path {}".format(path))
+    _log.debug("checking path {}".format(hg_path))
+
+    if os.path.isfile(hg_path):
+
+        _log.debug("{} exists".format(hg_path))
+
+        if os.path.isfile(path):
+            _log.debug("{} exists".format(path))
+
+            # Return latest file path
+            if os.path.getmtime(path) < os.path.getmtime(hg_path):
+                return hg_path
+            else:
+                return path
+        else:
+            return hg_path
+    elif os.path.isfile(path):
+        _log.debug("{} exists".format(path))
+
+        return path
+    else:
+        return None
+
+
 def list_models_of(sequence, species, position, template_id):
-    h = idForSeq(sequence)
+    seq_id = idForSeq(sequence)
 
     wildcard = os.path.join(flask_app.config['MODELDIR'],
-                            '%s_%s_*-*.tgz' % (h, species))
+                            '%s_%s_*-*.tgz' % (seq_id, species))
     hg_wildcard = os.path.join(flask_app.config['HGMODELDIR'],
-                               '%s_%s_*-*.tgz' % (h, species))
+                               '%s_%s_*-*.tgz' % (seq_id, species))
 
     _log.debug("looking for " + wildcard + " and " + hg_wildcard)
 
     l = []
     for f in (glob(wildcard) + glob(hg_wildcard)):
+
+        _log.debug("inspecting {}".format(f))
 
         age = time() - os.path.getmtime(f)
         if age >= flask_app.config['MAX_MODEL_DAYS'] * 24 * 60 * 60:
@@ -218,7 +262,9 @@ def list_models_of(sequence, species, position, template_id):
 
         name = os.path.splitext(os.path.basename(f))[0]
 
-        if template_id:
+        _log.debug("name is {}".format(name))
+
+        if template_id is not None:
             _log.debug("checking whether {} is the template of {}".format(
                 template_id, f))
             f_template_id = extract_template_id(f)
@@ -226,6 +272,11 @@ def list_models_of(sequence, species, position, template_id):
                 _log.debug("skipping {}, because it does not have {} as template, but {}"
                            .format(f, template_id, f_template_id))
                 continue
+
+        if position is None:
+            _log.debug("add {} to list".format(f))
+            l.append(f)
+            continue
 
         name_params = name.split('_')
         ran = name_params[2].split('-')
@@ -261,8 +312,8 @@ def list_models_of(sequence, species, position, template_id):
                     % (f, inputtargetseq, alignment['target']))
                 continue
 
-            _log.debug("add %s to list of models for %s %s %i" % (f, h, species, position))
+            _log.debug("add {} to list".format(f))
             l.append(f)
 
-    _log.debug("found %i models for %s %s %i" % (len(l), h, species, position))
+    _log.debug("found models {}".format(l))
     return l

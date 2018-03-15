@@ -1,13 +1,14 @@
 import logging
+import os
 
 from flask import Blueprint, jsonify, request, Response
 
 from hommod_rest.services.utils import (extract_info, extract_alignment,
-                                        extract_model, list_models_of)
+                                        extract_model, list_models_of,
+                                        get_model_path)
 from hommod_rest.services.modelutils import TemplateID
 
 _log = logging.getLogger(__name__)
-
 
 bp = Blueprint('hommod', __name__, url_prefix='/api')
 
@@ -41,6 +42,50 @@ def update_cache():
     return jsonify({'jobid': result.task_id})
 
 
+@bp.route('/get_model_if_exists/', methods=['POST'])
+def get_model_if_exists():
+
+    """
+    Get a model if it exists in the set of earlier created models.
+
+    :param sequence: target sequence for the model
+    :param species_id: uniprot species id for the model
+    :param position: (optional) position of the required residue in the sequence, starting 1
+    :param template_id: (optional) 'pdbid'-'chain' for the template
+    :return a json object, containing the field 'model_ids'
+    """
+
+    sequence = request.form.get('sequence', None)
+    species_id = request.form.get('species_id', None)
+    position = request.form.get('position', None)
+    template_id = request.form.get('template_id', None)
+
+    if position is not None:
+        try:
+            position = int(position)
+        except:
+            return jsonify({'error': 'expected integer for position'}), 400
+
+    if template_id is not None:
+        if type(template_id) == str and '-' in template_id:
+            ac, chain = template_id.split('-')
+            template_id = TemplateID(ac, chain)
+        else:
+            return jsonify({'error': "expected 'pdbid'-'chain' for the template"}), 400
+
+    paths = list_models_of(sequence, species_id, position, template_id)
+
+    _log.debug("got paths {}".format(paths))
+
+    model_ids = []
+    for path in paths:
+        model_id = os.path.splitext(os.path.basename(path))[0]
+        model_ids.append(model_id)
+
+    _log.debug("got model ids {}".format(model_ids))
+
+    return jsonify({'model_ids': model_ids})
+
 @bp.route('/has_model/', methods=['POST'])
 def has_model():
 
@@ -50,6 +95,7 @@ def has_model():
     :param sequence: target sequence for the model
     :param position: position of the required residue in the sequence, starting 1
     :param species_id: uniprot species id for the model
+    :param template_id: (optional) 'pdbid'-'chain' for the template
     :return: True if the model is already there, false otherwise
     """
 
@@ -69,14 +115,13 @@ def has_model():
         ac, chain = template_id.split('-')
         template_id = TemplateID(ac, chain)
     else:
-        template_id = None
+        return jsonify({'error': "expected 'pdbid'-'chain' for the template"}), 400
 
     _log.debug("endpoints.has_model request recieved for( " +
               "sequence: %s, species: %s, position: %s ,template %s)"
               %(sequence, species_id, position, template_id))
 
     paths = list_models_of(sequence, species_id, position, template_id)
-
     if len(paths) > 0:
 
         _log.debug("endpoints.has_model: returning true for %s" % str(paths))
@@ -173,6 +218,63 @@ def result(job_id):
         return jsonify({'model_created': False})
     else:
         return jsonify({'model_created': True})
+
+
+@bp.route('/get_model_file_by_model_id/<model_id>.pdb', methods=['GET'])
+@bp.route('/get_model_file_by_model_id/<model_id>.PDB', methods=['GET'])
+def get_model_file_by_model_id(model_id):
+    """
+    Get the pdb file, created by the modeling job.
+
+    :param model_id: the id returned by 'get_model_if_exists'
+    :return: The pdb file created by the job.
+    """
+
+    path = get_model_path(model_id)
+    if path is None:
+        return jsonify({'error': "No such model"}), 400
+
+    _log.debug("got model archive path {}".format(path))
+
+    try:
+        contents = extract_model(path)
+    except Exception as e:
+        error = 'failed to get all data from %s: %s' % (path, str(e))
+        _log.error(error)
+        return jsonify({'error': error}), 500
+
+    _log.debug("endpoints: model successfully retrieved for %s" % model_id)
+
+    return Response(contents, mimetype='chemical/x-pdb')
+
+
+@bp.route('/get_metadata_by_model_id/<model_id>/', methods=['GET'])
+def get_metadata_by_model_id(model_id):
+
+    """
+    Get the metadata of the model, created by the modeling job.
+
+    :param model_id: the id returned by 'get_model_if_exists'
+    :return: The json metadata object.
+    """
+
+    path = get_model_path(model_id)
+    if path is None:
+        return jsonify({'error': "No such model"}), 400
+
+    _log.debug("got model archive path {}".format(path))
+
+    try:
+        data = extract_info(path)
+        data['alignment'] = extract_alignment(path)
+    except Exception as e:
+        error = 'failed to get all data from %s: %s' % (path, str(e))
+        _log.error(error)
+        return jsonify({'error': error}), 500
+
+    _log.debug("endpoints: metadata successfully retrieved for %s" % model_id)
+
+    return jsonify(data)
 
 
 @bp.route('/get_model_file/<jobid>.pdb', methods=['GET'])
