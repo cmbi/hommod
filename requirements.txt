@@ -1,3 +1,4 @@
+watchdog==0.8.3
 amqp==1.4.7
 anyjson==0.3.3
 billiard==3.3.0.19
