@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="panel panel-default">
+  <div class="panel-body">
+    {% for (url, method, doc) in docs %}
+      <h3><samp>/api{{ url }}</samp> <small>({{ method }})</small></h3>
+      {{ doc|beautify_docstring }}
+      <hr>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+{% endblock %}

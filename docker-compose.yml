@@ -1,52 +1,49 @@
 version: "2"
 
 services:
-
   frontend:
     build:
       context: .
       dockerfile: Dockerfile-frontend
-    command: gunicorn -k gevent -b 0.0.0.0:7001 hommod_rest.application:app
+    command: gunicorn -k gevent -b 0.0.0.0:7001 hommod.application:app
     environment:
-      - LOG_FILENAME=/var/log/hommod/hommod-web.log
-      - HOMMOD_REST_SETTINGS=/usr/src/app/prd_settings.py
+      - LOG_FILENAME=/var/log/hommod/hommod-frontend.log
+      - HOMMOD_SETTINGS=/usr/src/app/prd_settings.py
     ports:
       - "7001:7001"
     volumes:
       - "/srv/hommod:/data"
-      - "/srv/data:/mnt/chelonium"
       - "/var/log/hommod:/var/log/hommod"
-
+    depends_on:
+      - celery
   celery:
     build:
       context: .
       dockerfile: Dockerfile-celery
-    command: celery -A hommod_rest.application:celery worker -B
+    command: celery -A hommod.application:celery worker -B
+    environment:
+      - LOG_FILENAME=/var/log/hommod/hommod-celery.log
+      - HOMMOD_SETTINGS=/usr/src/app/prd_settings.py
+    volumes:
+      - "/srv/hommod:/data"
+      - "/mnt/chelonium:/mnt/chelonium"
+      - "/var/log/hommod:/var/log/hommod"
     depends_on:
       - redis
       - rabbitmq
-    environment:
-      - LOG_FILENAME=/var/log/hommod/hommod-celery.log
-      - HOMMOD_REST_SETTINGS=/usr/src/app/prd_settings.py
-    volumes:
-      - "/srv/hommod:/data"
-      - "/srv/data:/mnt/chelonium"
-      - "/var/log/hommod:/var/log/hommod"
-
   databanks:
     build:
       context: .
       dockerfile: Dockerfile-databanks
-    command: bash /usr/src/app/schedule_updates.bash
+    command: cron -f
     environment:
-      - LOG_FILENAME=/var/log/hommod/hommod-web.log
-      - HOMMOD_REST_SETTINGS=/usr/src/app/prd_settings.py
+      - LOG_FILENAME=/var/log/hommod/hommod-databanks.log
+      - HOMMOD_SETTINGS=/usr/src/app/prd_settings.py
     volumes:
       - "/srv/hommod:/data"
-      - "/srv/data:/mnt/chelonium"
-
+      - "/mnt/chelonium:/mnt/chelonium"
+      - "/var/log/hommod:/var/log/hommod"
   redis:
     image: redis
-
   rabbitmq:
     image: rabbitmq

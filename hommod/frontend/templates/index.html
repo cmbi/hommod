@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-xs-8">
+    <div id="panel_target" class="panel panel-default">
+      <div class="panel-heading">Submit a Target Protein</div>
+      <div class="panel-body">
+        <div>
+          <form onsubmit="submit_target(); return false;">
+            <div class="form-group">
+              <p><label for="input_sequence">Sequence:</label></p>
+              <textarea class="protein_sequence protein_sequence_input" id="input_sequence"
+                        placeholder="Insert a protein sequence here.."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="input_species">Species ID:</label>
+              <input type="text" id="input_species"></input>
+              <small class="form-text text-muted">Species ID must be like in uniprot: HUMAN, MOUSE, etc.</small>
+            </div>
+            <input type="submit" value="OK"></input>
+            <span id="submit_target_error" style="display:none" class="label label-danger"></span>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">Submit a Template Structure (optional)</div>
+      <div class="panel-body">
+        <div id="submit_pdbid">
+          <form onsubmit="submit_pdbid(); return false;">
+              <label for="input_pdbid">Template PDB Accession Code:</label>
+              <input type="text" id="input_pdbid" placeholder="xxxx"></input>
+            <input type="submit" value="OK"></input>
+            <span id="submit_template_error" style="display:none" class="label label-danger"></span>
+          </form>
+        </div>
+        <div id="submit_chain" style="display:none">
+          <form>
+            <label id="select_chain_pdbid" for="select_chain"></label>
+            <select name="select_chain" id="select_chain">
+            </select>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div id="panel_position" class="panel panel-default" style="display:none">
+      <div class="panel-heading">Select a Residue Position (optional)</div>
+      <div class="panel-body">
+        <div id="residue_select" class="protein_sequence">
+        </div>
+      </div>
+      <div id="residue_footer" class="panel-footer">No Residue Selected</div>
+    </div>
+    <div id="panel_model" class="panel panel-default" style="display:none">
+       <div class="panel-heading">Build the Model with these Settings?</div>
+       <div class="panel-body">
+         <button onclick="submit_model();">OK</button>
+       </div>
+    </div>
+    <div id="panel_results" class="panel panel-default" style="display:none">
+      <div class="panel-heading">The following Models match your Criteria:</div>
+      <div class="panel-body" id="result_list">
+      </div>
+    </div>
+  </div>
+  <div class="col-xs-4">
+    <div id="model_listing" class="panel panel-default">
+      <div class="panel-heading">Model Jobs</div>
+      <div class="panel-body">
+        <table id="model_table" class="table">
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='mmcif.js') }}"></script>
+
+<script type="text/javascript">
+
+  update_job_list();
+  setInterval(update_job_list, 10000);
+
+
+  function load_cookie_obj()
+  {
+    if (document.cookie == "")
+      return {jobs: []};
+
+    var obj = JSON.parse(document.cookie);
+    if (obj.jobs === undefined)
+      obj.jobs = [];
+
+    return obj;
+  }
+
+  function save_cookie_obj(obj)
+  {
+    document.cookie = JSON.stringify(obj);
+  }
+
+  function delete_model_job(job_id)
+  {
+    var obj = load_cookie_obj();
+
+    var i = obj.jobs.indexOf(job_id);
+    if (i != -1)
+    {
+      obj.jobs.splice(i, 1);
+      save_cookie_obj(obj);
+
+      update_job_list();
+    }
+  }
+
+  function update_model_job(job_id)
+  {
+    $.get("{{ url_for('api.status', job_id='xxxxx') }}".replace('xxxxx', job_id),
+      function(response)
+      {
+        var job_id_tag = job_id;
+
+        if (response.status == "SUCCESS" || response.status == "FAILURE")
+          job_id_tag = "<a href=\"{{ url_for('dashboard.model_info', model_id='xxxxx') }}\">".replace('xxxxx', job_id) + job_id_tag + "</a>";
+
+        var row = "<tr><td class=\"job_id\">" + job_id_tag + "</td><td class=\"job_status_" +
+                  response.status.toLowerCase() + "\">" + response.status + "</td>" +
+                  "<td><a href=\"#\" onclick=\"delete_model_job('" + job_id +
+                  "'); return false;\"><span class=\"glyphicon glyphicon-remove red-glyph\"></span></a></td></tr>";
+        $("#model_table").html($("#model_table").html() + row);
+      }
+    );
+  }
+
+  function update_job_list()
+  {
+    $("#model_table").html("<tr><th>JOB ID:</th><th>STATUS:</th></tr>");
+
+    var job_ids = load_cookie_obj().jobs;
+    for (var i = 0; i < job_ids.length; i++)
+    {
+      update_model_job(job_ids[i]);
+    }
+
+    if (job_ids.length > 0)
+      $("#model_listing").show();
+    else
+      $("#model_listing").hide();
+  }
+
+  function residue_select_html(sequence)
+  {
+    var select_html = "",
+        sequence_html = "",
+        pointer_html = "",
+        number_html = "";
+    for (var i = 0; i < sequence.length; i++)
+    {
+      if (i % 100 == 0)
+      {
+        select_html += "<div class=\"residue_listing_line\">" +
+                       "<div>" + number_html + "</div>" +
+                       "<div>" + pointer_html + "</div>" +
+                       "<div>" + sequence_html + "</div></div>";
+
+        sequence_html = "";
+        pointer_html = "";
+        number_html = "";
+      }
+
+      var residue_number = i + 1;
+
+      sequence_html += "<a href=\"#\" class=\"residue_select\" id=\"residue_select_" + residue_number + "\" " +
+                       "title=\"Residue " + residue_number + "\"" +
+                       "onclick=\"select_position(" + residue_number + "); return false;\">" + sequence[i] + "</a>";
+
+      var residue_number = i + 1;
+
+      if (residue_number % 10 == 0)
+        pointer_html += "|";
+      else
+        pointer_html += "&nbsp;";
+
+      var next_display = 10 * Math.ceil(residue_number / 10),
+          right = residue_number % 10;
+      if (right == 0)
+          right = 10;
+
+      var left = 10 - right,
+          power = Math.pow(10, left),
+          digit = Math.floor(next_display / power) % 10;
+
+      if (power <= next_display && next_display < sequence.length)
+        number_html += "" + digit;
+      else
+        number_html += "&nbsp;";
+    }
+
+    select_html += "<div class=\"residue_listing_line\">" +
+                   "<div>" + number_html + "</div>" +
+                   "<div>" + pointer_html + "</div>" +
+                   "<div>" + sequence_html + "</div></div>";
+
+    return select_html;
+  }
+
+  function get_chain_id()
+  {
+    var chain_id = $("#select_chain").val();
+    return chain_id;
+  }
+
+  function set_chain_ids_for(pdbid)
+  {
+    var url = "https://files.rcsb.org/header/" + pdbid + ".cif";
+
+    $.get(url, function(data) {
+      var tables = parse_mmcif(data);
+      var entities = tables["_entity_poly"];
+      var chain_ids = [];
+      for (var i = 0; i < entities.length; i++)
+      {
+        var entity = entities[i];
+        if (entity["type"] == "polypeptide(L)")
+        {
+          chain_ids = chain_ids.concat(entity["pdbx_strand_id"].split(','));
+        }
+      }
+
+      var select_html = "";
+      for (var i = 0; i < chain_ids.length; i++)
+      {
+        select_html += "<option value=\"" + chain_ids[i] + "\">" + chain_ids[i] + "</option>";
+      }
+      $("#select_chain_pdbid").text("Select a Chain in PDB entry " + pdbid + ":");
+      $("#select_chain").html(select_html);
+      $("#submit_chain").show();
+
+    }).fail(function(error) {
+      $("#submit_template_error").text(error);
+      $("#submit_template_error").show();
+    });
+  }
+
+  function get_target_sequence()
+  {
+    var sequence = $("#input_sequence").val().replace(/^>.*\n/g, '').replace(/\s/g, '');
+    return sequence;
+  }
+
+  function get_target_species()
+  {
+    var species_id = $("#input_species").val().trim();
+    return species_id;
+  }
+
+  var P_SPECIES = /[a-zA-Z]+/;
+
+  var P_SEQUENCE = /[A-Z]+/;
+
+  function submit_target()
+  {
+    var sequence = get_target_sequence();
+    var species_id = get_target_species();
+
+    if (!species_id.match(P_SPECIES))
+    {
+      $("#submit_target_error").text("Species ID is not Valid!");
+      $("#submit_target_error").show();
+      return;
+    }
+
+    if (!sequence.match(P_SEQUENCE))
+    {
+      $("#submit_target_error").text("Sequence is not Valid!");
+      $("#submit_target_error").show();
+    }
+    else
+    {
+        $("#residue_select").html(residue_select_html(sequence));
+        $("#submit_target_error").hide();
+        $("#panel_position").show();
+        $("#panel_model").show();
+    }
+  }
+
+  function get_pdbid()
+  {
+    var template_pdbid = $("#input_pdbid").val().trim();
+    return template_pdbid;
+  }
+
+  var P_PDBID = /[0-9][0-9a-zA-Z]{3}/;
+
+  function submit_pdbid()
+  {
+    var template_pdbid = get_pdbid();
+    if (!template_pdbid.match(P_PDBID))
+    {
+      $("#submit_template_error").text("PDB Accession is not Valid!");
+      $("#submit_template_error").show();
+    }
+    else
+    {
+      set_chain_ids_for(template_pdbid);
+    }
+  }
+
+  var selected_position = null;
+
+  function select_position(position)
+  {
+    selected_position = position;
+
+    $(".residue_select").removeClass("highlighted");
+    $("#residue_select_" + position).addClass("highlighted");
+
+    $("#residue_footer").text("Selected Residue " + position);
+    $("#residue_footer").show();
+  }
+
+  function submit_model()
+  {
+    var data = {};
+    data.sequence = get_target_sequence();
+    if (!data.sequence.match(P_SEQUENCE))
+    {
+      $("#submit_target_error").text("Sequence is not Valid!");
+      $("#submit_target_error").show();
+      return;
+    }
+
+    data.species_id = get_target_species();
+    if (!data.species_id.match(P_SPECIES))
+    {
+      $("#submit_target_error").text("Species ID is not Valid!");
+      $("#submit_target_error").show();
+      return;
+    }
+
+    if (selected_position != null)
+      data.position = selected_position;
+
+    var pdbid = get_pdbid();
+    if (pdbid.match(P_PDBID))
+      data.template_id = pdbid + '_' + get_chain_id();
+    else if (pdbid.length > 0)
+    {
+      $("#submit_template_error").text("PDB Accession is not Valid!");
+      $("#submit_template_error").show();
+      return;
+    }
+
+    $.post("{{ url_for('api.get_model_if_exists') }}", data)
+    .done(function(result) {
+
+      if (result.model_ids.length > 0)
+      {
+        var model_links = "";
+        for (var i = 0; i < result.model_ids.length; i++)
+        {
+          model_links += "<div><a href=\"{{ url_for('dashboard.model_info', model_id='xxxxx') }}\">".replace('xxxxx', result.model_ids[i]) +
+                         result.model_ids[i] + "</a></div>"
+        }
+        $("#result_list").html(model_links);
+        $("#panel_results").show();
+        $("html,body").animate({scrollTop: 99999});
+      }
+      else
+        $.post("{{ url_for('api.submit') }}", data)
+        .done(function(result) {
+
+          var job_id = result.jobid;
+
+          var obj = load_cookie_obj();
+          obj.jobs.push(job_id);
+          save_cookie_obj(obj);
+
+          $("#input_sequence").val("");
+          $("#input_species").val("");
+          $("#input_pdbid").val("");
+          $("#submit_chain").hide();
+          $("#panel_position").hide();
+          $("#panel_model").hide();
+          $("#panel_results").hide();
+          update_job_list();
+        });
+    });
+  }
+</script>
+{% endblock %}

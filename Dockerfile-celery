@@ -19,13 +19,10 @@ RUN chmod 755 /deps/yasara/install_yasara ; sync && \
 rm install_yasara
 COPY yasara.ini /deps/yasara/yasara/yasara.ini
 
-ENV PATH $PATH:/deps/yasara/yasara
-ENV C_FORCE_ROOT true
-
-# hommod
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
-
+# python modules
+WORKDIR /usr/src/app/
 COPY requirements.txt /usr/src/app/
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . /usr/src/app
+
+ENV C_FORCE_ROOT true

@@ -1,0 +1,48 @@
+.protein_sequence_input {
+  width: 100%;
+  height: 200px;
+  resize: none;
+}
+
+.protein_sequence {
+  font-family: Courier New;
+  white-space: nowrap;
+}
+
+.alignment {
+  padding-bottom: 30px;
+  overflow: auto;
+}
+
+.alignment_key {
+  padding-right: 25px;
+  font-weight: bold;
+}
+
+.residue_listing_line {
+  padding-bottom: 30px;
+}
+
+.residue_select.highlighted {
+  background-color: cyan;
+}
+
+.job_id {
+  font-family: Courier New;
+}
+
+.job_status_failure {
+  color: red;
+}
+
+.job_status_success {
+  color: green;
+}
+
+.job_status_started {
+  color: blue;
+}
+
+.red-glyph {
+  color: red;
+}
