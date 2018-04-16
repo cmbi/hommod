@@ -64,9 +64,6 @@ def get_sequences():
             _log.debug("{} is blacklisted".format(pdbid))
             continue
 
-        if contains_unallowed_het_groups(entry):
-            continue
-
         for chain in entry.find('Chain'):
             sequence = chain.find_one('Sequence')
             if sequence is not None:
