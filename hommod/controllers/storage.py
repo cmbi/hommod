@@ -73,6 +73,10 @@ class ModelStorage:
                                        str(template_id))
         return name
 
+    def get_sequence_id_from_name(self, model_name):
+        s = model_name.split('_')
+        return s[0]
+
     def get_model_name_from_path(self, tar_path):
         return os.path.splitext(os.path.basename(tar_path))[0]
 
@@ -121,9 +125,23 @@ class ModelStorage:
                 if f is not None:
                     f.close()
 
-    def extract_info(self, tar_path):
+    def extract_selected_targets(self, tar_path):
+        dir_name = os.path.splitext(os.path.basename(tar_path))[0]
         with tarfile.open(tar_path, 'r:gz') as ar:
-            return {}
+            f = None
+            try:
+                targets = {}
+
+                f = ar.extractfile(os.path.join(dir_name, 'selected-targets.txt'))
+                for line in f:
+                    if ':' in line:
+                        chain_id, target_id = line.split(':')
+                        targets[chain_id.strip()] = target_id.strip()
+
+                return targets
+            finally:
+                if f is not None:
+                    f.close()
 
     def extract_model(self, tar_path):
         dir_name = os.path.splitext(os.path.basename(tar_path))[0]

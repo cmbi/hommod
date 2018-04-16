@@ -50,6 +50,8 @@ class Modeler:
                 if main_domain_alignment.get_template_sequence() == modeling_context.get_sequence(main_domain_alignment.template_id.chain_id) and \
                         main_domain_alignment.get_percentage_identity() >= 100.0:
 
+                    main_domain_alignment.target_id = model_storage.get_sequence_id(main_target_sequence)
+
                     tar_path = self._wrap_template(main_target_sequence, target_species_id,
                                                    main_domain_alignment, main_domain_alignment.template_id)
                     return tar_path
@@ -205,6 +207,7 @@ class Modeler:
         main_target_chain_ids = self._pick_template_chains(modeling_context,
                                                            main_domain_alignment.template_id.chain_id,
                                                            main_target_sequence)
+
         for chain_id in main_target_chain_ids:
 
             template_chain_sequence = modeling_context.get_sequence(chain_id)
@@ -212,6 +215,7 @@ class Modeler:
 
             alignments[chain_id] = kmad_aligner.align(template_chain_sequence, template_chain_secstr,
                                                       main_domain_alignment.get_target_sequence())
+            alignments[chain_id].target_id = model_storage.get_sequence_id(main_target_sequence)
 
         # Try to find and align target sequences for interacting chains in the template,
         # while keeping in mind which residues interact and must thus be covered by the alignment.
@@ -253,6 +257,7 @@ class Modeler:
                 if alignments[candidate_chain_id] is None:
                     alignments[candidate_chain_id] = self._make_poly_A_alignment(modeling_context,
                                                                                  candidate_chain_id)
+                    alignments[candidate_chain_id].target_id = "poly-A"
 
         return alignments
 
@@ -354,6 +359,8 @@ class Modeler:
                 alignment = kmad_aligner.align(template_chain_sequence,
                                                template_chain_secstr,
                                                domain_alignment.get_target_sequence())
+
+            alignment.target_id = target_id
 
             if best_alignment is None or \
                     best_alignment.get_percentage_identity() < alignment.get_percentage_identity():
@@ -460,6 +467,9 @@ class Modeler:
             with open(model_path, 'w') as f:
                 f.write(get_pdb_contents(template_id.pdbid))
 
+            self._write_selected_targets({template_id.chain_id: main_domain_alignment.target_id},
+                                         os.path.join(work_dir_path, 'selected-targets.txt'))
+
             tar_path = model_storage.get_tar_path(main_target_sequence,
                                                   target_species_id,
                                                   main_domain_alignment,
@@ -512,6 +522,8 @@ class Modeler:
             model_path = os.path.join(work_dir_path, 'target.pdb')
             context.yasara.SavePDB(context.template_obj, model_path)
 
+            self._write_selected_targets(chain_alignments, os.path.join(work_dir_path, 'selected-targets.txt'))
+
             tar_path = model_storage.get_tar_path(context.get_main_target_sequence(),
                                                   context.target_species_id,
                                                   main_domain_alignment,
@@ -533,5 +545,11 @@ class Modeler:
         finally:
             if os.path.isdir(work_dir_path):
                 shutil.rmtree(work_dir_path)
+
+    def _write_selected_targets(self, alignments_per_chain, path):
+        with open(path, 'w') as f:
+            for chain_id in alignments_per_chain:
+                if alignments_per_chain[chain_id].target_id is not None:
+                    f.write("%s: %s\n" % (chain_id, alignments_per_chain[chain_id].target_id))
 
 modeler = Modeler()

@@ -144,6 +144,9 @@ class TargetTemplateAlignment(Alignment):
     def __init__(self, target_alignment, template_alignment):
         Alignment.__init__(self, {'target': target_alignment,
                                   'template': template_alignment})
+        # These may be set later:
+        self.target_id = None
+        self.template_id = None
 
     @property
     def target_alignment(self):

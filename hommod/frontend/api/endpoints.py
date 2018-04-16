@@ -9,6 +9,7 @@ from flask import Blueprint, render_template, request, jsonify, Response
 from hommod.models.template import TemplateID
 from hommod.controllers.storage import model_storage
 from hommod.controllers.sequence import is_protein_sequence
+from hommod.controllers.method import select_best_model
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -166,7 +167,12 @@ def get_model_file(job_id):
         return jsonify({'error': message}), 500
 
     try:
-        contents = model_storage.extract_model(paths[0])
+        best_path = select_best_model(paths)
+        if best_path is None:
+            message = 'None of the created models match the target'
+            return jsonify({'error': message}), 500
+
+        contents = model_storage.extract_model(best_path)
         return Response(contents, mimetype='chemical/x-pdb')
     except Exception as e:
         message = str(e)
@@ -221,9 +227,15 @@ def get_metadata(job_id):
         return jsonify({'error': message}), 500
 
     try:
-        data = model_storage.extract_info(paths[0])
+        best_path = select_best_model(paths)
+        if best_path is None:
+            message = 'None of the created models match the target'
+            return jsonify({'error': message}), 500
+
+        data = {}
+        data['selected_targets'] = model_storage.extract_selected_targets(best_path)
         data['alignments'] = [alignment.as_dict()
-                              for alignment in model_storage.extract_alignments(paths[0])]
+                              for alignment in model_storage.extract_alignments(best_path)]
 
         return jsonify(data)
     except Exception as e:
