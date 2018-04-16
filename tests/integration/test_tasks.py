@@ -11,7 +11,9 @@ from hommod.default_settings import (KMAD_EXE, BLASTP_EXE, MODEL_DIR, INTERPRO_U
                                      SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE,
                                      BLACKLIST_FILE_PATH, HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY,
                                      CELERY_RESULT_BACKEND, CELERY_BROKER_URL, YASARA_DIR,
-                                     CLUSTALW_EXE, UNIPROT_DATABANK, UNIPROT_URL)
+                                     CLUSTALW_EXE, UNIPROT_BLAST_DATABANK, UNIPROT_URL,
+                                     CACHE_REDIS_HOST, CACHE_REDIS_PORT, CACHE_REDIS_DB,
+                                     CACHE_EXPIRATION_TIME, CACHE_LOCK_TIMEOUT)
 from hommod.controllers.kmad import kmad_aligner
 from hommod.controllers.clustal import clustal_aligner
 from hommod.controllers.model import modeler
@@ -23,6 +25,7 @@ from hommod.services.dssp import dssp
 from hommod.services.uniprot import uniprot
 from hommod.models.template import TemplateID
 from hommod.controllers.storage import model_storage
+from hommod.services.helpers.cache import cache_manager as cm
 
 
 def setup():
@@ -32,7 +35,7 @@ def setup():
     clustal_aligner.clustalw_exe = CLUSTALW_EXE
     model_storage.model_dir = '/tmp'
     modeler.yasara_dir = YASARA_DIR
-    modeler.uniprot_databank = UNIPROT_DATABANK
+    modeler.uniprot_databank = UNIPROT_BLAST_DATABANK
     domain_aligner.forbidden_interpro_domains = FORBIDDEN_INTERPRO_DOMAINS
     domain_aligner.similar_ranges_min_overlap_percentage = SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE
     domain_aligner.similar_ranges_max_length_difference_percentage = SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE
@@ -43,6 +46,11 @@ def setup():
     blaster.blastp_exe = BLASTP_EXE
     dssp.dssp_dir = DSSP_DIR
     blacklister.file_path = BLACKLIST_FILE_PATH
+    cm.redis_hostname = CACHE_REDIS_HOST
+    cm.redis_port = CACHE_REDIS_PORT
+    cm.redis_db = CACHE_REDIS_DB
+    cm.expiration_time = CACHE_EXPIRATION_TIME
+    cm.lock_timeout = CACHE_LOCK_TIMEOUT
 
     celery_app = Celery(__name__,
                         backend=CELERY_RESULT_BACKEND,

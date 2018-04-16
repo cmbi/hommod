@@ -8,7 +8,10 @@ from hommod.default_settings import (INTERPRO_URL, BLASTP_EXE,
                                      DOMAIN_MIN_PERCENTAGE_COVERAGE, DOMAIN_MAX_MERGE_DISTANCE,
                                      DSSP_DIR, SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE,
                                      SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE,
-                                     BLACKLIST_FILE_PATH, HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY)
+                                     BLACKLIST_FILE_PATH, HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY,
+                                     CACHE_REDIS_HOST, CACHE_REDIS_PORT, CACHE_REDIS_DB,
+                                     CACHE_EXPIRATION_TIME, CACHE_LOCK_TIMEOUT)
+from hommod.services.helpers.cache import cache_manager as cm
 from hommod.controllers.domain import domain_aligner
 from hommod.controllers.blast import blaster
 from hommod.controllers.blacklist import blacklister
@@ -33,7 +36,11 @@ def setup():
     domain_aligner.template_blast_databank = TEMPLATE_BLAST_DATABANK
     domain_aligner.max_merge_distance = DOMAIN_MAX_MERGE_DISTANCE
     domain_aligner.highly_homologous_percentage_identity = HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY
-
+    cm.redis_hostname = CACHE_REDIS_HOST
+    cm.redis_port = CACHE_REDIS_PORT
+    cm.redis_db = CACHE_REDIS_DB
+    cm.expiration_time = CACHE_EXPIRATION_TIME
+    cm.lock_timeout = CACHE_LOCK_TIMEOUT
 
 def end():
     pass
