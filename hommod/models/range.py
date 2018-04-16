@@ -22,10 +22,10 @@ class SequenceRange:
 
     def is_right_from(self, other):
 
-        if self.start > other.start:
+        if self.end > other.end:
             return True
-        elif self.start == other.start:
-            return self.end > other.end
+        elif self.end == other.end:
+            return self.start > other.start
         else:
             return False
 
@@ -44,8 +44,12 @@ class SequenceRange:
                 return 0
 
     def get_intersection(self, other):
+        if self.sequence != other.sequence:
+            raise ValueError("Not from the same Sequence")
+
         return SequenceRange(max(self.start, other.start),
-                             min(self.end, other.end))
+                             min(self.end, other.end),
+                             self.sequence)
 
 
     def __sub__(self, value):
