@@ -1,4 +1,0 @@
-
-
-class BlastHit:
-    pass
