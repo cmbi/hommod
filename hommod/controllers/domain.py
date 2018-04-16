@@ -43,7 +43,7 @@ class DomainAligner:
         sample_ranges = self._filter_forbidden_ranges(interpro_ranges)
 
         if require_resnum is not None:
-            sample_ranges = self._filter_including_ranges(sample_ranges, require_resnum)
+            sample_ranges = filter(lambda r: r.includes_residue(require_resnum), sample_ranges)
 
         # Add the whole sequence as a range too:
         sample_ranges.append(SequenceRange(0, len(target_sequence), target_sequence))
@@ -59,7 +59,7 @@ class DomainAligner:
             _log.debug("sampling {} ranges".format(len(merged_sample_ranges)))
 
             # Check the largest ranges first. If that yields, then the smaller ones don't matter.
-            for range_ in self._sort_ranges_largest_first(merged_sample_ranges):
+            for range_ in sorted(merged_sample_ranges, key=lambda r: r.get_length(), reverse=True):
 
                 if range_ in checked_ranges:
                     continue  # already passed this one
@@ -149,8 +149,8 @@ class DomainAligner:
 
         highly_homolgous = pid >= self.highly_homologous_percentage_identity and range_.get_length() == len(range_.sequence)
 
-        _log.debug("alignment with {} {}: pid={}, nalign={}, pcover={}"
-                   .format(alignment.get_hit_accession_code(), range_, pid, nalign, pcover))
+        _log.debug("alignment with {}: pid={}, nalign={}, pcover={}"
+                   .format(range_, pid, nalign, pcover))
 
         return pid >= get_min_identity(nalign) and \
                (pcover >= self.min_percentage_coverage or highly_homolgous)
@@ -300,23 +300,6 @@ class DomainAligner:
         return hit.get_percentage_identity() >= other_hit.get_percentage_identity() and \
                hit.count_aligned_residues() >= other_hit.count_aligned_residues()
 
-    def _filter_including_ranges(self, ranges, resnum):
-        passed = []
-        for range_ in ranges:
-            if range_.includes_residue(resnum):
-                passed.append(range_)
-        return passed
-
-    def _find_overlapping(self, ranges, range_):
-        overlapping = []
-        for other_range in ranges:
-            if other_range.overlaps_with(range_):
-                overlapping.append(other_range)
-        return overlapping
-
-    def _sort_ranges_largest_first(self, ranges):
-        return sorted(ranges, key=lambda r: r.get_length(), reverse=True)
-
     def _merge_similar_ranges(self, ranges):
         if self.similar_ranges_min_overlap_percentage is None or \
                 self.similar_ranges_max_length_difference_percentage is None:
@@ -327,23 +310,24 @@ class DomainAligner:
         i = 0
         while i < len(ranges):
             overlapping_indices = []
-            for j in range(len(ranges)):
-                if j != i and ranges[j].overlaps_with(ranges[i]):
+            for j in range(i + 1, len(ranges)):
+                if ranges[j].overlaps_with(ranges[i]):
                     overlapping_indices.append(j)
+
             # important, rightmost must go first!
             # Because we're going to remove ranges from the list.
             overlapping_indices = sorted(overlapping_indices, reverse=True)
-
             for j in overlapping_indices:
 
                 percentage_overlap = ranges[i].get_percentage_overlap(ranges[j])
                 percentage_length_difference = 100.0 * (abs(ranges[i].get_length() - ranges[j].get_length()) /
                                                         max(ranges[i].get_length(), ranges[j].get_length()))
-                merged = ranges[i].merge_with(ranges[j])
+
                 if percentage_overlap > self.similar_ranges_min_overlap_percentage and \
                         percentage_length_difference < self.similar_ranges_max_length_difference_percentage:
 
                     # Replace the two ranges by a single merged one:
+                    merged = ranges[i].merge_with(ranges[j])
                     ranges = (ranges[:i] + [merged] + ranges[i + 1: j] + ranges[j + 1:])
             i += 1
 
@@ -380,7 +364,8 @@ class DomainAligner:
 
         passed = []
         for range_ in ranges:
-            if len(self._find_overlapping(forbidden, range_)) <= 0:
+            overlapping = filter(lambda r: r.overlaps_with(range_), forbidden)
+            if len(overlapping) <= 0:
                 passed.append(range_)
 
         return passed
