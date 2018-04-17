@@ -70,10 +70,12 @@ def test_no_alignment_flip():
 
 
 @with_setup(setup, end)
-def test_init_template():
-
+def test_init_template_5GOX():
     context = modeler._prepare_context('5GOX')
 
     eq_(len(context.get_chain_ids()), 2)
 
 
+@with_setup(setup, end)
+def test_init_template_5MHF():
+    context = modeler._prepare_context('5MHF')

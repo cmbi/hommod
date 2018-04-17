@@ -148,7 +148,10 @@ class Modeler:
 
         for chain_id in chain_id_count:
             if chain_id_count[chain_id] > 1:
-                context.yasara.JoinMol("mol %s and Protein" % chain_id)
+                rs = context.yasara.ListMol("obj %i mol %s and protein" % (context.template_obj, chain_id))
+                for r in rs[1:]:
+                    atom_nr = int(r.split()[-1])
+                    context.yasara.JoinMol("obj %i atom %i" % (context.template_obj, atom_nr))
 
     def _swap_problem_residues(self, context):
         context.yasara.SwapRes('Protein and UNK and atom CA and atom CB', 'ALA')
