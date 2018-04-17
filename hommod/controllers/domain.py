@@ -8,7 +8,6 @@ from hommod.services.dssp import dssp
 from hommod.models.template import TemplateID
 from hommod.models.range import SequenceRange
 from hommod.models.align import DomainAlignment
-from hommod.models.blast import BlastHit
 from hommod.models.error import InitError
 from hommod.controllers.sequence import is_amino_acid_char
 from hommod.controllers.kmad import kmad_aligner

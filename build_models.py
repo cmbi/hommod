@@ -8,7 +8,6 @@ import logging
 
 from hommod.controllers.fasta import parse_fasta
 from hommod.models.template import TemplateID
-from hommod.tasks import create_models
 from hommod.controllers.domain import domain_aligner
 from hommod.controllers.model import modeler
 from hommod.services.uniprot import uniprot
