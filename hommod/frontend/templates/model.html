@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div>
+  <div id="metadata" style="display:none">
+    <div class="panel panel-default">
+      <div class="panel-heading">Alignments used in this Model:</div>
+      <div class="panel-body" id="alignments"></div>
+    </div>
+  </div>
+  <div id="download" style="display:none">
+    <div class="panel panel-default">
+      <div class="panel-body">
+        {% if '_' in model_id %}
+          <a href="{{ url_for('api.get_model_file_by_model_id', model_id=model_id) }}" download>Download PDB</a>
+        {% else %}
+          <a href="{{ url_for('api.get_model_file', job_id=model_id) }}" download>Download PDB</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div id="error" style="display:none">
+    <h2>Unfortunately, an Error ocurred while retrieving the Model:</h2>
+    <span id="error_message"></span>
+  </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+
+  {% if '_' in model_id %}
+    $.get("{{ url_for('api.get_metadata_by_model_id', model_id=model_id) }}", on_metadata)
+    .fail(on_error);
+  {% else %}
+    $.get("{{ url_for('api.get_metadata', job_id=model_id) }}", on_metadata)
+    .fail(on_error);
+  {% endif %}
+
+  function on_error(data)
+  {
+    if (data.responseJSON !== undefined)
+      data = data.responseJSON;
+
+    if(data.responseText !== undefined)
+      $("#error").html(data.responseText);
+    else if (data.error !== undefined)
+      $("#error_message").text(data.error);
+    else
+      $("#error_message").text(JSON.stringify(data));
+
+    $("#error").show();
+  }
+
+  function on_metadata(metadata)
+  {
+    var alignments = "";
+    for (var i = 0; i < metadata.alignments.length; i++)
+    {
+      alignments += "<div class=\"protein_sequence alignment\"><table>";
+
+      var keys = Object.keys(metadata.alignments[i]);
+      for (var j = 0; j < keys.length; j++)
+      {
+        if (j > 0)
+        {
+          var midline = "";
+          for (k = 0; k < metadata.alignments[i][keys[j]].length; k++)
+          {
+            if (metadata.alignments[i][keys[j]][k] == metadata.alignments[i][keys[j - 1]][k])
+              midline += metadata.alignments[i][keys[j]][k];
+            else
+              midline += '&nbsp;';
+          }
+          alignments += "<tr><td class=\"alignment_key\"></td><td>" + midline + "</td></tr>";
+        }
+
+        alignments += "<tr><td class=\"alignment_key\">" + keys[j] + ":</td><td>" + metadata.alignments[i][keys[j]] + "</td></tr>";
+      }
+
+      alignments += "</table></div>";
+    }
+    $("#alignments").html(alignments);
+
+    $("#metadata").show();
+
+    $("#download").show();
+  }
+</script>
+{% endblock %}

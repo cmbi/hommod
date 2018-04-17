@@ -1,0 +1,5 @@
+
+PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+0 20 * * 5 /bin/bash /usr/src/app/update_databanks.bash
+

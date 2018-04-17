@@ -7,6 +7,11 @@ RUN apt-get update && apt-get install -y ncbi-blast\+ rsync cron
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
+# cron
+ADD update_cron /usr/src/app/update_cron
+RUN crontab /usr/src/app/update_cron
+
+# python dependencies
 COPY requirements.txt /usr/src/app/
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . /usr/src/app
