@@ -68,8 +68,8 @@ def submit():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-    from hommod.tasks import create_models
-    result = create_models.apply_async((sequence, species_id, position, template_id))
+    from hommod.tasks import create_model
+    result = create_model.apply_async((sequence, species_id, position, template_id))
 
     return jsonify({'jobid': result.task_id})
 
@@ -132,11 +132,11 @@ def result(job_id):
     from hommod.application import celery
     result = celery.AsyncResult(job_id)
     try:
-        paths = result.get()
+        path = result.get()
     except:
         return jsonify({'model_created': False})
 
-    if len(paths) > 0:
+    if path is not None:
         return jsonify({'model_created': True})
     else:
         return jsonify({'model_created': False})
@@ -157,22 +157,17 @@ def get_model_file(job_id):
     from hommod.application import celery
     result = celery.AsyncResult(job_id)
     try:
-        paths = result.get()
+        path = result.get()
     except Exception as e:
         message = str(e)
         return jsonify({'error': message}), 500
 
-    if len(paths) <= 0:
+    if path is None:
         message = 'Job %s finished, but without creating a model. This could be due to lack of a suitable template.' % job_id
         return jsonify({'error': message}), 500
 
     try:
-        best_path = select_best_model(paths)
-        if best_path is None:
-            message = 'None of the created models match the target'
-            return jsonify({'error': message}), 500
-
-        contents = model_storage.extract_model(best_path)
+        contents = model_storage.extract_model(path)
         return Response(contents, mimetype='chemical/x-pdb')
     except Exception as e:
         message = str(e)
@@ -217,25 +212,20 @@ def get_metadata(job_id):
     result = celery.AsyncResult(job_id)
 
     try:
-        paths = result.get()
+        path = result.get()
     except Exception as e:
         message = str(e)
         return jsonify({'error': message}), 500
 
-    if len(paths) <= 0:
+    if path is None:
         message = 'Job %s finished, but without creating a model. This could be due to lack of a suitable template.' % job_id
         return jsonify({'error': message}), 500
 
     try:
-        best_path = select_best_model(paths)
-        if best_path is None:
-            message = 'None of the created models match the target'
-            return jsonify({'error': message}), 500
-
         data = {}
-        data['selected_targets'] = model_storage.extract_selected_targets(best_path)
+        data['selected_targets'] = model_storage.extract_selected_targets(path)
         data['alignments'] = [alignment.as_dict()
-                              for alignment in model_storage.extract_alignments(best_path)]
+                              for alignment in model_storage.extract_alignments(path)]
 
         return jsonify(data)
     except Exception as e:

@@ -11,13 +11,14 @@ from hommod.controllers.model import modeler
 from hommod.controllers.storage import model_storage
 from hommod.controllers.domain import domain_aligner
 from hommod.models.error import InitError
+from hommod.controllers.method import select_best_model, select_best_domain_alignment
 
 
 _log = logging.getLogger(__name__)
 
 
 @celery_app.task()
-def create_models(target_sequence, target_species_id, require_resnum=None, chosen_template_id=None):
+def create_model(target_sequence, target_species_id, require_resnum=None, chosen_template_id=None):
 
     target_species_id = target_species_id.upper()
 
@@ -36,31 +37,20 @@ def create_models(target_sequence, target_species_id, require_resnum=None, chose
         model_paths = model_storage.list_models(sequence_id, target_species_id,
                                                 require_resnum, chosen_template_id)
         if len(model_paths) > 0:
-            return model_paths
+            return select_best_model(model_paths)
         else:
-            overlapping_domain_alignments = \
+            domain_alignments = \
                 domain_aligner.get_domain_alignments(target_sequence,
                                                      require_resnum,
                                                      chosen_template_id)
-
-            job = group([create_model.subtask((target_sequence,
-                                               target_species_id,
-                                               domain_alignment))
-                       for domain_alignment in overlapping_domain_alignments])
-
-            result = job.apply_async()
-
-            return result.join()
-
-
-@celery_app.task()
-def create_model(target_sequence, target_species_id, domain_alignment):
-
-    target_species_id = target_species_id.upper()
-
-    return modeler.build_model(target_sequence, target_species_id, domain_alignment)
+            domain_alignment = select_best_domain_alignment(domain_alignments)
+            return modeler.build_model(target_sequence, target_species_id,
+                                       domain_alignment)
 
 
 @task_failure.connect
 def task_failure_handler(task_id, exception, *args, **kwargs):
-    _log.error(traceback.format_tb(kwargs['traceback']))
+    message = "task {} failed: {} {}".format(task_id, type(exception), exception)
+    message += '\n' + ''.join(traceback.format_tb(kwargs['traceback']))
+
+    _log.error(message)

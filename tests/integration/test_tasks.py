@@ -62,51 +62,47 @@ def end():
 
 
 @with_setup(setup, end)
-def test_create_models_crambin():
-    from hommod.tasks import create_models
+def test_create_model_crambin():
+    from hommod.tasks import create_model
 
-    paths = create_models("VTCCPSIVARSNFNVCRLPGTPQALCATYTGCIIIPGATCPGDFAN", "CRAAB")
-    ok_(len(paths) > 0)
+    path = create_model("VTCCPSIVARSNFNVCRLPGTPQALCATYTGCIIIPGATCPGDFAN", "CRAAB")
+    ok_(path is not None)
 
     try:
-        for path in paths:
-            name = os.path.splitext(os.path.basename(path))[0]
-            pdb_name = os.path.join(name, 'target.pdb')
-            with tarfile.open(path) as tf:
-                ok_(pdb_name in tf.getnames())
+        name = os.path.splitext(os.path.basename(path))[0]
+        pdb_name = os.path.join(name, 'target.pdb')
+        with tarfile.open(path) as tf:
+            ok_(pdb_name in tf.getnames())
     finally:
-        for path in paths:
-            os.remove(path)
+        os.remove(path)
 
 
 @with_setup(setup, end)
-def test_create_models_cox():
-    from hommod.tasks import create_models
+def test_create_model_cox():
+    from hommod.tasks import create_model
 
-    paths = create_models(
+    path = create_model(
 "MLATRVFSLVGKRAISTSVCVRAHESVVKSEDFSLPAYMDRRDHPLPEVAHVKHLSASQKALKEKEKASWSS" +
 "LSMDEKVELYRIKFKESFAEMNRGSNEWKTVVGGAMFFIGFTALVIMWQKHYVYGPLPQSFDKEWVAKQTKR" +
 "MLDMKVNPIQGLASKWDYEKNEWKK", "HUMAN", None, TemplateID('2y69', 'D'))
-    ok_(len(paths) > 0)
+    ok_(path is not None)
 
     try:
-        for path in paths:
-            name = os.path.splitext(os.path.basename(path))[0]
-            pdb_name = os.path.join(name, 'target.pdb')
-            with tarfile.open(path) as tf:
-                ok_(pdb_name in tf.getnames())
+        name = os.path.splitext(os.path.basename(path))[0]
+        pdb_name = os.path.join(name, 'target.pdb')
+        with tarfile.open(path) as tf:
+            ok_(pdb_name in tf.getnames())
 
-            alignments = model_storage.extract_alignments(path)
-            ok_(len(alignments) >= 13)
+        alignments = model_storage.extract_alignments(path)
+        ok_(len(alignments) >= 13)
     finally:
-        for path in paths:
-            os.remove(path)
+        os.remove(path)
 
 @with_setup(setup, end)
-def test_create_models_hydrolase():
-    from hommod.tasks import create_models
+def test_create_model_hydrolase():
+    from hommod.tasks import create_model
 
-    paths = create_models(
+    paths = create_model(
 "MSRIEKMSILGVRSFGIEDKDKQIITFFSPLTILVGPNGAGKTTIIECLKYICTGDFPPGTKGNTFVHDPKV"
 "AQETDVRAQIRLQFRDVNGELIAVQRSMVCTQKSKKTEFKTLEGVITRTKHGEKVSLSSKCAEIDREMISSL"
 "GVSKAVLNNVIFCHQEDSNWPLSEGKALKQKFDEIFSATRYIKALETLRQVRQTQGQKVKEYQMELKYLKQY"
@@ -126,11 +122,10 @@ def test_create_models_hydrolase():
 "STYRGQDIEYIEIRSDADENVSASDKRRNYNYRVVMLKGDTALDMRGRCSAGQKVLASLIIRLALAETFCLN"
 "CGIIALDEPTTNLDRENIESLAHALVEIIKSRSQQRNFQLLVITHDEDFVELLGRSEYVEKFYRIKKNIDQC"
 "SEIVKCSVSSLGFNVH", "HUMAN", 1184, None)
-    ok_(len(paths) > 0)
+    ok_(path is not None)
 
     try:
-        ok_(not any(['5GOX' in path.upper() for path in paths]))
+        ok_('5GOX' not in path.upper())
     finally:
-        for path in paths:
-            os.remove(path)
+        os.remove(path)
 

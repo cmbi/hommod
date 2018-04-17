@@ -467,7 +467,7 @@ class Modeler:
             with open(model_path, 'w') as f:
                 f.write(get_pdb_contents(template_id.pdbid))
 
-            self._write_selected_targets({template_id.chain_id: main_domain_alignment.target_id},
+            self._write_selected_targets({template_id.chain_id: main_domain_alignment},
                                          os.path.join(work_dir_path, 'selected-targets.txt'))
 
             tar_path = model_storage.get_tar_path(main_target_sequence,

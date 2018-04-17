@@ -45,3 +45,12 @@ def select_best_model(tar_paths):
             best_path = tar_path
 
     return best_path
+
+
+def select_best_domain_alignment(domain_alignments):
+    best = None
+    for alignment in domain_alignments:
+        if best is None or alignment.get_percentage_identity() > best.get_percentage_identity():
+            best = alignment
+
+    return best
