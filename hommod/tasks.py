@@ -43,6 +43,11 @@ def create_model(target_sequence, target_species_id, require_resnum=None, chosen
                 domain_aligner.get_domain_alignments(target_sequence,
                                                      require_resnum,
                                                      chosen_template_id)
+            if len(domain_alignments) <= 0:
+                _log.warn("no domain alignments for target={} resnum={} template={}"
+                          .format(target_sequence, require_resnum, chosen_template_id))
+                return None
+
             domain_alignment = select_best_domain_alignment(domain_alignments)
             return modeler.build_model(target_sequence, target_species_id,
                                        domain_alignment)
