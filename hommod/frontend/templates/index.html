@@ -106,7 +106,15 @@
   {
     var obj = load_cookie_obj();
 
-    var i = obj.jobs.indexOf(job_id);
+    var i = -1;
+    for (var j = 0; j < obj.jobs.length; j++)
+    {
+      if (obj.jobs[j].job_id == job_id)
+      {
+        i = j;
+        break;
+      }
+    }
     if (i != -1)
     {
       obj.jobs.splice(i, 1);
@@ -126,7 +134,8 @@
         if (response.status == "SUCCESS" || response.status == "FAILURE")
           job_id_tag = "<a href=\"{{ url_for('dashboard.model_info', model_id='xxxxx') }}\">".replace('xxxxx', job_id) + job_id_tag + "</a>";
 
-        var row = "<tr><td class=\"job_id\">" + job_id_tag + "</td><td class=\"job_status_" +
+        var row = "<tr id=\"job_row_" + job_id + "\" class=\"job_row\" onclick=\"set_job_inputs(\'" + job_id + "\');\">" +
+                  "<td class=\"job_id\">" + job_id_tag + "</td><td class=\"job_status_" +
                   response.status.toLowerCase() + "\">" + response.status + "</td>" +
                   "<td><a href=\"#\" onclick=\"delete_model_job('" + job_id +
                   "'); return false;\"><span class=\"glyphicon glyphicon-remove red-glyph\"></span></a></td></tr>";
@@ -139,13 +148,13 @@
   {
     $("#model_table").html("<tr><th>JOB ID:</th><th>STATUS:</th></tr>");
 
-    var job_ids = load_cookie_obj().jobs;
-    for (var i = 0; i < job_ids.length; i++)
+    var jobs = load_cookie_obj().jobs;
+    for (var i = 0; i < jobs.length; i++)
     {
-      update_model_job(job_ids[i]);
+      update_model_job(jobs[i].job_id);
     }
 
-    if (job_ids.length > 0)
+    if (jobs.length > 0)
       $("#model_listing").show();
     else
       $("#model_listing").hide();
@@ -213,7 +222,7 @@
     return chain_id;
   }
 
-  function set_chain_ids_for(pdbid)
+  function set_chain_ids_for(pdbid, set_value)
   {
     var url = "https://files.rcsb.org/header/" + pdbid + ".cif";
 
@@ -237,6 +246,8 @@
       }
       $("#select_chain_pdbid").text("Select a Chain in PDB entry " + pdbid + ":");
       $("#select_chain").html(select_html);
+      if (chain_ids.indexOf(set_value) != -1)
+        $("#select_chain").val(set_value);
       $("#submit_chain").show();
 
     }).fail(function(error) {
@@ -305,7 +316,7 @@
     }
     else
     {
-      set_chain_ids_for(template_pdbid);
+      set_chain_ids_for(template_pdbid, 'A');
     }
   }
 
@@ -373,10 +384,11 @@
         $.post("{{ url_for('api.submit') }}", data)
         .done(function(result) {
 
-          var job_id = result.jobid;
+          var job = data;
+          job.job_id = result.jobid;
 
           var obj = load_cookie_obj();
-          obj.jobs.push(job_id);
+          obj.jobs.push(job);
           save_cookie_obj(obj);
 
           $("#input_sequence").val("");
@@ -389,6 +401,56 @@
           update_job_list();
         });
     });
+  }
+
+  function set_job_inputs(job_id)
+  {
+    var obj = load_cookie_obj();
+    var job = null;
+    for (var i = 0; i < obj.jobs.length; i++)
+    {
+      if (obj.jobs[i].job_id == job_id)
+      {
+        job = obj.jobs[i];
+        break;
+      }
+    }
+
+    if (job != null)
+    {
+      $(".job_row").removeClass("highlighted");
+      $("#job_row_" + job_id).addClass("highlighted");
+
+
+      $("#input_sequence").val(job.sequence);
+      $("#input_species").val(job.species_id);
+
+      if (job.position !== undefined)
+      {
+        submit_target();
+        select_position(job.position);
+      }
+      else
+      {
+        $("#panel_position").hide();
+      }
+
+      if (job.template_id !== undefined)
+      {
+        var pdbid = job.template_id.split('_')[0];
+        var chain = job.template_id.split('_')[1];
+
+        $("#input_pdbid").val(pdbid);
+        set_chain_ids_for(pdbid, chain);
+      }
+      else
+      {
+        $("#input_pdbid").val("");
+        $("#submit_chain").hide();
+      }
+
+      $("#panel_model").show();
+    }
   }
 </script>
 {% endblock %}
