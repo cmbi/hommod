@@ -79,3 +79,5 @@ def test_init_template_5GOX():
 @with_setup(setup, end)
 def test_init_template_5MHF():
     context = modeler._prepare_context('5MHF')
+
+    eq_(len(context.get_chain_ids()), 4)

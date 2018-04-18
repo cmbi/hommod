@@ -3,6 +3,7 @@ import os
 import tarfile
 import logging
 import tempfile
+import re
 
 from hommod.controllers.blast import blaster
 from hommod.controllers.fasta import write_fasta, parse_fasta_from_string
@@ -149,9 +150,14 @@ class Modeler:
         for chain_id in chain_id_count:
             if chain_id_count[chain_id] > 1:
                 rs = context.yasara.ListMol("obj %i mol %s and protein" % (context.template_obj, chain_id))
+                _log.debug("chain {} listmol: {}".format(chain_id, rs))
                 for r in rs[1:]:
                     atom_nr = int(r.split()[-1])
                     context.yasara.JoinMol("obj %i atom %i" % (context.template_obj, atom_nr))
+
+                    # Add the peptide bond:
+                    context.yasara.AddBond("obj %i and res atom %i and atom C" % (context.template_obj, atom_nr - 1),
+                                           "obj %i and res atom %i and atom N" % (context.template_obj, atom_nr))
 
     def _swap_problem_residues(self, context):
         context.yasara.SwapRes('Protein and UNK and atom CA and atom CB', 'ALA')
@@ -536,14 +542,8 @@ class Modeler:
                 ar.add(work_dir_path, arcname=model_name)
 
             return tar_path
-        except:
-            ali_path = os.path.join(work_dir_path, 'target.ali')
-            for path in [align_fasta_path, ali_path]:
-                if os.path.isfile(path):
-                    with open(path, 'r') as f:
-                        _log.debug("{}:\n{}".format(path, f.read()))
-                else:
-                    _log.debug("not present: {}".format(path))
+        except RuntimeError as e:
+            self._log_additional_error_info(e, context, chain_alignments)
             raise
         finally:
             if os.path.isdir(work_dir_path):
@@ -554,5 +554,17 @@ class Modeler:
             for chain_id in alignments_per_chain:
                 if alignments_per_chain[chain_id].target_id is not None:
                     f.write("%s: %s\n" % (chain_id, alignments_per_chain[chain_id].target_id))
+
+    def _log_additional_error_info(self, err, context, alignments):
+        message = str(err)
+        if P_TEMPLATE_DIFFERENT.search(message):
+
+            for chain_id in context.get_chain_ids():
+                sequence = context.get_sequence(chain_id)
+                _log.error("template chain {} has sequence {}".format(chain_id, sequence))
+                _log.error("vs sequencemol {}".format(context.yasara.SequenceMol("obj %i and mol %s and protein" % (context.template_obj, chain_id))))
+
+
+P_TEMPLATE_DIFFERENT = re.compile(r"The template object [0-9]+ does not contain all the residues specified in the sequence alignment")
 
 modeler = Modeler()

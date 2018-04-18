@@ -1,5 +1,7 @@
 import tarfile
 import os
+import shutil
+import tempfile
 
 from nose.tools import with_setup, ok_
 from celery import Celery
@@ -33,7 +35,7 @@ def setup():
     interpro.url = INTERPRO_URL
     kmad_aligner.kmad_exe = KMAD_EXE
     clustal_aligner.clustalw_exe = CLUSTALW_EXE
-    model_storage.model_dir = '/tmp'
+    model_storage.model_dir = tempfile.mkdtemp()
     modeler.yasara_dir = YASARA_DIR
     modeler.uniprot_databank = UNIPROT_BLAST_DATABANK
     domain_aligner.forbidden_interpro_domains = FORBIDDEN_INTERPRO_DOMAINS
@@ -57,8 +59,9 @@ def setup():
                         broker=CELERY_BROKER_URL)
     celery_app.conf.update({'TESTING': True, 'CELERY_ALWAYS_EAGER': True})
 
+
 def end():
-    pass
+    shutil.rmtree(model_storage.model_dir)
 
 
 @with_setup(setup, end)
@@ -68,13 +71,10 @@ def test_create_model_crambin():
     path = create_model("VTCCPSIVARSNFNVCRLPGTPQALCATYTGCIIIPGATCPGDFAN", "CRAAB")
     ok_(path is not None)
 
-    try:
-        name = os.path.splitext(os.path.basename(path))[0]
-        pdb_name = os.path.join(name, 'target.pdb')
-        with tarfile.open(path) as tf:
-            ok_(pdb_name in tf.getnames())
-    finally:
-        os.remove(path)
+    name = os.path.splitext(os.path.basename(path))[0]
+    pdb_name = os.path.join(name, 'target.pdb')
+    with tarfile.open(path) as tf:
+        ok_(pdb_name in tf.getnames())
 
 
 @with_setup(setup, end)
@@ -87,22 +87,20 @@ def test_create_model_cox():
 "MLDMKVNPIQGLASKWDYEKNEWKK", "HUMAN", None, TemplateID('2y69', 'D'))
     ok_(path is not None)
 
-    try:
-        name = os.path.splitext(os.path.basename(path))[0]
-        pdb_name = os.path.join(name, 'target.pdb')
-        with tarfile.open(path) as tf:
-            ok_(pdb_name in tf.getnames())
+    name = os.path.splitext(os.path.basename(path))[0]
+    pdb_name = os.path.join(name, 'target.pdb')
+    with tarfile.open(path) as tf:
+        ok_(pdb_name in tf.getnames())
 
-        alignments = model_storage.extract_alignments(path)
-        ok_(len(alignments) >= 13)
-    finally:
-        os.remove(path)
+    alignments = model_storage.extract_alignments(path)
+    ok_(len(alignments) >= 13)
+
 
 @with_setup(setup, end)
 def test_create_model_hydrolase():
     from hommod.tasks import create_model
 
-    paths = create_model(
+    path = create_model(
 "MSRIEKMSILGVRSFGIEDKDKQIITFFSPLTILVGPNGAGKTTIIECLKYICTGDFPPGTKGNTFVHDPKV"
 "AQETDVRAQIRLQFRDVNGELIAVQRSMVCTQKSKKTEFKTLEGVITRTKHGEKVSLSSKCAEIDREMISSL"
 "GVSKAVLNNVIFCHQEDSNWPLSEGKALKQKFDEIFSATRYIKALETLRQVRQTQGQKVKEYQMELKYLKQY"
@@ -124,8 +122,28 @@ def test_create_model_hydrolase():
 "SEIVKCSVSSLGFNVH", "HUMAN", 1184, None)
     ok_(path is not None)
 
-    try:
-        ok_('5GOX' not in path.upper())
-    finally:
-        os.remove(path)
+    ok_('5GOX' not in path.upper())
 
+
+@with_setup(setup, end)
+def test_create_model_5MHF():
+    from hommod.tasks import create_model
+
+    path = create_model(
+"MARGERRRRAVPAEGVRTAERAARGGPGRRDGRGGGPRSTAGGVALAVVVLSLALGMSGRWVLAWYRARRAV"
+"TLHSAPPVLPADSSSPAVAPDLFWGTYRPHVYFGMKTRSPKPLLTGLMWAQQGTTPGTPKLRHTCEQGDGVG"
+"PYGWEFHDGLSFGRQHIQDGALRLTTEFVKRPGGQHGGDWSWRVTVEPQDSGTSALPLVSLFFYVVTDGKEV"
+"LLPEVGAKGQLKFISGHTSELGDFRFTLLPPTSPGDTAPKYGSYNVFWTSNPGLPLLTEMVKSRLNSWFQHR"
+"PPGAPPERYLGLPGSLKWEDRGPSGQGQGQFLIQQVTLKIPISIEFVFESGSAQAGGNQALPRLAGSLLTQA"
+"LESHAEGFRERFEKTFQLKEKGLSSGEQVLGQAALSGLLGGIGYFYGQGLVLPDIGVEGSEQKVDPALFPPV"
+"PLFTAVPSRSFFPRGFLWDEGFHQLVVQRWDPSLTREALGHWLGLLNADGWIGREQILGDEARARVPPEFLV"
+"QRAVHANPPTLLLPVAHMLEVGDPDDLAFLRKALPRLHAWFSWLHQSQAGPLPLSYRWRGRDPALPTLLNPK"
+"TLPSGLDDYPRASHPSVTERHLDLRCWVALGARVLTRLAEHLGEAEVAAELGPLAASLEAAESLDELHWAPE"
+"LGVFADFGNHTKAVQLKPRPPQGLVRVVGRPQPQLQYVDALGYVSLFPLLLRLLDPTSSRLGPLLDILADSR"
+"HLWSPFGLRSLAASSSFYGQRNSEHDPPYWRGAVWLNVNYLALGALHHYGHLEGPHQARAAKLHGELRANVV"
+"GNVWRQYQATGFLWEQYSDRDGRGMGCRPFHGWTSLVLLAMAEDY", "HUMAN", 100,
+                        TemplateID('5MHF', 'D'))
+    ok_(path is not None)
+
+    contents = model_storage.extract_model(path)
+    ok_(contents is not None)
