@@ -31,6 +31,18 @@
   font-family: Courier New;
 }
 
+.job_row:hover {
+  background-color: #CCFFFF;
+}
+
+.job_row.highlighted {
+  background-color: #AAEEFF;
+}
+
+.job_row.highlighted:hover {
+  background-color: #AADDFF;
+}
+
 .job_status_failure {
   color: red;
 }
