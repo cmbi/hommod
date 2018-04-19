@@ -19,6 +19,7 @@ from hommod.default_settings import (KMAD_EXE, BLASTP_EXE, MODEL_DIR, INTERPRO_U
 from hommod.controllers.kmad import kmad_aligner
 from hommod.controllers.clustal import clustal_aligner
 from hommod.controllers.model import modeler
+from hommod.controllers.soup import soup
 from hommod.services.interpro import interpro
 from hommod.controllers.domain import domain_aligner
 from hommod.controllers.blast import blaster
@@ -36,7 +37,7 @@ def setup():
     kmad_aligner.kmad_exe = KMAD_EXE
     clustal_aligner.clustalw_exe = CLUSTALW_EXE
     model_storage.model_dir = tempfile.mkdtemp()
-    modeler.yasara_dir = YASARA_DIR
+    soup.yasara_dir = YASARA_DIR
     modeler.uniprot_databank = UNIPROT_BLAST_DATABANK
     domain_aligner.forbidden_interpro_domains = FORBIDDEN_INTERPRO_DOMAINS
     domain_aligner.similar_ranges_min_overlap_percentage = SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE
