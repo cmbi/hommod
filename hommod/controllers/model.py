@@ -284,8 +284,16 @@ class Modeler:
         return target_sequences
 
     def _preserves_interactions(self,
-                                candidate_alignment, candidate_chain_id,
+                                candidate_target_segment, candidate_chain_id,
                                 interacting_chain_alignments):
+
+        # The pdb file in the soup can be different from the blast hit
+        # So make an alignment first!
+        template_chain_sequence = soup.get_sequence(candidate_chain_id)
+        template_chain_secstr = soup.get_secondary_structure(candidate_chain_id)
+        candidate_alignment = kmad_aligner.align(template_chain_sequence,
+                                                 template_chain_secstr,
+                                                 candidate_target_segment)
 
         candidate_residue_indices = candidate_alignment.get_covered_template_residues_indices()
         candidate_residues = soup.get_residues(candidate_chain_id)
@@ -337,23 +345,23 @@ class Modeler:
 
             if alignment.get_percentage_coverage() < 90.0:
                 # If the coverage is too low, we need to bother interpro.
-                overlapping_domain_alignments = \
+                domain_alignments = \
                     domain_aligner.get_domain_alignments(potential_target_sequences[target_id],
                                                          None,
                                                          TemplateID(soup.template_pdbid, chain_id))
 
-                interacting_alignments = list(filter(lambda alignment: self._preserves_interactions(alignment, chain_id,
-                                                                                                    interacting_chain_alignments),
-                                                     overlapping_domain_alignments))
+                interacting_alignments = list(filter(lambda ali: self._preserves_interactions(ali.target_alignment.replace('-', ''),
+                                                                                              chain_id, interacting_chain_alignments),
+                                                     domain_alignments))
 
                 _log.debug("preserve interactions with chains {}: filtered {} alignments out of {}"
                            .format(interacting_chain_alignments.keys(),
-                                   len(interacting_alignments), len(overlapping_domain_alignments)))
+                                   len(interacting_alignments), len(domain_alignments)))
 
                 if len(interacting_alignments) > 0:
                     domain_alignment = self._join_alignments_to_best_template_coverage(interacting_alignments)
-                elif len(overlapping_domain_alignments) > 0:
-                    domain_alignment = self._join_alignments_to_best_template_coverage(overlapping_domain_alignments)
+                elif len(domain_alignments) > 0:
+                    domain_alignment = self._join_alignments_to_best_template_coverage(domain_alignments)
                 else:
                     continue
 
@@ -493,7 +501,9 @@ class Modeler:
 
         work_dir_path = tempfile.mkdtemp()
         align_fasta_path = os.path.join(work_dir_path, 'align.fa')
-
+        output_yob_path = os.path.join(work_dir_path, 'target.yob')
+        error_path = os.path.join(work_dir_path, 'errorexit.txt')
+        error_scene_path = os.path.join(work_dir_path, 'errorexit.sce')
         try:
             soup.yasara.CD(work_dir_path)
 
@@ -515,10 +525,14 @@ class Modeler:
             soup.yasara.Experiment("On")
             soup.yasara.Wait("Expend")
 
-            error_path = os.path.join(work_dir_path, 'errorexit.txt')
             if os.path.isfile(error_path):
                 with open(error_path, 'r') as f:
                     raise ModelRunError(f.read())
+            elif os.path.isfile(error_scene_path):
+                raise ModelRunError("yasara exited with an error")
+
+            if not os.path.isfile(output_yob_path):
+                raise ModelRunError("yasara generated no output yob")
 
             model_path = os.path.join(work_dir_path, 'target.pdb')
             soup.yasara.SavePDB(soup.template_obj, model_path)
@@ -536,7 +550,14 @@ class Modeler:
             return tar_path
         except RuntimeError as e:
             self._log_additional_error_info(e, chain_alignments)
-            raise
+
+            if os.path.isfile(error_path):
+                with open(error_path, 'r') as f:
+                    raise ModelRunError(f.read())
+            elif os.path.isfile(error_scene_path):
+                raise ModelRunError("yasara exited with an error")
+            else:
+                raise e
         finally:
             if os.path.isdir(work_dir_path):
                 shutil.rmtree(work_dir_path)
