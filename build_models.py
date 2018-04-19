@@ -2,7 +2,7 @@ import tempfile
 import os
 import sys
 import shutil
-from threading import Thread
+from multiprocessing import Process, Value
 from argparse import ArgumentParser
 import logging
 
@@ -10,6 +10,7 @@ from hommod.controllers.fasta import parse_fasta
 from hommod.models.template import TemplateID
 from hommod.controllers.domain import domain_aligner
 from hommod.controllers.model import modeler
+from hommod.controllers.soup import soup
 from hommod.services.uniprot import uniprot
 from hommod.services.interpro import interpro
 from hommod.controllers.kmad import kmad_aligner
@@ -22,30 +23,26 @@ from hommod.services.helpers.cache import cache_manager as cm
 import hommod.default_settings as settings
 
 
-class ModelThread(Thread):
-    def __init__(self, sequence, species_id, domain_alignment):
-        Thread.__init__(self)
+class ModelProcess(Process):
+    def __init__(self, sequence, species_id, domain_alignment, output_dir):
+        Process.__init__(self)
         self.daemon = True
 
-        self.path = None
         self.exc_info = None
 
         self.sequence = sequence
         self.species_id = species_id
         self.domain_alignment = domain_alignment
+        self.output_dir = output_dir
 
     def run(self):
-        try:
-            self.path = modeler.build_model(self.sequence, self.species_id, self.domain_alignment)
-        except Exception as e:
-            self.exc_info = sys.exc_info()
+        path = modeler.build_model(self.sequence, self.species_id, self.domain_alignment)
 
-    def join(self):
-        Thread.join(self)
+        _log.info(path)
+        shutil.copy(path, self.output_dir)
 
-        if self.exc_info:
-            exc_type, exc_value, exc_traceback = self.exc_info
-            raise exc_type, exc_value, exc_traceback
+        soup.yasara.Exit()
+
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 _log = logging.getLogger(__name__)
@@ -58,7 +55,8 @@ if __name__ == "__main__":
     kmad_aligner.kmad_exe = settings.KMAD_EXE
     clustal_aligner.clustalw_exe = settings.CLUSTALW_EXE
 
-    modeler.yasara_dir = settings.YASARA_DIR
+    soup.yasara_dir = settings.YASARA_DIR
+
     modeler.uniprot_databank = settings.UNIPROT_BLAST_DATABANK
 
     domain_aligner.forbidden_interpro_domains = settings.FORBIDDEN_INTERPRO_DOMAINS
@@ -108,12 +106,10 @@ if __name__ == "__main__":
         domain_alignments = domain_aligner.get_domain_alignments(sequence, args.position, template_id)
         _log.info("{} domain alignments".format(len(domain_alignments)))
 
-        threads = [ModelThread(sequence, species_id, ali) for ali in domain_alignments]
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-            _log.info(t.path)
-            shutil.copy(t.path, final_output_dir)
+        ps = [ModelProcess(sequence, species_id, ali, final_output_dir) for ali in domain_alignments]
+        for p in ps:
+            p.start()
+        for p in ps:
+            p.join()
     finally:
         shutil.rmtree(tmp_dir)
