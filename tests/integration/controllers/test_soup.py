@@ -1,3 +1,6 @@
+import os
+import tempfile
+import shutil
 from multiprocessing import Process
 import logging
 
@@ -12,6 +15,7 @@ _log = logging.getLogger(__name__)
 def setup():
     soup.yasara_dir = YASARA_DIR
 
+
 def teardown():
     pass
 
@@ -20,10 +24,16 @@ def teardown():
 def test_yasara_multiprocess():
     class TestProcess(Process):
         def run(self):
-            soup.yasara.LoadPDB('1crn', download='yes')
-            ok_(len(soup.yasara.ListMol('all')) > 0)
+            work_dir = tempfile.mkdtemp()
 
-            soup.yasara.Exit()
+            try:
+                soup.yasara.CD(work_dir)
+                soup.yasara.LoadPDB('1crn', download='yes')
+                eq_(soup.yasara.ListMol('all', 'MOL'), ['A'])
+
+                soup.yasara.Exit()
+            finally:
+                shutil.rmtree(work_dir)
 
     ps = [TestProcess(), TestProcess(), TestProcess()]
     for p in ps:
@@ -31,3 +41,19 @@ def test_yasara_multiprocess():
     for p in ps:
         p.join()
         eq_(p.exitcode, 0)
+
+
+@with_setup(setup, teardown)
+def test_yasara_restart():
+    work_dir = tempfile.mkdtemp()
+
+    try:
+        soup.yasara.CD(work_dir)
+        soup.yasara.LoadPDB('1crn', download='yes')
+        soup.yasara.Exit()
+
+        soup.yasara.CD(work_dir)
+        soup.yasara.LoadPDB('1crn', download='yes')
+        eq_(soup.yasara.ListMol('all', 'MOL'), ['A'])
+    finally:
+        shutil.rmtree(work_dir)

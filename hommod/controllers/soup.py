@@ -19,6 +19,10 @@ class ModelingSoup:
         self.target_species_id = None
         self.target_sequences = {}
 
+    def __delete__(self, instance):
+        if self._yasara.pid is not None:
+            self._yasara.Exit()
+
     def cleanup(self):
         self.yasara.Clear()
         self.template_obj = None
@@ -30,13 +34,16 @@ class ModelingSoup:
     @property
     def yasara(self):
         if self.yasara_dir is None:
-            raise InitError("yasara dir is not set")
+            raise InitError("yasara directory is not set")
 
         if self._yasara is None:
             sys.path.append(os.path.join(self.yasara_dir, 'pym'))
             sys.path.append(os.path.join(self.yasara_dir, 'plg'))
             self._yasara = imp.load_module('yasara', *imp.find_module('yasaramodule'))
             self._yasara.info.mode = 'txt'
+
+        if self._yasara.pid is None:
+            self._yasara.start()
 
         return self._yasara
 

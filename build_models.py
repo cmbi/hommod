@@ -41,8 +41,6 @@ class ModelProcess(Process):
         _log.info(path)
         shutil.copy(path, self.output_dir)
 
-        soup.yasara.Exit()
-
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 _log = logging.getLogger(__name__)
