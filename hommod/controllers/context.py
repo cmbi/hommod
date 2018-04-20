@@ -5,40 +5,19 @@ import os
 from hommod.models.error import ModelRunError, InitError
 from hommod.models.aminoacid import AminoAcid
 from hommod.models.residue import ModelingResidue
+from hommod.controllers.yasara import YasaraContext
 
 
-class ModelingSoup:
+class ModelingContext:
 
-    def __init__(self, yasara_dir=None):
-        self.yasara_dir = yasara_dir
+    def __init__(self, yasara_dir):
+        self.yasara = YasaraContext(yasara_dir)
 
-        self._yasara = None
         self.template_obj = None
         self.template_pdbid = None
         self.main_target_chain_id = None
         self.target_species_id = None
         self.target_sequences = {}
-
-    def cleanup(self):
-        self.yasara.Clear()
-        self.template_obj = None
-        self.template_pdbid = None
-        self.main_target_chain_id = None
-        self.target_species_id = None
-        self.target_sequences = {}
-
-    @property
-    def yasara(self):
-        if self.yasara_dir is None:
-            raise InitError("yasara dir is not set")
-
-        if self._yasara is None:
-            sys.path.append(os.path.join(self.yasara_dir, 'pym'))
-            sys.path.append(os.path.join(self.yasara_dir, 'plg'))
-            self._yasara = imp.load_module('yasara', *imp.find_module('yasaramodule'))
-            self._yasara.info.mode = 'txt'
-
-        return self._yasara
 
     def set_main_target(self, main_target_sequence, target_species_id, main_target_chain_id):
         self.target_species_id = target_species_id
@@ -106,4 +85,3 @@ class ModelingSoup:
         return ''.join(self.yasara.SecStrRes('obj %i and protein and mol %s' % (self.template_obj, chain_id)))
 
 
-soup = ModelingSoup()

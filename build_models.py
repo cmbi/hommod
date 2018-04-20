@@ -2,7 +2,7 @@ import tempfile
 import os
 import sys
 import shutil
-from multiprocessing import Process, Value
+from threading import Thread
 from argparse import ArgumentParser
 import logging
 
@@ -10,7 +10,6 @@ from hommod.controllers.fasta import parse_fasta
 from hommod.models.template import TemplateID
 from hommod.controllers.domain import domain_aligner
 from hommod.controllers.model import modeler
-from hommod.controllers.soup import soup
 from hommod.services.uniprot import uniprot
 from hommod.services.interpro import interpro
 from hommod.controllers.kmad import kmad_aligner
@@ -23,12 +22,10 @@ from hommod.services.helpers.cache import cache_manager as cm
 import hommod.default_settings as settings
 
 
-class ModelProcess(Process):
+class ModelThread(Thread):
     def __init__(self, sequence, species_id, domain_alignment, output_dir):
-        Process.__init__(self)
+        Thread.__init__(self)
         self.daemon = True
-
-        self.exc_info = None
 
         self.sequence = sequence
         self.species_id = species_id
@@ -40,8 +37,6 @@ class ModelProcess(Process):
 
         _log.info(path)
         shutil.copy(path, self.output_dir)
-
-        soup.yasara.Exit()
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -55,8 +50,7 @@ if __name__ == "__main__":
     kmad_aligner.kmad_exe = settings.KMAD_EXE
     clustal_aligner.clustalw_exe = settings.CLUSTALW_EXE
 
-    soup.yasara_dir = settings.YASARA_DIR
-
+    modeler.yasara_dir = settings.YASARA_DIR
     modeler.uniprot_databank = settings.UNIPROT_BLAST_DATABANK
 
     domain_aligner.forbidden_interpro_domains = settings.FORBIDDEN_INTERPRO_DOMAINS
@@ -106,10 +100,10 @@ if __name__ == "__main__":
         domain_alignments = domain_aligner.get_domain_alignments(sequence, args.position, template_id)
         _log.info("{} domain alignments".format(len(domain_alignments)))
 
-        ps = [ModelProcess(sequence, species_id, ali, final_output_dir) for ali in domain_alignments]
-        for p in ps:
-            p.start()
-        for p in ps:
-            p.join()
+        ts = [ModelThread(sequence, species_id, ali, final_output_dir) for ali in domain_alignments]
+        for t in ts:
+            t.start()
+        for t in ts:
+            t.join()
     finally:
         shutil.rmtree(tmp_dir)
