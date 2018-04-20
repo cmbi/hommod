@@ -2,7 +2,6 @@ import logging
 
 from nose.tools import with_setup, eq_, ok_
 
-from hommod.controllers.soup import soup
 from hommod.controllers.blast import blaster
 from hommod.services.dssp import dssp
 from hommod.controllers.blacklist import blacklister
@@ -25,7 +24,7 @@ def setup():
     dssp.dssp_dir = settings.DSSP_DIR
     blacklister.file_path = settings.BLACKLIST_FILE_PATH
     interpro.url = settings.INTERPRO_URL
-    soup.yasara_dir = settings.YASARA_DIR
+    modeler.yasara_dir = settings.YASARA_DIR
     modeler.uniprot_databank = settings.UNIPROT_BLAST_DATABANK
     domain_aligner.forbidden_interpro_domains = settings.FORBIDDEN_INTERPRO_DOMAINS
     domain_aligner.similar_ranges_min_overlap_percentage = settings.SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE

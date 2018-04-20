@@ -113,10 +113,8 @@ def create_celery_app(flask_app=None):  # pragma: no cover
     from hommod.controllers.storage import model_storage
     model_storage.model_dir = flask_app.config['MODEL_DIR']
 
-    from hommod.controllers.soup import soup
-    soup.yasara_dir = flask_app.config['YASARA_DIR']
-
     from hommod.controllers.model import modeler
+    modeler.yasara_dir = flask_app.config['YASARA_DIR']
     modeler.uniprot_databank = flask_app.config['UNIPROT_BLAST_DATABANK']
 
     from hommod.controllers.domain import domain_aligner
