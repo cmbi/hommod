@@ -39,19 +39,19 @@ class YasaraContext:
 
     def ListRes(self, selection, format_=None):
         command = 'ListRes ' + self._yasara_module.selstr(selection) + ','
-        if format is not None:
+        if format_ is not None:
             command += 'Format=' + self._yasara_module.cstr(format_) + ','
         return self._run(command[:-1])
 
     def ListAtom(self, selection, format_=None):
         command = 'ListAtom ' + self._yasara_module.selstr(selection) + ','
-        if format is not None:
+        if format_ is not None:
             command += 'Format=' + self._yasara_module.cstr(format_) + ','
         return self._run(command[:-1])
 
     def ListMol(self, selection, format_=None):
         command = 'ListMol ' + self._yasara_module.selstr(selection) + ','
-        if format is not None:
+        if format_ is not None:
             command += 'Format=' + self._yasara_module.cstr(format_) + ','
         return self._run(command[:-1])
 
