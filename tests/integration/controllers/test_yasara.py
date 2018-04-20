@@ -6,6 +6,7 @@ from multiprocessing import Process
 from threading import Thread
 import logging
 
+from mock import patch
 from nose.tools import ok_, eq_, with_setup
 
 from hommod.default_settings import YASARA_DIR
@@ -76,3 +77,21 @@ def test_yasara_multiprocess():
     for p in ps:
         p.join()
         eq_(p.exitcode, 0)
+
+
+@patch('hommod.controllers.yasara.YasaraContext.__del__')
+@with_setup(setup, teardown)
+def test_yasara_shutdown(mock_del):
+
+    work_dir = tempfile.mkdtemp()
+    os.chdir(work_dir)
+    yasara = YasaraContext(YASARA_DIR)
+
+    try:
+        yasara.CD(work_dir)
+        del yasara
+
+        ok_(mock_del.called)
+        ok_(not os.path.isfile(os.path.join(work_dir, 'errorexit.txt')))
+    finally:
+        shutil.rmtree(work_dir)

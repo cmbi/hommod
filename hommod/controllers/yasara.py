@@ -33,7 +33,7 @@ class YasaraContext:
         # Multiline command, send each line separately to catch all errors.
         return [self._execute(c) for c in command.split("\n")]
 
-    def __delete__(self, instance):
+    def __del__(self):
         self._execute("Exit")
         os.waitpid(self._pid, 0)
 
