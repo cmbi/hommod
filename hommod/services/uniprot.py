@@ -1,7 +1,7 @@
-from urllib2 import urlopen
+import requests
 import logging
 
-from hommod.models.error import InitError
+from hommod.models.error import InitError, ServiceError
 from hommod.controllers.fasta import parse_fasta_from_string
 
 
@@ -19,7 +19,14 @@ class UniprotService:
 
         _log.debug(fasta_url)
 
-        fa = parse_fasta_from_string(urlopen(fasta_url).read())
+        try:
+            r = requests.get(fasta_url)
+        except requests.exceptions.ConnectTimeout:
+            raise ServiceError("timeout connecting with uniprot")
+
+        r.raise_for_status()
+
+        fa = parse_fasta_from_string(r.text)
 
         return fa.values()[0]
 
