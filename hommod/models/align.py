@@ -196,6 +196,17 @@ class TargetTemplateAlignment(Alignment):
                 n += 1
         return covered
 
+    def is_target_residue_covered(self, residue_number):
+        n = 1
+        for i in range(len(self.aligned_sequences['target'])):
+            if is_amino_acid_char(self.aligned_sequences['target'][i]):
+                if n == residue_number and \
+                        is_amino_acid_char(self.aligned_sequences['template'][i]):
+                    return True
+                n += 1
+
+        return False
+
     def get_relative_span(self):
         """
         Tells the starting position of 'target' relative to
