@@ -139,6 +139,18 @@ class BlastAlignment(Alignment):
                     nalign += 1
         return (100.0 * nalign) / nq
 
+    def is_query_residue_covered(self, residue_number):
+        n = self.query_start
+
+        for i in range(len(self.aligned_sequences['query'])):
+            if is_amino_acid_char(self.aligned_sequences['query'][i]):
+                if n == residue_number and \
+                        is_amino_acid_char(self.aligned_sequences['subject'][i]):
+                    return True
+                n += 1
+
+        return False
+
 
 class TargetTemplateAlignment(Alignment):
     def __init__(self, target_alignment, template_alignment):

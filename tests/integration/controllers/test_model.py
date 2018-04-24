@@ -152,3 +152,30 @@ ISYLHFTKKKPVAGTYSLQISSTPLYKKKELNQLEDKYDKDYLSGELGDNLKMKIQVLLH
     offset = sequence.find(alignment.get_target_sequence())
 
     ok_(alignment.is_target_residue_covered(residue_number - offset))
+
+
+@with_setup(setup, end)
+def test_align_rab3d():
+    sequence = "MDEDVLTTLKILIIGESGVGKSSLLLRFTDDTFDPELAATIGVDFKVKTISVDGN" + \
+"KAKLAIWVTLHQQTANFFLKSQIGNSPILKWAMWQYDTAGQERFRTLTPSYYRGAQGVILVYDVTRRDTF" + \
+"VKLDNWLNELETYCTRNDIVNMLVGNKIDKENREVDRNEGLKFARKHSMLFIEASAKTCDGVQCAFEELV" + \
+"EKIIQTPGLWESENQNKGVKLSHREEGQGGGACGGYCSVL"
+
+    template_id = TemplateID('2GF9', 'A')
+
+    residue_number = 70
+
+    domain_alignments = domain_aligner.get_domain_alignments(sequence, residue_number, template_id)
+    if len(domain_alignments) > 0:
+        domain_alignment = select_best_domain_alignment(domain_alignments)
+
+        context = modeler._prepare_context(template_id.pdbid)
+        context.set_main_target(sequence, 'HUMAN', template_id.chain_id)
+
+        alignments = modeler._make_alignments(sequence, 'HUMAN', domain_alignment, context)
+        alignment = alignments[template_id.chain_id]
+
+        ok_(alignment.get_target_sequence() in sequence)
+        offset = sequence.find(alignment.get_target_sequence())
+
+        ok_(alignment.is_target_residue_covered(residue_number - offset))

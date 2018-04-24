@@ -84,6 +84,9 @@ class DomainAligner:
                                        .format(hit_candidate.get_hit_accession_code(),
                                                hit_range, require_resnum))
                             continue
+                        if not hit_candidate.is_query_residue_covered(require_resnum):
+                            continue
+
 
                     if self._alignment_ok_for_range(range_, hit_candidate):
                         _log.debug("hit with {} {} is ok"
