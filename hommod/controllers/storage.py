@@ -92,6 +92,18 @@ class ModelStorage:
 
         return self.get_tar_path_from_name(name)
 
+    def get_error_tar_path_from_name(self, name):
+        if self.model_dir is None:
+            raise InitError("model directory is not set")
+
+        return os.path.join(self.model_dir, name + '_error.tgz')
+
+    def get_error_tar_path(self, target_sequence, target_species_id, main_domain_alignment, template_id):
+        name = self.get_model_name(target_sequence, target_species_id,
+                                   main_domain_alignment, template_id)
+
+        return self.get_error_tar_path_from_name(name)
+
     def get_model_lock(self, main_target_sequence, target_species_id,
                        main_domain_alignment, template_id):
         if self.model_dir is None:

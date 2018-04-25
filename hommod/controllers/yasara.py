@@ -188,3 +188,7 @@ class YasaraContext:
         command = 'SavePDB %s, Filename=%s' % (self._yasara_module.selstr(selection),
                                                self._yasara_module.cstr(filename))
         self._run(command)
+
+    def SaveSce(self, filename):
+        command = 'SaveSce %s' % filename
+        self._run(command)
