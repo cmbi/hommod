@@ -19,10 +19,9 @@ class UniprotService:
 
         _log.debug(fasta_url)
 
-        try:
+        r = requests.get(fasta_url)
+        while r.status_code == 500:
             r = requests.get(fasta_url)
-        except requests.exceptions.ConnectTimeout:
-            raise ServiceError("timeout connecting with uniprot")
 
         r.raise_for_status()
 
