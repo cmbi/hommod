@@ -1,8 +1,10 @@
 import tarfile
 import os
+from glob import glob
 import shutil
 import tempfile
 
+from mock import patch
 from nose.tools import with_setup, ok_
 from celery import Celery
 
@@ -189,4 +191,5 @@ def test_create_model_5GJV():
     except ModelRunError as e:
         message = str(e)
         ok_('error 39' in message)
+
 

@@ -1,4 +1,7 @@
 import logging
+import os
+import tempfile
+import shutil
 
 from nose.tools import with_setup, eq_, ok_
 
@@ -8,9 +11,11 @@ from hommod.controllers.blacklist import blacklister
 from hommod.services.interpro import interpro
 from hommod.controllers.domain import domain_aligner
 from hommod.controllers.model import modeler
+from hommod.controllers.storage import model_storage
 from hommod.models.template import TemplateID
 from hommod.models.range import SequenceRange
 from hommod.models.align import DomainAlignment
+from hommod.models.error import ModelRunError
 from hommod.controllers.clustal import clustal_aligner
 from hommod.controllers.kmad import kmad_aligner
 from hommod.controllers.method import select_best_domain_alignment
@@ -22,6 +27,7 @@ _log = logging.getLogger(__name__)
 
 
 def setup():
+    model_storage.model_dir = tempfile.mkdtemp()
     blaster.blastp_exe = settings.BLASTP_EXE
     dssp.dssp_dir = settings.DSSP_DIR
     blacklister.file_path = settings.BLACKLIST_FILE_PATH
@@ -44,7 +50,7 @@ def setup():
     cm.lock_timeout = settings.CACHE_LOCK_TIMEOUT
 
 def end():
-    pass
+    shutil.rmtree(model_storage.model_dir)
 
 
 @with_setup(setup, end)
@@ -179,3 +185,60 @@ def test_align_rab3d():
         offset = sequence.find(alignment.get_target_sequence())
 
         ok_(alignment.is_target_residue_covered(residue_number - offset))
+
+@with_setup(setup, end)
+def test_generate_error_archive():
+    sequence = "EDFPRFPHRGLLLDTSRHYLPLSSILDTLDVMAYNKLNVFHWH"
+
+    alignment = DomainAlignment(sequence, sequence,
+                                SequenceRange(0, len(sequence), sequence),
+                                TemplateID('2GK1', 'I'))
+
+    class FakeYasara:
+        def CD(self, work_dir):
+            self.work_dir = work_dir
+
+        def Processors(self, n):
+            pass
+
+        def ExperimentHomologyModeling(self, *args, **kwargs):
+            error_path = os.path.join(self.work_dir, 'errorexit.txt')
+            with open(error_path, 'w') as f:
+                f.write('10$ reward for reporting')
+
+        def Experiment(self, s):
+            pass
+
+        def Wait(self, s):
+            pass
+
+    class FakeContext:
+        def __init__(self):
+            self.target_species_id = 'HUMAN'
+            self.main_target_chain_id = 'I'
+            self.template_pdbid = '2GK1'
+            self.yasara = FakeYasara()
+            self.template_obj = 1
+
+        def get_main_target_sequence(self):
+            return sequence
+
+        def get_chain_ids(self):
+            return ['I']
+
+        def get_sequence(self, chain_id):
+            return sequence
+
+    context = FakeContext()
+
+    try:
+        modeler._model_run(alignment, {'I': alignment}, context)
+    except ModelRunError:
+        pass
+
+    tar_path = model_storage.get_error_tar_path(context.get_main_target_sequence(),
+                                                context.target_species_id,
+                                                alignment,
+                                                TemplateID(context.template_pdbid,
+                                                           context.main_target_chain_id))
+    ok_(os.path.isfile(tar_path))

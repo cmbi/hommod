@@ -500,11 +500,11 @@ class Modeler:
 
     def _model_run(self, main_domain_alignment, chain_alignments, context):
 
-        model_name =  model_storage.get_model_name(context.get_main_target_sequence(),
-                                                   context.target_species_id,
-                                                   main_domain_alignment,
-                                                   TemplateID(context.template_pdbid,
-                                                              context.main_target_chain_id))
+        model_name = model_storage.get_model_name(context.get_main_target_sequence(),
+                                                  context.target_species_id,
+                                                  main_domain_alignment,
+                                                  TemplateID(context.template_pdbid,
+                                                             context.main_target_chain_id))
 
         work_dir_path = tempfile.mkdtemp()
         align_fasta_path = os.path.join(work_dir_path, 'align.fa')
@@ -533,8 +533,7 @@ class Modeler:
             context.yasara.Wait("Expend")
 
             if os.path.isfile(error_path):
-                with open(error_path, 'r') as f:
-                    raise ModelRunError(f.read())
+                self._handle_error_txt(error_path, work_dir_path, context, main_domain_alignment)
             elif os.path.isfile(error_scene_path):
                 raise ModelRunError("yasara exited with an error")
 
@@ -559,8 +558,7 @@ class Modeler:
             self._log_additional_error_info(e, chain_alignments, context)
 
             if os.path.isfile(error_path):
-                with open(error_path, 'r') as f:
-                    raise ModelRunError(f.read())
+                self._handle_error_txt(error_path, work_dir_path, context, main_domain_alignment)
             elif os.path.isfile(error_scene_path):
                 raise ModelRunError("yasara exited with an error")
             else:
@@ -574,6 +572,26 @@ class Modeler:
             for chain_id in alignments_per_chain:
                 if alignments_per_chain[chain_id].target_id is not None:
                     f.write("%s: %s\n" % (chain_id, alignments_per_chain[chain_id].target_id))
+
+    def _handle_error_txt(self, error_path, work_dir_path, context, main_domain_alignment):
+        with open(error_path, 'r') as f:
+            msg = f.read()
+
+            if 'reward for reporting' in msg.lower():
+                model_name = model_storage.get_model_name(context.get_main_target_sequence(),
+                                                          context.target_species_id,
+                                                          main_domain_alignment,
+                                                          TemplateID(context.template_pdbid,
+                                                                     context.main_target_chain_id))
+                tar_path = model_storage.get_error_tar_path(context.get_main_target_sequence(),
+                                                            context.target_species_id,
+                                                            main_domain_alignment,
+                                                            TemplateID(context.template_pdbid,
+                                                                       context.main_target_chain_id))
+                with tarfile.open(tar_path, mode="w:gz") as ar:
+                    ar.add(work_dir_path, arcname=model_name)
+
+            raise ModelRunError(msg)
 
     def _log_additional_error_info(self, err, alignments, context):
         message = str(err)
