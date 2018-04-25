@@ -212,6 +212,9 @@ def test_generate_error_archive():
         def Wait(self, s):
             pass
 
+        def SaveSce(self, filename):
+            pass
+
     class FakeContext:
         def __init__(self):
             self.target_species_id = 'HUMAN'

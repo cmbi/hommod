@@ -511,8 +511,11 @@ class Modeler:
         output_yob_path = os.path.join(work_dir_path, 'target.yob')
         error_path = os.path.join(work_dir_path, 'errorexit.txt')
         error_scene_path = os.path.join(work_dir_path, 'errorexit.sce')
+        before_scene_path =  os.path.join(work_dir_path, 'beforemodel.sce')
         try:
             context.yasara.CD(work_dir_path)
+
+            context.yasara.SaveSce(before_scene_path)
 
             self._write_model_alignment_fasta(context, chain_alignments, align_fasta_path)
 
