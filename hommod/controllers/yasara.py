@@ -34,7 +34,7 @@ class YasaraContext:
         return [self._execute(c) for c in command.split("\n")]
 
     def __del__(self):
-        self._execute("Exit")
+        self._com.sendmessage(self._com.EXECUTE, "Exit")
         os.waitpid(self._pid, 0)
 
     def ListRes(self, selection, format_=None):
