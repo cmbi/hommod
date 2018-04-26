@@ -24,6 +24,7 @@ class ModelStorage:
         wildcard = os.path.join(self.model_dir, "*.tgz")
 
         paths = glob(wildcard)
+        paths = [path for path in paths if '_error' not in path]
         return paths
 
     def list_models(self, target_sequence, species_id, required_resnum=None, template_id=None):
@@ -42,6 +43,7 @@ class ModelStorage:
         wildcard = os.path.join(self.model_dir, wildcard)
 
         paths = glob(wildcard)
+        paths = [path for path in paths if '_error' not in path]
 
         if required_resnum is None:
             return paths

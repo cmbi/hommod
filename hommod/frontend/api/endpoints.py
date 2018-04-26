@@ -131,6 +131,10 @@ def result(job_id):
 
     from hommod.application import celery
     result = celery.AsyncResult(job_id)
+
+    if result.status != 'SUCCESS':
+        return jsonify({'error': "{} has status {}".format(job_id, result.status)}), 400
+
     try:
         path = result.get()
     except:
@@ -156,11 +160,14 @@ def get_model_file(job_id):
 
     from hommod.application import celery
     result = celery.AsyncResult(job_id)
+
+    if result.status != 'SUCCESS':
+        return jsonify({'error': "{} has status {}".format(job_id, result.status)}), 400
+
     try:
         path = result.get()
-    except Exception as e:
-        message = str(e)
-        return jsonify({'error': message}), 500
+    except Exception:
+        return jsonify({'error': result.traceback}), 500
 
     if path is None:
         message = 'Job %s finished, but without creating a model. This could be due to lack of a suitable template.' % job_id
@@ -169,9 +176,8 @@ def get_model_file(job_id):
     try:
         contents = model_storage.extract_model(path)
         return Response(contents, mimetype='chemical/x-pdb')
-    except Exception as e:
-        message = str(e)
-        return jsonify({'error': message}), 500
+    except:
+        return jsonify({'error': traceback.format_exc()}), 500
 
 
 @bp.route('/get_model_file_by_model_id/<model_id>.pdb', methods=['GET'])
@@ -192,9 +198,9 @@ def get_model_file_by_model_id(model_id):
     try:
         contents = model_storage.extract_model(path)
         return Response(contents, mimetype='chemical/x-pdb')
-    except Exception as e:
+    except:
         message = str(e)
-        return jsonify({'error': message}), 500
+        return jsonify({'error': traceback.format_exc()}), 500
 
 
 @bp.route('/get_metadata/<job_id>/', methods=['GET'])
@@ -211,11 +217,13 @@ def get_metadata(job_id):
     from hommod.application import celery
     result = celery.AsyncResult(job_id)
 
+    if result.status != 'SUCCESS':
+        return jsonify({'error': "{} has status {}".format(job_id, result.status)}), 400
+
     try:
         path = result.get()
-    except Exception as e:
-        message = str(e)
-        return jsonify({'error': message}), 500
+    except Exception:
+        return jsonify({'error': result.traceback}), 500
 
     if path is None:
         message = 'Job %s finished, but without creating a model. This could be due to lack of a suitable template.' % job_id
@@ -228,9 +236,8 @@ def get_metadata(job_id):
                               for alignment in model_storage.extract_alignments(path)]
 
         return jsonify(data)
-    except Exception as e:
-        message = str(e)
-        return jsonify({'error': message}), 500
+    except:
+        return jsonify({'error': traceback.format_exc()}), 500
 
 
 @bp.route('/get_metadata_by_model_id/<model_id>/', methods=['GET'])
@@ -248,14 +255,14 @@ def get_metadata_by_model_id(model_id):
         return jsonify({'error': "no such model"}), 400
 
     try:
-        data = model_storage.extract_info(path)
+        data = {}
+        data['selected_targets'] = model_storage.extract_selected_targets(path)
         data['alignments'] = [alignment.as_dict()
                               for alignment in model_storage.extract_alignments(path)]
 
         return jsonify(data)
-    except Exception as e:
-        message = str(e)
-        return jsonify({'error': message}), 500
+    except:
+        return jsonify({'error': traceback.format_exc()}), 500
 
 
 @bp.route('/', methods=['GET'])
@@ -280,4 +287,6 @@ def api_doc():
 
 @bp.errorhandler(Exception)
 def exception_error_handler(error):  # pragma: no cover
-    _log.error("Unhandled exception:\n{}".format(traceback.format_exc(error)))
+    tb = traceback.format_exc()
+    _log.error("Unhandled exception:\n{}".format(tb))
+    return jsonify({'error': tb}), 500
