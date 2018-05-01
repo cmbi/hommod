@@ -239,11 +239,29 @@ class TargetTemplateAlignment(Alignment):
 
         return SequenceRange(start, end, self.get_template_sequence())
 
+
 class DomainAlignment(TargetTemplateAlignment):
     def __init__(self, target_alignment, template_alignment, range_, template_id):
         TargetTemplateAlignment.__init__(self, target_alignment, template_alignment)
+
+        # 'range' is the range in the original target sequence,
+        # thus including the parts that are not in the alignment.
         self.range = range_
+
         self.template_id = template_id
 
     def __repr__(self):
         return "{} {}\n".format(self.template_id, self.range) + TargetTemplateAlignment.__repr__(self)
+
+    def _get_target_offset(self):
+        domain_target_sequence = self.get_target_sequence()
+        if domain_target_sequence not in self.range.sequence:
+            raise RuntimeError("domain alignment target sequence is not in the full target sequence")
+
+        return self.range.sequence.find(domain_target_sequence)
+
+    def is_target_residue_covered(self, residue_number):
+        # The domain alignment does not include the whole target sequence.
+        # Therefore, the residue number must be shifted to the left.
+        local_resnum = residue_number - self._get_target_offset()
+        return TargetTemplateAlignment.is_target_residue_covered(self, local_resnum)
