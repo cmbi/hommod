@@ -11,7 +11,7 @@ from hommod.controllers.kmad import kmad_aligner
 from hommod.controllers.clustal import clustal_aligner
 from hommod.controllers.domain import domain_aligner
 from hommod.controllers.blacklist import blacklister
-from hommod.models.align import TargetTemplateAlignment, Alignment
+from hommod.models.align import TargetTemplateAlignment, Alignment, DomainAlignment
 from hommod.models.template import TemplateID
 from hommod.controllers.context import ModelingContext
 from hommod.models.error import TemplateError, ModelRunError, InitError
@@ -35,7 +35,7 @@ class Modeler:
         self.uniprot_databank = uniprot_databank
         self.yasara_dir = yasara_dir
 
-    def build_model(self, main_target_sequence, target_species_id, main_domain_alignment):
+    def build_model(self, main_target_sequence, target_species_id, main_domain_alignment, require_resnum=None):
 
         tar_path = model_storage.get_tar_path(main_target_sequence,
                                               target_species_id,
@@ -63,7 +63,7 @@ class Modeler:
                                      main_domain_alignment.template_id.chain_id)
 
                 chain_alignments = self._make_alignments(main_target_sequence, target_species_id,
-                                                         main_domain_alignment, context)
+                                                         main_domain_alignment, context, require_resnum)
 
                 # Delete chains that aren't in the alignment set:
                 for chain_id in context.get_chain_ids():
@@ -209,7 +209,7 @@ class Modeler:
         raise ModelRunError("chain not found in identical groups: {}".format(main_chain_id))
 
     def _make_alignments(self, main_target_sequence, target_species_id,
-                         main_domain_alignment, context):
+                         main_domain_alignment, context, require_resnum):
         alignments = {}
 
         # Choose what chains to align the main_target_on
@@ -221,8 +221,17 @@ class Modeler:
             template_chain_sequence = context.get_sequence(chain_id)
             template_chain_secstr = context.get_secondary_structure(chain_id)
 
-            alignments[chain_id] = kmad_aligner.align(template_chain_sequence, template_chain_secstr,
-                                                      main_domain_alignment.get_target_sequence())
+            local_alignment = kmad_aligner.align(template_chain_sequence, template_chain_secstr,
+                                                 main_domain_alignment.get_target_sequence())
+            alignments[chain_id] = DomainAlignment(local_alignment.target_alignment,
+                                                   local_alignment.template_alignment,
+                                                   main_domain_alignment.range,
+                                                   main_domain_alignment.template_id)
+            if require_resnum is not None and \
+                    not alignments[chain_id].is_target_residue_covered(require_resnum):
+                alignments[chain_id] = self._align_to_cover(main_domain_alignment,
+                                                            context, chain_id, require_resnum)
+
             alignments[chain_id].target_id = model_storage.get_sequence_id(main_target_sequence)
 
         # Try to find and align target sequences for interacting chains in the template,
@@ -267,6 +276,20 @@ class Modeler:
                     alignments[candidate_chain_id].target_id = "poly-A"
 
         return alignments
+
+    def _align_to_cover(self, main_domain_alignment, context, chain_id, require_resnum):
+        # Resort to clustal, since it does align the whole sequence.
+        alignment = clustal_aligner.align({'target': main_domain_alignment.get_target_sequence(),
+                                           'template': context.get_sequence(chain_id)})
+        alignment = DomainAlignment(alignment.get_sequence('target'),
+                                    alignment.get_sequence('template'),
+                                    main_domain_alignment.range,
+                                    main_domain_alignment.template_id)
+
+        if not alignment.is_target_residue_covered(require_resnum):
+            raise RuntimeError("Cannot align with chain {} so that residue {} is covered"
+                               .format(chain_id, require_resnum))
+        return alignment
 
     def _find_target_sequences(self, template_chain_sequence, target_species_id):
         if self.uniprot_databank is None:
