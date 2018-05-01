@@ -229,8 +229,8 @@ class Modeler:
                                                    main_domain_alignment.template_id)
             if require_resnum is not None and \
                     not alignments[chain_id].is_target_residue_covered(require_resnum):
-                alignments[chain_id] = self._align_to_cover(main_domain_alignment,
-                                                            context, chain_id, require_resnum)
+                raise RuntimeError("Cannot align to chain {} so that residue {} is covered"
+                                   .format(chain_id, require_resnum))
 
             alignments[chain_id].target_id = model_storage.get_sequence_id(main_target_sequence)
 
@@ -276,20 +276,6 @@ class Modeler:
                     alignments[candidate_chain_id].target_id = "poly-A"
 
         return alignments
-
-    def _align_to_cover(self, main_domain_alignment, context, chain_id, require_resnum):
-        # Resort to clustal, since it does align the whole sequence.
-        alignment = clustal_aligner.align({'target': main_domain_alignment.get_target_sequence(),
-                                           'template': context.get_sequence(chain_id)})
-        alignment = DomainAlignment(alignment.get_sequence('target'),
-                                    alignment.get_sequence('template'),
-                                    main_domain_alignment.range,
-                                    main_domain_alignment.template_id)
-
-        if not alignment.is_target_residue_covered(require_resnum):
-            raise RuntimeError("Cannot align with chain {} so that residue {} is covered"
-                               .format(chain_id, require_resnum))
-        return alignment
 
     def _find_target_sequences(self, template_chain_sequence, target_species_id):
         if self.uniprot_databank is None:
