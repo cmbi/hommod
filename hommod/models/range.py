@@ -75,7 +75,7 @@ class SequenceRange:
 
     def includes_residue(self, resnum):
         residue_index = resnum - 1
-        return resnum > self.start and residue_index <= self.end
+        return residue_index >= self.start and residue_index < self.end
 
     def get_percentage_overlap(self, other):
         if not self.overlaps_with(other):
