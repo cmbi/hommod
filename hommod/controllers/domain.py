@@ -82,12 +82,10 @@ class DomainAligner:
 
                     hit_range = hit_candidate.get_query_range()
                     if require_resnum is not None:
-                        if not hit_range.includes_residue(require_resnum):
-                            _log.debug("hit with {} on {} does not include residue {}"
+                        if not hit_candidate.is_query_residue_covered(require_resnum):
+                            _log.debug("hit with {} on {} does not cover residue {}"
                                        .format(hit_candidate.get_hit_accession_code(),
                                                hit_range, require_resnum))
-                            continue
-                        if not hit_candidate.is_query_residue_covered(require_resnum):
                             continue
 
 
@@ -284,6 +282,7 @@ class DomainAligner:
                 # Must shift the numbers in the blast hit,
                 # since we used a sub-sequence.
                 alignment.query_shift_right(range_.start)
+                alignment.full_query_sequence = range_.sequence
 
                 hit_template_id = TemplateID(alignment.get_hit_accession_code(),
                                              alignment.get_hit_chain_id())
