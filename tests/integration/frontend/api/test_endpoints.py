@@ -89,3 +89,4 @@ def test_interface(mock_targets, mock_alignments, mock_model, mock_async, mock_r
 
     r = flask_client.get('/api/get_metadata/%s/' % job_id)
     eq_(r.status_code, 200)
+    json.loads(r.data)
