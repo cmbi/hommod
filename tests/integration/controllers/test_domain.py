@@ -279,6 +279,7 @@ GVHGPRTPCEEILVKHVGSRLYSVSYLLKDKGEYTLVVKWGDEHIPGSPYRVVVP
 
     alignments = domain_aligner.get_domain_alignments(seq, require_resnum=429, template_id=template_id)
 
+    ok_(len(alignments) > 0)
     for alignment in alignments:
         fragment = alignment.get_target_sequence()
         ok_(fragment in seq)

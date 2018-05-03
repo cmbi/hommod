@@ -17,7 +17,7 @@ class KmadAligner:
     def align(self, template_sequence, template_secstr, target_sequence,
               gap_open=-13.0, gap_extend=-0.4, modifier=3.0):
 
-        _log.debug("kmad align {} {} {}".format(template_sequence, template_secstr, target_sequence))
+        _log.debug("kmad align\n{}\n{}\n{}".format(template_sequence, template_secstr, target_sequence))
 
         # Prevent kmad from adding insertions in bulges, replace those.
         template_secstr = self._remove_bulges(template_secstr, 'H', 3)
@@ -43,6 +43,8 @@ class KmadAligner:
             output_path += '_al'
 
             aligned = parse_fasta(output_path)
+
+            _log.debug("kmad aligned\n{}\n{}".format(aligned['target'], aligned['template']))
         finally:
             for path in [input_path, output_path]:
                 if os.path.isfile(path):

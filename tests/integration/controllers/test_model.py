@@ -204,6 +204,7 @@ GVHGPRTPCEEILVKHVGSRLYSVSYLLKDKGEYTLVVKWGDEHIPGSPYRVVVP
     residue_number = 429
 
     domain_alignments = domain_aligner.get_domain_alignments(sequence, residue_number, template_id)
+    ok_(len(domain_alignments) > 0)
     domain_alignment = select_best_domain_alignment(domain_alignments)
 
     context = modeler._prepare_context(template_id.pdbid)

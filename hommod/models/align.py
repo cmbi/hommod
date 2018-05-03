@@ -74,6 +74,11 @@ class BlastAlignment(Alignment):
     def __repr__(self):
         return self.hit_id + '\n' + Alignment.__repr__(self)
 
+    # This is useful when the inserted sequence is not the whole sequence.
+    def query_shift_right(self, n):
+        self.query_start += n
+        self.query_end += n
+
     def get_query_range(self):
         return SequenceRange(self.query_start - 1, self.query_end, self.full_query_sequence)
 
