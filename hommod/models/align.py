@@ -1,7 +1,11 @@
 import re
+import logging
 
 from hommod.models.range import SequenceRange
 from hommod.controllers.sequence import is_amino_acid_char
+
+
+_log = logging.getLogger(__name__)
 
 
 class Alignment:
@@ -124,7 +128,7 @@ class BlastAlignment(Alignment):
     def subject_alignment(self):
         return self.aligned_sequences['subject']
 
-    @query_alignment.setter
+    @subject_alignment.setter
     def subject_alignment(self, value):
         self.aligned_sequences['subject'] = value
 
