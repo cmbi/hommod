@@ -47,13 +47,9 @@ def select_best_model(tar_paths):
     return best_path
 
 
-def select_best_domain_alignment(domain_alignments, require_resnum=None):
+def select_best_domain_alignment(domain_alignments):
     best = None
     for alignment in domain_alignments:
-        if require_resnum is not None and \
-                not alignment.is_target_residue_covered(require_resnum):
-            continue
-
         if best is None or alignment.get_percentage_identity() > best.get_percentage_identity():
             best = alignment
 

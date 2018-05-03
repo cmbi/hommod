@@ -48,7 +48,7 @@ def create_model(target_sequence, target_species_id, require_resnum=None, chosen
                           .format(target_sequence, require_resnum, chosen_template_id))
                 return None
 
-            domain_alignment = select_best_domain_alignment(domain_alignments, require_resnum)
+            domain_alignment = select_best_domain_alignment(domain_alignments)
             return modeler.build_model(target_sequence, target_species_id,
                                        domain_alignment, require_resnum)
 
