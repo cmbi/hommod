@@ -39,10 +39,13 @@ class DomainAligner:
             raise InitError("min percentage coverage is not set")
 
         interpro_ranges = interpro.get_domain_ranges(target_sequence)
+        _log.debug("{} ranges from interpro".format(len(interpro_ranges)))
+
         sample_ranges = self._filter_forbidden_ranges(interpro_ranges)
 
         if require_resnum is not None:
             sample_ranges = filter(lambda r: r.includes_residue(require_resnum), sample_ranges)
+            _log.debug("{} ranges have residue {}".format(len(sample_ranges), require_resnum))
 
         # Add the whole sequence as a range too:
         sample_ranges.append(SequenceRange(0, len(target_sequence), target_sequence))
@@ -80,7 +83,7 @@ class DomainAligner:
                     hit_range = hit_candidate.get_query_range()
                     if require_resnum is not None:
                         if not hit_range.includes_residue(require_resnum):
-                            _log.debug("hit with {} {} does not include residue {}"
+                            _log.debug("hit with {} on {} does not include residue {}"
                                        .format(hit_candidate.get_hit_accession_code(),
                                                hit_range, require_resnum))
                             continue
@@ -95,9 +98,9 @@ class DomainAligner:
                         # This range made an OK alignment, so at least store it for later usage:
                         template_id = TemplateID(hit_candidate.get_hit_accession_code(),
                                                  hit_candidate.get_hit_chain_id())
-                        ok_ranges_alignments[range_] = DomainAlignment(hit_candidate.query_alignment,
-                                                                       hit_candidate.subject_alignment,
-                                                                       hit_range, template_id)
+                        ok_ranges_alignments[hit_range] = DomainAlignment(hit_candidate.query_alignment,
+                                                                          hit_candidate.subject_alignment,
+                                                                          hit_range, template_id)
 
                         if hit_candidate.get_percentage_coverage() > self.min_percentage_coverage:
 
@@ -122,9 +125,9 @@ class DomainAligner:
                     template_id = TemplateID(best_hit.get_hit_accession_code(),
                                              best_hit.get_hit_chain_id())
 
-                    _log.debug("passing best hit with template {} for range {}".format(template_id, range_))
-
                     hit_range = best_hit.get_query_range()
+                    _log.debug("passing best hit with template {} with range {}".format(template_id, hit_range))
+
                     best_ranges_alignments[hit_range] = DomainAlignment(best_hit.query_alignment,
                                                                         best_hit.subject_alignment,
                                                                         hit_range, template_id)
@@ -147,9 +150,10 @@ class DomainAligner:
 
         pid = alignment.get_percentage_identity()
         nalign = alignment.count_aligned_residues()
-        pcover = alignment.get_percentage_coverage()
+        pcover = (100.0 * nalign) / range_.get_length()
 
-        highly_homolgous = pid >= self.highly_homologous_percentage_identity and range_.get_length() == len(range_.sequence)
+        highly_homolgous = pid >= self.highly_homologous_percentage_identity and \
+                           range_.get_length() == len(range_.sequence)
 
         _log.debug("alignment with {}: pid={}, nalign={}, pcover={}"
                    .format(range_, pid, nalign, pcover))
@@ -277,6 +281,10 @@ class DomainAligner:
         good_hits = []
         for hit_id in blast_hits:
             for alignment in blast_hits[hit_id]:
+                # Must shift the numbers in the blast hit,
+                # since we used a sub-sequence.
+                alignment.query_shift_right(range_.start)
+
                 hit_template_id = TemplateID(alignment.get_hit_accession_code(),
                                              alignment.get_hit_chain_id())
                 if template_id is not None and hit_template_id != template_id:
@@ -322,13 +330,15 @@ class DomainAligner:
             for j in overlapping_indices:
 
                 percentage_overlap = ranges[i].get_percentage_overlap(ranges[j])
-                percentage_length_difference = 100.0 * (abs(ranges[i].get_length() - ranges[j].get_length()) /
-                                                        max(ranges[i].get_length(), ranges[j].get_length()))
+                percentage_length_difference = ((100.0 * abs(ranges[i].get_length() - ranges[j].get_length())) /
+                                                max(ranges[i].get_length(), ranges[j].get_length()))
 
                 if percentage_overlap > self.similar_ranges_min_overlap_percentage and \
                         percentage_length_difference < self.similar_ranges_max_length_difference_percentage:
 
                     # Replace the two ranges by a single merged one:
+                    _log.debug("merging {} with {}, they have {} % length difference"
+                               .format(ranges[i], ranges[j], percentage_length_difference))
                     merged = ranges[i].merge_with(ranges[j])
                     ranges = (ranges[:i] + [merged] + ranges[i + 1: j] + ranges[j + 1:])
             i += 1
