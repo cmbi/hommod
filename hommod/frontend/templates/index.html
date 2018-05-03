@@ -90,7 +90,12 @@
     if (document.cookie == "")
       return {jobs: []};
 
-    var obj = JSON.parse(document.cookie);
+    try {
+      var obj = JSON.parse(document.cookie);
+    }
+    catch (e) {
+      return {jobs: []};
+    }
     if (obj.jobs === undefined)
       obj.jobs = [];
 
