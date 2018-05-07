@@ -72,4 +72,4 @@ build_sprot &
 
 wait
 
-/bin/echo -e "TITLE uniprot\nDBLIST $SPROT_BLAST $TREMBL_BLAST" > $BLAST_DIR/uniprot.pal
+/bin/echo -e "TITLE uniprot\nDBLIST $BLAST_DIR/uniprot_sprot $BLAST_DIR/uniprot_trembl" > $BLAST_DIR/uniprot.pal
