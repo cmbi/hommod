@@ -241,6 +241,46 @@ def test_align_rab3d():
 
         ok_(alignment.is_target_residue_covered(residue_number))
 
+
+@with_setup(setup, end)
+def test_pick_identical_chains():
+
+    class _FakeContext:
+        def __init__(self):
+            self.sequences = {
+                'A': "NPIHDRTSDYHKYLKVKQGDSDLFKLTVSDKRYIWYNPDPKERDSYECGEIVSETSD" +
+                     "SFTFKTVDGQDRQVKKDDANQRNPIKFDGVEDMSELSYLNEPAVFHNLRVRYNQDLI" +
+                     "YTYSGLFLVAVNPFKRIPIYTQEMVDIFKGRRRNEVAPHIFAISDVAYRSMLDDRQN" +
+                     "QSLLITGESGAGKTENTKKVIQYLASVAGRNQANGSGVLEQQILQANPILEAFGNAK" +
+                     "TTRNNNSSRFGKFIEIQFNSAGFISGASIQSYLLEKSRVVFQSETERNYHIFYQLLA" +
+                     "GATAEEKKALHLAGPESFNYLNQSGCVDIKGVSDSEEFKITRQAMDIVGFSQEEQMS" +
+                     "IFKIIAGILHLGNIKFEKGAGEGAVLKDKTALNAASTVFGVNPSVLEKALMEPRILA" +
+                     "GRDLVAQHLNVEKSSSSRDALVKALYGRLFLWLVKKINNVLCQERKAYFIGVLDISG" +
+                     "FEIFKVNSFEQLCINYTNEKLQQFFNHHMFKLEQEEYLKEKINWTFIDFGLDSQATI" +
+                     "DLIDGRQPPGILALLDEQSVFPNATDNTLITKLHSHFSKKNAKYEEPRFSKTEFGVT" +
+                     "HYAGQVMYEIQDWLEKNKDPLQQDLELCFKDSSDNVVTKLFNDPNIASRAKKGANFI" +
+                     "TVAAQYKEQLASLMATLETTNPHFVRCIIPNNKQLPAKLEDKVVLDQLRCNGVLEGI" +
+                     "RITRKGFPNRIIYADFVKRYYLLAPNVPRDAEDSQKATDAVLKHLNIDPEQYRFGIT" +
+                     "KIFFRAGQLARIEEAREQRISEI",
+                'B': "MEDLIPLVNRLQDAFSAIGQNADLDLPQIAVVGGQSAGKSSVLENFVGRDFLPRGSG" +
+                     "IVTRRPLVLQLVNSTTEYAEFLHCKGKKFTDFEEVRLEIEAETDRVTGTNKGISPVP" +
+                     "INLRVYSPHVLNLTLVDLPGMTKVPVGDQPPDIEFQIRDMLMQFVTKENCLILAVSP" +
+                     "ANSDLANSDALKIAKEVDPQGQRTIGVITKLDLMDEGTDARDVLENKLLPLRRGYIG" +
+                     "VVNRSQKDIDGKKDITAALAAERKFFLSHPSYRHLADRMGTPYLQKVLNQQLTNHIR" +
+                     "DTLPGLRNKLQSQL",
+                'L': "TRLVPR"
+            }
+
+        def get_chain_ids(self):
+            return self.sequences.keys()
+
+        def get_sequence(self, chain_id):
+            return self.sequences[chain_id]
+
+    chain_ids = modeler._pick_identical_chains('A', _FakeContext())
+    eq_(chain_ids, ['A'])
+
+
 @with_setup(setup, end)
 def test_generate_error_archive():
     sequence = "EDFPRFPHRGLLLDTSRHYLPLSSILDTLDVMAYNKLNVFHWH"
@@ -249,7 +289,7 @@ def test_generate_error_archive():
                                 SequenceRange(0, len(sequence), sequence),
                                 TemplateID('2GK1', 'I'))
 
-    class FakeYasara:
+    class _FakeYasara:
         def CD(self, work_dir):
             self.work_dir = work_dir
 
@@ -275,7 +315,7 @@ def test_generate_error_archive():
             self.target_species_id = 'HUMAN'
             self.main_target_chain_id = 'I'
             self.template_pdbid = '2GK1'
-            self.yasara = FakeYasara()
+            self.yasara = _FakeYasara()
             self.template_obj = 1
 
         def get_main_target_sequence(self):
@@ -287,7 +327,7 @@ def test_generate_error_archive():
         def get_sequence(self, chain_id):
             return sequence
 
-    context = FakeContext()
+    context = _FakeContext()
 
     try:
         modeler._model_run(alignment, {'I': alignment}, context)

@@ -178,7 +178,7 @@ class Modeler:
         grouped = [] 
 
         ids = sequences.keys()
-        while len(ids) > 0: 
+        while len(ids) > 0:
             id_ = ids[0]
             ids.remove(id_)
             grouped.append([id_])
@@ -192,14 +192,16 @@ class Modeler:
                 if pair not in alignments:
                     alignments[pair] = clustal_aligner.align({id_: sequences[id_],
                                                               other_id: sequences[other_id]})
+                    _log.debug("aligned {} with {}: {}".format(id_, other_id, alignments[pair]))
 
-                if alignments[pair].get_percentage_identity(id_, other_id) >= 99.0:
+                if alignments[pair].get_percentage_identity(id_, other_id) >= 99.0 and \
+                        alignments[pair].count_aligned_residues(id_, other_id) > 20:
                     grouped[-1].append(other_id)
                     ids.remove(other_id)
 
         return grouped
 
-    def _pick_template_chains(self, main_chain_id, main_target_sequence, context):
+    def _pick_identical_chains(self, main_chain_id, context):
 
         identical_chain_groups = self._group_identical_chains(context)
         for group in identical_chain_groups:
@@ -213,8 +215,8 @@ class Modeler:
         alignments = {}
 
         # Choose what chains to align the main_target_on
-        main_target_chain_ids = self._pick_template_chains(main_domain_alignment.template_id.chain_id,
-                                                           main_target_sequence, context)
+        main_target_chain_ids = self._pick_identical_chains(main_domain_alignment.template_id.chain_id,
+                                                            context)
 
         for chain_id in main_target_chain_ids:
 
@@ -227,12 +229,14 @@ class Modeler:
                                                    local_alignment.template_alignment,
                                                    main_domain_alignment.range,
                                                    main_domain_alignment.template_id)
-            if require_resnum is not None and \
-                    not alignments[chain_id].is_target_residue_covered(require_resnum):
-                raise RuntimeError("Cannot align to chain {} so that residue {} is covered"
-                                   .format(chain_id, require_resnum))
 
             alignments[chain_id].target_id = model_storage.get_sequence_id(main_target_sequence)
+
+        if require_resnum is not None and \
+                not alignments[main_domain_alignment.template_id.chain_id].is_target_residue_covered(require_resnum):
+            raise RuntimeError("Cannot align to chain {} so that residue {} is covered"
+                               .format(main_domain_alignment.template_id.chain_id, require_resnum))
+
 
         # Try to find and align target sequences for interacting chains in the template,
         # while keeping in mind which residues interact and must thus be covered by the alignment.
