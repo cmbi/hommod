@@ -8,7 +8,7 @@ TESTING = False
 # Cache
 CACHE_REDIS_HOST = 'hommod_redis_1'
 CACHE_REDIS_PORT = 6379
-CACHE_REDIS_DB = 1 
+CACHE_REDIS_DB = 1
 CACHE_EXPIRATION_TIME = 60*60*24*30  # 30 days
 CACHE_LOCK_TIMEOUT = 60*60  # 1 hour
 
@@ -45,6 +45,9 @@ CLUSTALW_EXE = '/usr/bin/clustalw'
 # Databanks
 TEMPLATE_BLAST_DATABANK = '/data/blast/templates'
 UNIPROT_BLAST_DATABANK = '/data/blast/uniprot'
+
+# Fastas
+SPROT_FASTA = '/data/fasta/uniprot_sprot.fasta'
 
 # Domain alignment settings
 HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY = 80.0
