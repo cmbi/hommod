@@ -59,7 +59,7 @@ class KmadAligner:
             raise InitError("kmad executable is not set")
 
         cmd = [self.kmad_exe, '-i', input_path, '-o', output_path,
-               '-g', '%.1f' % gap_open, '-e', '%.1f' % gap_extend, '-s', '%.1f' % modifier, '-c']
+               '-g', '%.1f' % gap_open, '-e', '%.1f' % gap_extend, '-s', '%.1f' % modifier, '-c', '4']
 
         _log.debug(cmd)
 
