@@ -68,7 +68,7 @@ class Modeler:
                 # Delete chains that aren't in the alignment set:
                 for chain_id in context.get_chain_ids():
                     if chain_id not in chain_alignments:
-                        self._delete_chain(chain_id)
+                        context.delete_chain(chain_id)
 
                 _log.debug("final alignments: {}".format([(chain_id, chain_alignments[chain_id])
                                                           for chain_id in context.get_chain_ids()]))

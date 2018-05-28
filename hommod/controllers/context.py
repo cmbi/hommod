@@ -33,6 +33,12 @@ class ModelingContext:
 
         return self.yasara.ListMol('obj %i and protein' % self.template_obj, 'MOL')
 
+    def delete_chain(self, chain_id):
+        if self.template_obj is None:
+            raise ModelRunError("template object is not set")
+
+        self.yasara.DelMol('obj %i and protein and mol %s' % (self.template_obj, chain_id))
+
     def get_sequence(self, chain_id):
         sequence = ""
         for residue in self.get_residues(chain_id):
