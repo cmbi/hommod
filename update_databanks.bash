@@ -12,28 +12,25 @@ MODEL_DIR=$DATA_DIR/models
 mkdir -p $FASTA_DIR $BLAST_DIR
 
 MODELS_FASTA=$FASTA_DIR/models.fa
+MODELS_DB=$BLAST_DIR/models
 
 build_models () {
 
-    mkdir -p /tmp/models-blast
-
     $PYTHON make_models_fasta.py $MODELS_FASTA
-    $MAKEBLASTDB -in $MODELS_FASTA -dbtype prot -out /tmp/models-blast/models
-    mv -f /tmp/models-blast/models.* $BLAST_DIR/
+    $MAKEBLASTDB -in $MODELS_FASTA -dbtype prot -out $MODELS_DB
 }
 
 TEMPLATES_FASTA=$FASTA_DIR/templates.fa
+TEMPLATES_DB=$BLAST_DIR/templates
 
 build_templates () {
 
-    mkdir -p /tmp/templates-blast
-
     $PYTHON make_templates_fasta.py $TEMPLATES_FASTA
-    $MAKEBLASTDB -in $TEMPLATES_FASTA -dbtype prot -out /tmp/templates-blast/templates
-    mv -f /tmp/templates-blast/templates.* $BLAST_DIR/
+    $MAKEBLASTDB -in $TEMPLATES_FASTA -dbtype prot -out $TEMPLATES_DB
 }
 
 SPROT_FASTA=$FASTA_DIR/uniprot_sprot.fasta
+SPROT_DB=$BLAST_DIR/uniprot_sprot
 
 build_sprot () {
 
@@ -43,13 +40,11 @@ build_sprot () {
     # To prevent warnings, remove all titles from the fasta.
     sed -i 's/^>\([^ ]\+\) .*$/>\1/' $SPROT_FASTA
 
-    mkdir -p /tmp/sprot-blast
-
-    $MAKEBLASTDB -in $SPROT_FASTA -dbtype prot -out /tmp/sprot-blast/uniprot_sprot
-    mv -f /tmp/sprot-blast/uniprot_sprot.* $BLAST_DIR/
+    $MAKEBLASTDB -in $SPROT_FASTA -dbtype prot -out $SPROT_DB
 }
 
 TREMBL_FASTA=$FASTA_DIR/uniprot_trembl.fasta
+TREMBL_DB=$BLAST_DIR/uniprot_trembl
 
 build_trembl () {
 
@@ -59,10 +54,7 @@ build_trembl () {
     # To prevent warnings, remove all titles from the fasta.
     sed -i 's/^>\([^ ]\+\) .*$/>\1/' $TREMBL_FASTA
 
-    mkdir -p /tmp/trembl-blast
-
-    $MAKEBLASTDB -in $TREMBL_FASTA -dbtype prot -out /tmp/trembl-blast/uniprot_trembl
-    mv -f /tmp/trembl-blast/uniprot_trembl.* $BLAST_DIR/
+    $MAKEBLASTDB -in $TREMBL_FASTA -dbtype prot -out $TREMBL_DB
 }
 
 build_models &
