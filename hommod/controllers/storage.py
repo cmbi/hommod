@@ -123,7 +123,11 @@ class ModelStorage:
         with tarfile.open(tar_path, 'r:gz') as ar:
             f = None
             try:
-                f = ar.extractfile(os.path.join(dir_name, 'align.fa'))
+                path = os.path.join(dir_name, 'align.fa')
+                if path not in ar.getnames():
+                    path = os.path.join(dir_name, 'align.fasta')
+
+                f = ar.extractfile(path)
                 alignment_fasta = parse_fasta_from_string(f.read())
 
                 rows = {}
