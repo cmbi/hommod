@@ -427,7 +427,7 @@ class Modeler:
         span1 = alignment1.get_relative_span()
         span2 = alignment2.get_relative_span()
 
-        # make sure span1 is the left sided:
+        # make sure span1 is the N-sided:
         if span2 < span1:
             span1, span2 = swap(span1, span2)
             alignment1, alignment2 = swap(alignment1, alignment2)
@@ -447,11 +447,11 @@ class Modeler:
                 naa += 1
             i2 += 1
 
-        return TargetTemplateAlignment(alignment1.target_alignment[: i1] + alignment2.target_alignment[: i2],
-                                       alignment1.template_alignment[: i1] + alignment2.template_alignment[: i2])
+        return TargetTemplateAlignment(alignment1.target_alignment[: i1] + alignment2.target_alignment[i2: ],
+                                       alignment1.template_alignment[: i1] + alignment2.template_alignment[i2: ])
 
     def _write_model_alignment_fasta(self, context, chain_alignments, fasta_path):
-        # Creates the input file for YASAYA's modeling run.
+        # Creates the input file for YASARA's modeling run.
         # Includes all the chain ids in 'chain_order' in the alignment.
 
         chain_order = context.get_chain_ids()
