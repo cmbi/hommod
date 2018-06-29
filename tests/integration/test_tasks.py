@@ -10,7 +10,7 @@ from celery import Celery
 
 from hommod.default_settings import (KMAD_EXE, BLASTP_EXE, MODEL_DIR, INTERPRO_URL,
                                      FORBIDDEN_INTERPRO_DOMAINS, TEMPLATE_BLAST_DATABANK,
-                                     DOMAIN_MIN_PERCENTAGE_COVERAGE, DOMAIN_MAX_MERGE_DISTANCE,
+                                     DOMAIN_MIN_PERCENTAGE_COVERAGE,
                                      DSSP_DIR, SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE,
                                      SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE,
                                      BLACKLIST_FILE_PATH, HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY,
@@ -46,7 +46,6 @@ def setup():
     domain_aligner.similar_ranges_max_length_difference_percentage = SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE
     domain_aligner.min_percentage_coverage = DOMAIN_MIN_PERCENTAGE_COVERAGE
     domain_aligner.template_blast_databank = TEMPLATE_BLAST_DATABANK
-    domain_aligner.max_merge_distance = DOMAIN_MAX_MERGE_DISTANCE
     domain_aligner.highly_homologous_percentage_identity = HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY
     blaster.blastp_exe = BLASTP_EXE
     dssp.dssp_dir = DSSP_DIR

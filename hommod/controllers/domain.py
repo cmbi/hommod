@@ -22,7 +22,6 @@ class DomainAligner:
                  similar_ranges_max_length_difference_percentage=None,
                  template_blast_databank=None,
                  min_percentage_coverage=None,
-                 max_merge_distance=None,
                  highly_homologous_percentage_identity=None):
 
             self.forbidden_interpro_domains = forbidden_interpro_domains
@@ -30,7 +29,6 @@ class DomainAligner:
             self.similar_ranges_max_length_difference_percentage = similar_ranges_max_length_difference_percentage
             self.template_blast_databank = template_blast_databank
             self.min_percentage_coverage = min_percentage_coverage
-            self.max_merge_distance = max_merge_distance
             self.highly_homologous_percentage_identity = highly_homologous_percentage_identity
 
     def get_domain_alignments(self, target_sequence, require_resnum=None, template_id=None):
@@ -201,8 +199,6 @@ class DomainAligner:
                     percentage_length_difference = 100.0 * (abs(ranges[i].get_length() - ranges[j].get_length()) /
                                                             max(ranges[i].get_length(), ranges[j].get_length()))
 
-                    distance = ranges[i].get_distance_from(ranges[j])
-
                     merged = ranges[i].merge_with(ranges[j])
 
                     # Merge only if:
@@ -210,7 +206,7 @@ class DomainAligner:
                     # - the merge has not already been done
                     # - the intersecting parts of the ranges align to
                     #   the template in exactly the same way
-                    if distance < self.max_merge_distance and merged not in checked_ranges:
+                    if merged not in checked_ranges:
 
                         alignment_i = ok_ranges_alignments[ranges[i]]
                         alignment_j = ok_ranges_alignments[ranges[j]]

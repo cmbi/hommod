@@ -58,7 +58,6 @@ if __name__ == "__main__":
     domain_aligner.similar_ranges_max_length_difference_percentage = settings.SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE
     domain_aligner.min_percentage_coverage = settings.DOMAIN_MIN_PERCENTAGE_COVERAGE
     domain_aligner.template_blast_databank = settings.TEMPLATE_BLAST_DATABANK
-    domain_aligner.max_merge_distance = settings.DOMAIN_MAX_MERGE_DISTANCE
     domain_aligner.highly_homologous_percentage_identity = settings.HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY
 
     blaster.blastp_exe = settings.BLASTP_EXE
