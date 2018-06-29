@@ -5,7 +5,7 @@ from nose.tools import eq_, ok_, with_setup
 
 from hommod.default_settings import (INTERPRO_URL, BLASTP_EXE,
                                      FORBIDDEN_INTERPRO_DOMAINS, TEMPLATE_BLAST_DATABANK,
-                                     DOMAIN_MIN_PERCENTAGE_COVERAGE, DOMAIN_MAX_MERGE_DISTANCE,
+                                     DOMAIN_MIN_PERCENTAGE_COVERAGE,
                                      DSSP_DIR, SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE,
                                      SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE,
                                      BLACKLIST_FILE_PATH, HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY,
@@ -34,7 +34,6 @@ def setup():
     domain_aligner.similar_ranges_max_length_difference_percentage = SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE
     domain_aligner.min_percentage_coverage = DOMAIN_MIN_PERCENTAGE_COVERAGE
     domain_aligner.template_blast_databank = TEMPLATE_BLAST_DATABANK
-    domain_aligner.max_merge_distance = DOMAIN_MAX_MERGE_DISTANCE
     domain_aligner.highly_homologous_percentage_identity = HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY
     cm.redis_hostname = CACHE_REDIS_HOST
     cm.redis_port = CACHE_REDIS_PORT
@@ -328,6 +327,24 @@ Q""".replace('\n','')
 
     alignments = domain_aligner.get_domain_alignments(seq,
                                                       require_resnum=676,
+                                                      template_id=template_id)
+    ok_(len(alignments) > 0)
+    for alignment in alignments:
+        eq_(alignment.template_id, template_id)
+
+
+@with_setup(setup, end)
+def test_secretase():
+    seq = ("MTAAVFFGCAFIAFGPALALYVFTIATEPLRIIFLIAGAFFWLVSLLISSLVWFMARVII" +
+           "DNKDGPTQKYLLIFGAFVSVYIQEMFRFAYYKLLKKASEGLKSINPGETAPSMRLLAYVS" +
+           "GLGFGIMSGVFSFVNTLSDSLGPGTVGIHGDSPQFFLYSAFMTLVIILLHVFWGIVFFDG" +
+           "CEKKKWGILLIVLLTHLLVSAQTFISSYYGINLASAFIILVLMGTWAFLAAGGSCRSLKL" +
+           "CLLCQDKNFLLYNQRSR")
+
+    template_id = TemplateID('5A63', 'C')
+
+    alignments = domain_aligner.get_domain_alignments(seq,
+                                                      require_resnum=72,
                                                       template_id=template_id)
     ok_(len(alignments) > 0)
     for alignment in alignments:

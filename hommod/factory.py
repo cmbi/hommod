@@ -123,7 +123,6 @@ def create_celery_app(flask_app=None):  # pragma: no cover
     domain_aligner.similar_ranges_max_length_difference_percentage = flask_app.config['SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE']
     domain_aligner.min_percentage_coverage = flask_app.config['DOMAIN_MIN_PERCENTAGE_COVERAGE']
     domain_aligner.template_blast_databank = flask_app.config['TEMPLATE_BLAST_DATABANK']
-    domain_aligner.max_merge_distance = flask_app.config['DOMAIN_MAX_MERGE_DISTANCE']
     domain_aligner.highly_homologous_percentage_identity = flask_app.config['HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY']
 
     from hommod.controllers.blast import blaster

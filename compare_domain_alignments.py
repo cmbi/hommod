@@ -3,7 +3,6 @@ from requests.exceptions import HTTPError
 
 from hommod.default_settings import (SPROT_FASTA, DSSP_DIR, INTERPRO_URL,
                                      HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY,
-                                     DOMAIN_MAX_MERGE_DISTANCE,
                                      DOMAIN_MIN_PERCENTAGE_COVERAGE,
                                      SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE,
                                      SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE,
@@ -31,7 +30,6 @@ cm.lock_timeout = CACHE_LOCK_TIMEOUT
 dssp.dssp_dir = DSSP_DIR
 interpro.url = INTERPRO_URL
 domain_aligner.highly_homologous_percentage_identity = HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY
-domain_aligner.max_merge_distance = DOMAIN_MAX_MERGE_DISTANCE
 domain_aligner.min_percentage_coverage = DOMAIN_MIN_PERCENTAGE_COVERAGE
 domain_aligner.forbidden_interpro_domains = FORBIDDEN_INTERPRO_DOMAINS
 domain_aligner.template_blast_databank = TEMPLATE_BLAST_DATABANK
