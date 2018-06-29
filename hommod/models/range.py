@@ -82,15 +82,17 @@ class SequenceRange:
             return 0.0
 
         count_overlap = min(self.end, other.end) - max(self.start, other.start)
+        if count_overlap <= 0:
+            return 0.0
+
         return  (100.0 * count_overlap) / min(self.get_length(), other.get_length())
 
     def overlaps_with(self, other):
         if self.sequence != other.sequence:
             return False
 
-        # given: start <= end
-        return (self.end >= other.start and
-                self.start <= other.end or
+        # given: start < end
+        return (self.end >= other.start and self.start <= other.end or
                 other.end >= self.start and other.start <= self.end)
 
     def encloses(self, other):
