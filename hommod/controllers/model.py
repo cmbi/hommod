@@ -485,6 +485,9 @@ class Modeler:
 
         work_dir_path = tempfile.mkdtemp()
         align_fasta_path = os.path.join(work_dir_path, 'align.fa')
+        full_target_path = os.path.join(work_dir_path, 'target.fa')
+
+        write_fasta(full_target_path, {'target': context.get_main_target_sequence()})
 
         try:
             os.chdir(work_dir_path)
@@ -520,11 +523,15 @@ class Modeler:
                                                              context.main_target_chain_id))
 
         work_dir_path = tempfile.mkdtemp()
+        full_target_path = os.path.join(work_dir_path, 'target.fa')
         align_fasta_path = os.path.join(work_dir_path, 'align.fa')
         output_yob_path = os.path.join(work_dir_path, 'target.yob')
         error_path = os.path.join(work_dir_path, 'errorexit.txt')
         error_scene_path = os.path.join(work_dir_path, 'errorexit.sce')
         before_scene_path =  os.path.join(work_dir_path, 'beforemodel.sce')
+
+        write_fasta(full_target_path, {'target': context.get_main_target_sequence()})
+
         try:
             context.yasara.CD(work_dir_path)
 
