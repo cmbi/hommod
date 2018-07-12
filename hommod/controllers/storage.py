@@ -38,7 +38,15 @@ class ModelStorage:
         if template_id is None:
             wildcard = "%s_%s_*.tgz" % (sequence_id, species_id)
         else:
-            wildcard = "%s_%s_*_%s-%s.tgz" % (sequence_id, species_id, template_id.pdbid, template_id.chain_id)
+            case_insensitive_pdbid = ""
+            for i in range(len(template_id.pdbid)):
+                char = template_id.pdbid[i]
+                if char.isalpha():
+                    case_insensitive_pdbid += '[%s%s]' % (char.lower(), char.upper())
+                else:
+                    case_insensitive_pdbid += char
+
+            wildcard = "%s_%s_*_%s-%s.tgz" % (sequence_id, species_id, case_insensitive_pdbid, template_id.chain_id)
 
         wildcard = os.path.join(self.model_dir, wildcard)
 
