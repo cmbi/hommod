@@ -34,7 +34,7 @@ def create_model(target_sequence, target_species_id, require_resnum=None, chosen
     lock_path = os.path.join(model_storage.model_dir, lock_name)
     with FileLock(lock_path):
 
-        model_paths = model_storage.list_models(sequence_id, target_species_id,
+        model_paths = model_storage.list_models(target_sequence, target_species_id,
                                                 require_resnum, chosen_template_id)
         if len(model_paths) > 0:
             return select_best_model(model_paths)
