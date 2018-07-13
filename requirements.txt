@@ -13,7 +13,7 @@ Flask==0.10.1
 funcsigs==1.0.2
 gevent==1.0.2
 greenlet==0.4.9
-gunicorn==19.4.5
+gunicorn==19.9.0
 itsdangerous==0.24
 Jinja2==2.7.3
 kombu==3.0.30
