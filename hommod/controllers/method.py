@@ -21,6 +21,10 @@ def select_best_model(tar_paths):
 
         chain_alignments = model_storage.extract_alignments(tar_path)
 
+        if len(chain_order) != len(chain_alignments):
+            raise ValueError("{}: {} chains in pdb file, vs. {} alignments in fasta"
+                             .format(tar_path, len(chain_order), len(chain_alignments)))
+
         chain_targets = model_storage.extract_selected_targets(tar_path)
         chain_ids = list(filter(lambda chain_id: chain_targets[chain_id] == sequence_id,
                                 chain_targets.keys()))
