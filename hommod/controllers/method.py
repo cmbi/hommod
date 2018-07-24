@@ -32,10 +32,10 @@ def select_best_model(tar_paths):
             _log.error("no main target {} in selected targets of {}".format(sequence_id, tar_path))
             continue
 
-        chain_i = chain_order.index(chain_ids[0])
-        if chain_i == -1:
+        if chain_ids[0] not in chain_order:
             _log.error("chain {} not in {}".format(chain_ids[0], tar_path))
             continue
+        chain_i = chain_order.index(chain_ids[0])
 
         alignment = chain_alignments[chain_i]
         keys = alignment.aligned_sequences.keys()
