@@ -1,6 +1,7 @@
 import os
 import logging
 
+from hommod.models.error import InitError
 
 _log = logging.getLogger(__name__)
 
@@ -32,6 +33,9 @@ class DsspService:
         return data[template_id.chain_id][1]
 
     def _get_dssp(self, pdbid):
+        if self.dssp_dir is None:
+            raise InitError("dssp directory is not set")
+
         file_path = os.path.join(self.dssp_dir, '%s.dssp' % pdbid.lower())
         with open(file_path, 'r') as f:
             return f.read()
