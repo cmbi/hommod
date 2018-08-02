@@ -26,7 +26,7 @@ services:
       - HOMMOD_SETTINGS=/usr/src/app/prd_settings.py
     volumes:
       - "/srv/hommod:/data"
-      - "/mnt/chelonium:/mnt/chelonium"
+      - "/srv/data:/mnt/chelonium"
       - "/var/log/hommod:/var/log/hommod"
     depends_on:
       - redis
@@ -41,7 +41,7 @@ services:
       - HOMMOD_SETTINGS=/usr/src/app/prd_settings.py
     volumes:
       - "/srv/hommod:/data"
-      - "/mnt/chelonium:/mnt/chelonium"
+      - "/srv/data:/mnt/chelonium"
       - "/var/log/hommod:/var/log/hommod"
   redis:
     image: redis
