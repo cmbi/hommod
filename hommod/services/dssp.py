@@ -35,6 +35,8 @@ class DsspService:
     def _get_dssp(self, pdbid):
         if self.dssp_dir is None:
             raise InitError("dssp directory is not set")
+        elif not os.path.isdir(self.dssp_dir):
+            raise InitError("No such directory: {}".format(self.dssp_dir))
 
         file_path = os.path.join(self.dssp_dir, '%s.dssp' % pdbid.lower())
         with open(file_path, 'r') as f:
