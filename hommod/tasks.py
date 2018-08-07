@@ -12,6 +12,7 @@ from hommod.controllers.storage import model_storage
 from hommod.controllers.domain import domain_aligner
 from hommod.models.error import InitError
 from hommod.controllers.method import select_best_model, select_best_domain_alignment
+from hommod.controllers.log import ModelLogger
 
 
 _log = logging.getLogger(__name__)
@@ -39,6 +40,8 @@ def create_model(target_sequence, target_species_id, require_resnum=None, chosen
         if len(model_paths) > 0:
             return select_best_model(model_paths)
         else:
+            ModelLogger.get_current().clear()
+
             domain_alignments = \
                 domain_aligner.get_domain_alignments(target_sequence,
                                                      require_resnum,
