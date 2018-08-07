@@ -19,6 +19,7 @@ from hommod.services.pdb import get_pdb_contents
 from hommod.services.uniprot import uniprot
 from hommod.controllers.storage import model_storage
 from hommod.controllers.sequence import is_amino_acid_char
+from hommod.controllers.log import ModelLogger
 
 
 _log = logging.getLogger(__name__)
@@ -36,6 +37,9 @@ class Modeler:
         self.yasara_dir = yasara_dir
 
     def build_model(self, main_target_sequence, target_species_id, main_domain_alignment, require_resnum=None):
+
+        ModelLogger.get_current().add("building model with sequence {}, species {}, alignment {} and resnum {}"
+                                      .format(main_target_sequence, target_species_id, main_domain_alignment, require_resnum))
 
         tar_path = model_storage.get_tar_path(main_target_sequence,
                                               target_species_id,
@@ -87,10 +91,16 @@ class Modeler:
         context = ModelingContext(self.yasara_dir)
 
         self._init_template(template_pdbid, context)
+
+        ModelLogger.get_current().add("starting with template with {} chains"
+                                      .format(len(context.get_chain_ids())))
         try:
             self._oligomerize_template(context)
         except:
             self._init_template(template_pdbid, context)
+
+        ModelLogger.get_current().add("after oligomerization: {} chains"
+                                      .format(len(context.get_chain_ids())))
 
         try:
             self._build_template_symmetry_residues(context)
@@ -199,6 +209,8 @@ class Modeler:
                     grouped[-1].append(other_id)
                     ids.remove(other_id)
 
+        ModelLogger.get_current().add("grouped identical chains: {}".format(grouped))
+
         return grouped
 
     def _pick_identical_chains(self, main_chain_id, context):
@@ -217,6 +229,8 @@ class Modeler:
         # Choose what chains to align the main_target_on
         main_target_chain_ids = self._pick_identical_chains(main_domain_alignment.template_id.chain_id,
                                                             context)
+
+        ModelLogger.get_current().add("using template chains {} for the main target sequence".format(main_target_chain_ids))
 
         for chain_id in main_target_chain_ids:
 
@@ -248,6 +262,10 @@ class Modeler:
             candidate_chains_interacts_with = {}
             for aligned_chain_id in alignments:
                 for interacting_chain_id in context.list_interacting_chains(aligned_chain_id):
+
+                    ModelLogger.get_current().add("template chain {} interacts with {}"
+                                                  .format(aligned_chain_id, interacting_chain_id))
+
                     # Skip those that we've already aligned, to prevent infinite loops:
                     if interacting_chain_id in alignments:
                         continue
@@ -271,6 +289,9 @@ class Modeler:
                 potential_target_sequences = self._find_target_sequences(template_chain_sequence,
                                                                          target_species_id)
 
+                ModelLogger.get_current().add("choosing target sequence for template chain {} from {}"
+                                              .format(candidate_chain_id, potential_target_sequences.keys()))
+
                 alignments[candidate_chain_id] = self._choose_best_target_alignment(context,
                                                                                     interacting_chain_alignments,
                                                                                     potential_target_sequences,
@@ -278,6 +299,9 @@ class Modeler:
                 if alignments[candidate_chain_id] is None:
                     alignments[candidate_chain_id] = self._make_poly_A_alignment(context, candidate_chain_id)
                     alignments[candidate_chain_id].target_id = "poly-A"
+
+                    ModelLogger.get_current().add("found no target for template chain {}, placing poly-A"
+                                                  .format(candidate_chain_id))
 
         return alignments
 
@@ -502,6 +526,9 @@ class Modeler:
             self._write_selected_targets({template_id.chain_id: main_domain_alignment},
                                          os.path.join(work_dir_path, 'selected-targets.txt'))
 
+            log_path = os.path.join(work_dir_path, 'model.log')
+            ModelLogger.get_current().write(log_path)
+
             tar_path = model_storage.get_tar_path(main_target_sequence,
                                                   target_species_id,
                                                   main_domain_alignment,
@@ -567,6 +594,9 @@ class Modeler:
             context.yasara.SavePDB(context.template_obj, model_path)
 
             self._write_selected_targets(chain_alignments, os.path.join(work_dir_path, 'selected-targets.txt'))
+
+            log_path = os.path.join(work_dir_path, 'model.log')
+            ModelLogger.get_current().write(log_path)
 
             tar_path = model_storage.get_tar_path(context.get_main_target_sequence(),
                                                   context.target_species_id,

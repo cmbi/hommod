@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from hommod.controllers.rost import get_min_identity
 from hommod.controllers.blast import blaster
@@ -11,6 +12,7 @@ from hommod.models.align import DomainAlignment
 from hommod.models.error import InitError
 from hommod.controllers.sequence import is_amino_acid_char
 from hommod.controllers.kmad import kmad_aligner
+from hommod.controllers.log import ModelLogger
 
 
 _log = logging.getLogger(__name__)
@@ -32,6 +34,9 @@ class DomainAligner:
             self.highly_homologous_percentage_identity = highly_homologous_percentage_identity
 
     def get_domain_alignments(self, target_sequence, require_resnum=None, template_id=None):
+
+        ModelLogger.get_current().add("getting domain alignments for sequence {}, resnum {}, template {}"
+                                      .format(target_sequence, require_resnum, template_id))
 
         if self.min_percentage_coverage is None:
             raise InitError("min percentage coverage is not set")
@@ -72,12 +77,13 @@ class DomainAligner:
                 best_hit = None
                 last_resort_hit = None
 
+                ModelLogger.get_current().add("examining range {}".format(range_))
+
                 hit_candidates = self._get_hits(range_, template_id)
 
                 _log.debug('trying range: {} against {} hits'.format(range_, len(hit_candidates)))
 
                 for hit_candidate in hit_candidates:
-
                     hit_range = hit_candidate.get_query_range()
                     if require_resnum is not None:
                         if not hit_candidate.is_query_residue_covered(require_resnum):
@@ -85,7 +91,6 @@ class DomainAligner:
                                        .format(hit_candidate.get_hit_accession_code(),
                                                hit_range, require_resnum))
                             continue
-
 
                     if self._alignment_ok_for_range(range_, hit_candidate):
                         _log.debug("hit with {} {} is ok"
@@ -98,6 +103,10 @@ class DomainAligner:
                                                                           hit_candidate.subject_alignment,
                                                                           hit_range, template_id)
 
+                        ModelLogger.get_current().add("found a hit with {} covering range {}:\n{}"
+                                                      .format(template_id, hit_range, hit_candidate))
+
+
                         if hit_candidate.get_percentage_coverage() > self.min_percentage_coverage:
 
                             _log.debug("coverage is high enough for {} {}"
@@ -106,6 +115,8 @@ class DomainAligner:
                             if best_hit is None or self._is_better_than(hit_candidate, best_hit):
 
                                 _log.debug("{} is better than {}".format(hit_candidate, best_hit))
+                                ModelLogger.get_current().add("{} is better than {}".format(hit_candidate, best_hit))
+
                                 best_hit = hit_candidate
                         else:
                             last_resort_hit = hit_candidate
@@ -210,13 +221,13 @@ class DomainAligner:
 
                         alignment_i = ok_ranges_alignments[ranges[i]]
                         alignment_j = ok_ranges_alignments[ranges[j]]
+                        template_secstr = dssp.get_secondary_structure(template_id)
+                        template_sequence = dssp.get_sequence(template_id)
                         try:
-                            template_secstr = dssp.get_secondary_structure(template_id)
-                            template_sequence = dssp.get_sequence(template_id)
                             alignment_m = kmad_aligner.align(template_sequence, template_secstr,
                                                              merged.get_sub_sequence())
-                        except Exception as e:
-                            _log.warn(str(e))
+                        except:
+                            _log.warn(traceback.format_exc())
 
                             # If kmad fails, then skip this one :(
                             continue
@@ -275,11 +286,6 @@ class DomainAligner:
         good_hits = []
         for hit_id in blast_hits:
             for alignment in blast_hits[hit_id]:
-                # Must shift the numbers in the blast hit,
-                # since we used a sub-sequence.
-                alignment.query_shift_right(range_.start)
-                alignment.full_query_sequence = range_.sequence
-
                 hit_template_id = TemplateID(alignment.get_hit_accession_code(),
                                              alignment.get_hit_chain_id())
                 if template_id is not None and hit_template_id != template_id:
@@ -291,19 +297,36 @@ class DomainAligner:
                 if not dssp.has_secondary_structure(hit_template_id):
                     continue
 
+                # Replace the blast hit's alignment with the kmad alignment.
+                template_secstr = dssp.get_secondary_structure(hit_template_id)
+                template_sequence = dssp.get_sequence(hit_template_id)
+                try:
+                    kmad_alignment = kmad_aligner.align(template_sequence, template_secstr,
+                                                        range_.get_sub_sequence())
+                except:
+                    _log.warn(traceback.format_exc())
+
+                    # If kmad fails, then skip this one :(
+                    continue
+                alignment.full_query_sequence = range_.sequence
+                alignment.query_start = range_.start + 1
+                alignment.query_end = range_.end
+                alignment.subject_start = 1
+                alignment.subject_end = len(template_sequence)
+                alignment.query_alignment = kmad_alignment.target_alignment
+                alignment.subject_alignment = kmad_alignment.template_alignment
+
                 if alignment.get_percentage_identity() >= get_min_identity(alignment.count_aligned_residues()):
                     good_hits.append(alignment)
 
         return good_hits
 
     def _is_better_than(self, hit, other_hit):
+        _log.debug("compare new {} {}% with current best {} {}%"
+                   .format(hit.hit_id, hit.get_percentage_identity(),
+                           other_hit.hit_id, other_hit.get_percentage_identity()))
 
-        _log.debug("compare new {} {} with current best {} {}"
-                   .format(hit.get_percentage_identity(), hit.count_aligned_residues(),
-                           other_hit.get_percentage_identity(), other_hit.count_aligned_residues()))
-
-        return hit.get_percentage_identity() >= other_hit.get_percentage_identity() and \
-               hit.count_aligned_residues() >= other_hit.count_aligned_residues()
+        return hit.get_percentage_identity() >= other_hit.get_percentage_identity()
 
     def _merge_similar_ranges(self, ranges):
         if self.similar_ranges_min_overlap_percentage is None or \

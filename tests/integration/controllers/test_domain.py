@@ -3,7 +3,7 @@ import logging
 from mock import patch
 from nose.tools import eq_, ok_, with_setup
 
-from hommod.default_settings import (INTERPRO_URL, BLASTP_EXE,
+from hommod.default_settings import (INTERPRO_URL, BLASTP_EXE, KMAD_EXE,
                                      FORBIDDEN_INTERPRO_DOMAINS, TEMPLATE_BLAST_DATABANK,
                                      DOMAIN_MIN_PERCENTAGE_COVERAGE,
                                      DSSP_DIR, SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE,
@@ -19,12 +19,14 @@ from hommod.services.interpro import interpro
 from hommod.services.dssp import dssp
 from hommod.models.template import TemplateID
 from hommod.models.range import SequenceRange
+from hommod.controllers.kmad import kmad_aligner
 
 
 _log = logging.getLogger(__name__)
 
 
 def setup():
+    kmad_aligner.kmad_exe = KMAD_EXE
     blaster.blastp_exe = BLASTP_EXE
     interpro.url = INTERPRO_URL
     dssp.dssp_dir = DSSP_DIR
@@ -349,3 +351,30 @@ def test_secretase():
     ok_(len(alignments) > 0)
     for alignment in alignments:
         eq_(alignment.template_id, template_id)
+
+
+@with_setup(setup, end)
+def test_cadherin():
+    seq = ("MTIHQFLLLFLFWVCLPHFCSPEIMFRRTPVPQQRILSSRVPRSDGKILHRQKRGWMWNQ" +
+           "FFLLEEYTGSDYQYVGKLHSDQDKGDGSLKYILSGDGAGTLFIIDEKTGDIHATRRIDRE" +
+           "EKAFYTLRAQAINRRTLRPVEPESEFVIKIHDINDNEPTFPEEIYTASVPEMSVVGTSVV" +
+           "QVTATDADDPSYGNSARVIYSILQGQPYFSVEPETGIIRTALPNMNRENREQYQVVIQAK" +
+           "DMGGQMGGLSGTTTVNITLTDVNDNPPRFPQNTIHLRVLESSPVGTAIGSVKATDADTGK" +
+           "NAEVEYRIIDGDGTDMFDIVTEKDTQEGIITVKKPLDYESRRLYTLKVEAENTHVDPRFY" +
+           "YLGPFKDTTIVKISIEDVDEPPVFSRSSYLFEVHEDIEVGTIIGTVMARDPDSISSPIRF" +
+           "SLDRHTDLDRIFNIHSGNGSLYTSKPLDRELSQWHNLTVIAAEINNPKETTRVAVFVRIL" +
+           "DVNDNAPQFAVFYDTFVCENARPGQLIQTISAVDKDDPLGGQKFFFSLAAVNPNFTVQDN" +
+           "EDNTARILTRKNGFNRHEISTYLLPVVISDNDYPIQSSTGTLTIRVCACDSQGNMQSCSA" +
+           "EALLLPAGLSTGALIAILLCIIILLVIVVLFAALKRQRKKEPLILSKEDIRDNIVSYNDE" +
+           "GGGEEDTQAFDIGTLRNPAAIEEKKLRRDIIPETLFIPRRTPTAPDNTDVRDFINERLKE" +
+           "HDLDPTAPPYDSLATYAYEGNDSIAESLSSLESGTTEGDQNYDYLREWGPRFNKLAEMYG" +
+           "GGESDKDS")
+
+    alignments = domain_aligner.get_domain_alignments(seq,
+                                                      require_resnum=540)
+    ok_(len(alignments) > 0)
+    max_identity = 0.0
+    for alignment in alignments:
+        max_identity = max(max_identity, alignment.get_percentage_identity())
+
+    ok_(max_identity > 70.0)
