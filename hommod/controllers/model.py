@@ -511,7 +511,7 @@ class Modeler:
         align_fasta_path = os.path.join(work_dir_path, 'align.fa')
         full_target_path = os.path.join(work_dir_path, 'target.fa')
 
-        write_fasta(full_target_path, {'target': context.get_main_target_sequence()})
+        write_fasta(full_target_path, {'target': main_target_sequence})
 
         try:
             os.chdir(work_dir_path)
