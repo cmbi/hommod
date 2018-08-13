@@ -36,7 +36,8 @@ class Blaster:
             p.wait()
 
             if p.returncode != 0:
-                raise RuntimeError(p.stderr.read())
+                raise RuntimeError("%s for databank %s, sequence %s"
+                                   % (p.stderr.read(), databank, sequence))
 
             with open(output_path, 'r') as f:
                 xml_str = f.read()
