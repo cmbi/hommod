@@ -4,10 +4,9 @@ import tempfile
 import subprocess
 import xml.etree.ElementTree as ET
 
-from hommod.models.error import InitError
+from hommod.models.error import InitError, RecoverableError
 from hommod.controllers.fasta import write_fasta
 from hommod.models.align import BlastAlignment
-
 
 _log = logging.getLogger(__name__)
 
@@ -36,8 +35,12 @@ class Blaster:
             p.wait()
 
             if p.returncode != 0:
+                err_msg = p.stderr.read()
+                if err_msg.startswith("BLAST Database error: No alias or index file found for protein database"):
+                    raise RecoverableError(err_msg)
+
                 raise RuntimeError("%s for databank %s, sequence %s"
-                                   % (p.stderr.read(), databank, sequence))
+                                   % (err_msg, databank, sequence))
 
             with open(output_path, 'r') as f:
                 xml_str = f.read()

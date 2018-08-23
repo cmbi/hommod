@@ -1,5 +1,10 @@
 
 
+
+class RecoverableError(Exception):
+    pass
+
+
 class InitError(Exception):
     pass
 

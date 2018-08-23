@@ -10,7 +10,7 @@ from celery.signals import task_failure
 from hommod.controllers.model import modeler
 from hommod.controllers.storage import model_storage
 from hommod.controllers.domain import domain_aligner
-from hommod.models.error import InitError
+from hommod.models.error import InitError, RecoverableError
 from hommod.controllers.method import select_best_model, select_best_domain_alignment
 from hommod.controllers.log import ModelLogger
 
@@ -18,7 +18,8 @@ from hommod.controllers.log import ModelLogger
 _log = logging.getLogger(__name__)
 
 
-@celery_app.task()
+@celery_app.task(autoretry_for=(RecoverableError,), retry_kwargs={'max_retries': 50},
+                                                    default_retry_delay=3600)
 def create_model(target_sequence, target_species_id, require_resnum=None, chosen_template_id=None):
 
     target_species_id = target_species_id.upper()
