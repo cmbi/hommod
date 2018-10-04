@@ -10,10 +10,10 @@ _log = logging.getLogger(__name__)
 
 class Alignment:
     def __init__(self, aligned_sequences):
-        l = len(aligned_sequences.values())
+        l = len(aligned_sequences.values()[0])
         for seq in aligned_sequences.values():
             if len(seq) != l:
-                raise ValueError("inserted aligned sequences are of different length")
+                raise ValueError("inserted aligned sequences are of different length: {}".format(aligned_sequences))
 
         # Alignments are assumed to have '-' for gaps.
         self.aligned_sequences = aligned_sequences
