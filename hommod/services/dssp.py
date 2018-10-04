@@ -1,5 +1,6 @@
 import os
 import logging
+import traceback
 
 from hommod.models.error import InitError
 
@@ -11,12 +12,10 @@ class DsspService:
         self.dssp_dir = dssp_dir
 
     def has_secondary_structure(self, template_id):
-        try:
-            dssp_str = self._get_dssp(template_id.pdbid)
-        except:
-            return False
+        dssp_str = self._get_dssp(template_id.pdbid)
 
         data = self._parse_dssp(dssp_str)
+        _log.debug("{}".format(data))
 
         return template_id.chain_id in data
 
@@ -39,6 +38,10 @@ class DsspService:
             raise InitError("No such directory: {}".format(self.dssp_dir))
 
         file_path = os.path.join(self.dssp_dir, '%s.dssp' % pdbid.lower())
+
+        if not os.path.isfile(file_path):
+            return ""
+
         with open(file_path, 'r') as f:
             return f.read()
 

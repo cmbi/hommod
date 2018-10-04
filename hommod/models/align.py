@@ -10,6 +10,10 @@ _log = logging.getLogger(__name__)
 
 class Alignment:
     def __init__(self, aligned_sequences):
+        l = len(aligned_sequences.values())
+        for seq in aligned_sequences.values():
+            if len(seq) != l:
+                raise ValueError("inserted aligned sequences are of different length")
 
         # Alignments are assumed to have '-' for gaps.
         self.aligned_sequences = aligned_sequences
@@ -28,9 +32,17 @@ class Alignment:
         return s
 
     def get_sequence(self, id_):
+        if id_ not in self.aligned_sequences:
+            raise ValueError("{} is not in alignment".format(id_))
+
         return self.aligned_sequences[id_].replace('-','')
 
     def count_aligned_residues(self, id1, id2):
+        if id1 not in self.aligned_sequences:
+            raise ValueError("{} is not in alignment".format(id1))
+        if id2 not in self.aligned_sequences:
+            raise ValueError("{} is not in alignment".format(id2))
+
         nalign = 0
         for i in range(len(self.aligned_sequences[id1])):
             if is_amino_acid_char(self.aligned_sequences[id1][i]) and \
@@ -39,8 +51,15 @@ class Alignment:
         return nalign
 
     def get_percentage_identity(self, id1, id2):
+        if id1 not in self.aligned_sequences:
+            raise ValueError("{} is not in alignment".format(id1))
+        if id2 not in self.aligned_sequences:
+            raise ValueError("{} is not in alignment".format(id2))
+
         nalign = 0
         nid = 0
+        _log.debug(self.aligned_sequences[id1])
+        _log.debug(self.aligned_sequences[id2])
         for i in range(len(self.aligned_sequences[id1])):
             if is_amino_acid_char(self.aligned_sequences[id1][i]) and \
                     is_amino_acid_char(self.aligned_sequences[id2][i]):

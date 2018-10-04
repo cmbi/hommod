@@ -292,9 +292,11 @@ class DomainAligner:
                     continue
 
                 if template_id is None and blacklister.is_blacklisted(alignment.get_hit_accession_code()):
+                    _log.debug("{} is blacklisted".format(alignment.get_hit_accession_code()))
                     continue
 
                 if not dssp.has_secondary_structure(hit_template_id):
+                    _log.debug("{} has no secondary structure".format(hit_template_id))
                     continue
 
                 # Replace the blast hit's alignment with the kmad alignment.
