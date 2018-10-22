@@ -31,7 +31,7 @@ class Blaster:
         _log.debug("{}".format(cmd))
 
         try:
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd='/')
             p.wait()
 
             if p.returncode != 0:
