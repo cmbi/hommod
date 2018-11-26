@@ -326,7 +326,8 @@ class DomainAligner:
                    .format(hit.hit_id, hit.get_percentage_identity(),
                            other_hit.hit_id, other_hit.get_percentage_identity()))
 
-        return hit.get_percentage_identity() >= other_hit.get_percentage_identity()
+        return hit.get_percentage_identity() >= other_hit.get_percentage_identity() and \
+               hit.count_aligned_residues() >= other_hit.count_aligned_residues()
 
     def _merge_similar_ranges(self, ranges):
         if self.similar_ranges_min_overlap_percentage is None or \
