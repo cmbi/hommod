@@ -1,8 +1,8 @@
 watchdog==0.8.3
-amqp==1.4.7
+amqp==2.3.2
 anyjson==0.3.3
-billiard==3.3.0.19
-celery==3.1.23
+billiard==3.5.0.4
+celery==4.2.1
 configparser==3.5.0
 coverage==4.0.3
 dogpile.cache==0.6.2
@@ -16,7 +16,8 @@ greenlet==0.4.9
 gunicorn==19.9.0
 itsdangerous==0.24
 Jinja2==2.7.3
-kombu==3.0.30
+kombu==4.2.1
+lru_cache==0.2.3
 MarkupSafe==0.23
 mccabe==0.5.2
 mock==2.0.0
@@ -31,3 +32,4 @@ six==1.10.0
 suds==0.4
 Werkzeug==0.10.4
 pathlib==1.0.1
+vine==1.1.4
