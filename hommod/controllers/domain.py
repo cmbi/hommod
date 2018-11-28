@@ -47,7 +47,7 @@ class DomainAligner:
         sample_ranges = self._filter_forbidden_ranges(interpro_ranges)
 
         if require_resnum is not None:
-            sample_ranges = filter(lambda r: r.includes_residue(require_resnum), sample_ranges)
+            sample_ranges = list(filter(lambda r: r.includes_residue(require_resnum), sample_ranges))
             _log.debug("{} ranges have residue {}".format(len(sample_ranges), require_resnum))
 
         # Add the whole sequence as a range too:
@@ -334,7 +334,7 @@ class DomainAligner:
                 self.similar_ranges_max_length_difference_percentage is None:
             raise InitError("similar range percentages not set")
 
-        ranges = sorted(ranges, cmp=lambda r1, r2: r1.is_left_from(r2))
+        ranges = sorted(ranges, key=lambda r: r.start)
 
         i = 0
         while i < len(ranges):
@@ -395,7 +395,7 @@ class DomainAligner:
 
         passed = []
         for range_ in ranges:
-            overlapping = filter(lambda r: r.overlaps_with(range_), forbidden)
+            overlapping = list(filter(lambda r: r.overlaps_with(range_), forbidden))
             if len(overlapping) <= 0:
                 passed.append(range_)
 
