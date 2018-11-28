@@ -13,7 +13,9 @@ CACHE_EXPIRATION_TIME = 60*60*24*30  # 30 days
 CACHE_LOCK_TIMEOUT = 60*60  # 1 hour
 
 # Celery
-CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+CELERY_TASK_SERIALIZER = 'pickle'
+CELERY_RESULT_SERIALIZER='pickle'
+CELERY_ACCEPT_CONTENT = ['pickle']
 CELERY_BROKER_URL = 'amqp://guest@hommod_rabbitmq_1'
 CELERY_DEFAULT_QUEUE = 'hommod'
 CELERYD_CONCURRENCY = 20

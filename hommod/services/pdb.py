@@ -1,5 +1,5 @@
 import logging
-from urllib2 import Request, urlopen
+from urllib.request import Request, urlopen
 from io import BytesIO
 from gzip import GzipFile
 
