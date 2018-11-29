@@ -144,7 +144,7 @@ class DomainAligner:
             # After iterating the sample ranges, prepare for the next round:
             sample_ranges = self._clean_search_space(checked_ranges, sample_ranges, ok_ranges_alignments)
 
-        return best_ranges_alignments.values()
+        return list(best_ranges_alignments.values())
 
     def _remove_enclosing(self, range_, ranges_alignments):
         new_ranges_alignments = {}
