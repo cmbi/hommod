@@ -187,7 +187,7 @@ class Modeler:
 
         grouped = [] 
 
-        ids = sequences.keys()
+        ids = list(sequences.keys())
         while len(ids) > 0:
             id_ = ids[0]
             ids.remove(id_)

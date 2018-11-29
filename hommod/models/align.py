@@ -18,7 +18,7 @@ class Alignment:
         s = "\n"
         n = 100
         m = 20
-        l = len(self.aligned_sequences.values()[0])
+        l = len(list(self.aligned_sequences.values())[0])
         for i in range(0, l, n):
             f = min(i + n, l)
             for k in self.aligned_sequences:

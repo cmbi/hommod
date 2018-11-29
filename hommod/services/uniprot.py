@@ -27,7 +27,7 @@ class UniprotService:
 
         fa = parse_fasta_from_string(r.text)
 
-        return fa.values()[0]
+        return list(fa.values())[0]
 
 
 uniprot = UniprotService()

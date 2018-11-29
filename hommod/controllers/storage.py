@@ -136,14 +136,14 @@ class ModelStorage:
                     path = os.path.join(dir_name, 'align.fasta')
 
                 f = ar.extractfile(path)
-                alignment_fasta = parse_fasta_from_string(f.read())
+                alignment_fasta = parse_fasta_from_string(f.read().decode('ascii'))
 
                 rows = {}
                 for key in alignment_fasta:
                     rows[key] = alignment_fasta[key].split('|')
 
                 alignments = []
-                for n in range(len(rows.values()[0])):
+                for n in range(len(list(rows.values())[0])):
                     a = {key: rows[key][n] for key in rows}
                     alignments.append(Alignment(a))
                 return alignments
@@ -160,6 +160,7 @@ class ModelStorage:
 
                 f = ar.extractfile(os.path.join(dir_name, 'selected-targets.txt'))
                 for line in f:
+                    line = line.decode('ascii')
                     if ':' in line:
                         chain_id, target_id = line.split(':')
                         targets[chain_id.strip()] = target_id.strip()
@@ -176,7 +177,7 @@ class ModelStorage:
             try:
                 f = ar.extractfile(os.path.join(dir_name, 'target.pdb'))
 
-                return f.read()
+                return f.read().decode('ascii')
             finally:
                 if f is not None:
                     f.close()

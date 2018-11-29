@@ -39,7 +39,7 @@ def select_best_model(tar_paths):
         chain_i = chain_order.index(chain_ids[0])
 
         alignment = chain_alignments[chain_i]
-        keys = alignment.aligned_sequences.keys()
+        keys = list(alignment.aligned_sequences.keys())
         if len(keys) != 2:
             _log.error("alignment for chain {} in {} has too many keys: {}".format(chain_ids[0], tar_path, keys))
             continue
