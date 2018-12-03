@@ -35,7 +35,7 @@ class Blaster:
             p.wait()
 
             if p.returncode != 0:
-                err_msg = p.stderr.read()
+                err_msg = p.stderr.read().decode('ascii')
                 if err_msg.startswith("BLAST Database error: No alias or index file found for protein database"):
                     raise RecoverableError(err_msg)
 

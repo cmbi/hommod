@@ -68,7 +68,7 @@ class KmadAligner:
         p.wait()
 
         if p.returncode != 0:
-            raise RuntimeError(p.stderr.read())
+            raise RuntimeError(p.stderr.read().decode('ascii'))
 
     def _to_kmad_sequence(self, sequence, secstr=None):
         kmad_sequence = ''

@@ -30,7 +30,7 @@ class ClustalAligner:
             p.wait()
 
             if p.returncode != 0:
-                raise RuntimeError("%s for %s" % (p.stderr.read(), str(input_)))
+                raise RuntimeError("%s for %s" % (p.stderr.read().decode('ascii'), str(input_)))
 
             return Alignment(parse_fasta(output_path))
         finally:
