@@ -2,7 +2,7 @@
 
 ## Pre-requisites
 
-* sudo apt-get install docker docker-compose
+* Install [docker](https://docs.docker.com/install/) and [docker-compose](https://docs.docker.com/compose/install/)
 
 * Download a linux yasara installation executable
   (see: http://www.yasara.org/update.htm)
