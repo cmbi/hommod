@@ -55,6 +55,12 @@ class SequenceRange:
     def __sub__(self, value):
         return SequenceRange(self.start - value, self.end - value, self.sequence)
 
+    def __lt__(self, other):
+        return self.is_left_from(other)
+
+    def __gt__(self, other):
+        return self.is_right_from(other)
+
     def __eq__(self, other):
         return (self.start == other.start and self.end == other.end and self.sequence == other.sequence)
 
