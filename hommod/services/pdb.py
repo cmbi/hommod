@@ -20,4 +20,4 @@ def get_pdb_contents(pdbid):
     response = urlopen(request)
 
     buf = BytesIO(response.read())
-    return GzipFile(fileobj=buf).read()
+    return GzipFile(fileobj=buf).read().decode('ascii')
