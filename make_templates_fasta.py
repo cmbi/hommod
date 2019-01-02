@@ -1,6 +1,5 @@
 import sys 
 import os
-import urllib2
 import re
 from argparse import ArgumentParser
 import logging
@@ -14,7 +13,7 @@ filename = os.environ['HOMMOD_SETTINGS']
 with open(filename) as config_file:
     exec(compile(config_file.read(), filename, 'exec'), env_settings)
 settings.update(env_settings)
-settings = {k:v for k, v in settings.iteritems() if k.isupper()}
+settings = {k:v for k, v in settings.items() if k.isupper()}
 
 from hommod.services.dssp import dssp
 dssp.DSSP_DIR = settings['DSSP_DIR']
