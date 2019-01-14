@@ -86,7 +86,7 @@ if __name__ == "__main__":
         raise ValueError("Not a directory: {}".format(final_output_dir))
 
     try:
-        sequence = parse_fasta(args.fasta).values()[0]
+        sequence = list(parse_fasta(args.fasta).values())[0]
 
         species_id = args.species.upper()
 
