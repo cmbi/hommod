@@ -27,6 +27,9 @@ class Alignment:
 
         return s
 
+    def has_sequence_for(self, id_):
+        return id_ in self.aligned_sequences
+
     def get_sequence(self, id_):
         return self.aligned_sequences[id_].replace('-','')
 

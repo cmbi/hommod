@@ -1,4 +1,5 @@
 import os
+import logging
 from hashlib import md5
 from glob import glob
 import tarfile
@@ -7,6 +8,11 @@ from filelock import FileLock
 from hommod.models.align import Alignment
 from hommod.models.error import InitError
 from hommod.controllers.fasta import parse_fasta_from_string
+from hommod.controllers.pdb import parse_seqres_from_string
+from hommod.controllers.clustal import clustal_aligner
+
+
+_log = logging.getLogger(__name__)
 
 
 class ModelStorage:
@@ -30,6 +36,9 @@ class ModelStorage:
     def list_models(self, target_sequence, species_id, required_resnum=None, template_id=None):
         if self.model_dir is None:
             raise InitError("model directory is not set")
+        elif not os.path.isdir(self.model_dir):
+            raise InitError("No such directory: {}".format(self.model_dir))
+
 
         sequence_id = self.get_sequence_id(target_sequence)
 
@@ -58,16 +67,32 @@ class ModelStorage:
         else:
             matching_paths = []
             for path in paths:
-                name = os.path.splitext(os.path.basename(path))[0]
-                range_ = name.split('_')[2]
-
-                start, end = range_.split('-')
-                start = int(start)
-                end = int(end)
-                if required_resnum >= start and required_resnum <= end:
+                if self.model_covers(path, target_sequence, required_resnum):
                     matching_paths.append(path)
 
             return matching_paths
+
+    def model_covers(self, tar_path, sequence, covered_residue_number):
+        sequence_id = self.get_sequence_id(sequence)
+
+        seqres_sequences = parse_seqres_from_string(self.extract_model(tar_path))
+        _log.debug(str(seqres_sequences))
+
+        for chain_id in seqres_sequences:
+            _log.debug(chain_id)
+
+            full_to_model = clustal_aligner.align({'model': ''.join([aa.letter for aa in seqres_sequences[chain_id]]),
+                                                   'full': sequence})
+            _log.debug(str(full_to_model))
+
+            resnum = 0
+            for i in range(len(full_to_model.aligned_sequences['full'])):
+                if full_to_model.aligned_sequences['full'][i].isalpha():
+                    resnum += 1
+
+                    if resnum == covered_residue_number and full_to_model.aligned_sequences['model'][i].isalpha():
+                        return True
+        return False
 
     def get_model_name(self, main_target_sequence, target_species_id,
                        main_domain_alignment, template_id):
