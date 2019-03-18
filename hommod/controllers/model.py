@@ -564,6 +564,9 @@ class Modeler:
 
             context.yasara.SaveSce(before_scene_path)
 
+            chain_ids_before_model = context.get_chain_ids()
+            sequences_before_model = {chain_id: context.get_sequence(chain_id) for chain_id in chain_ids_before_model}
+
             self._write_model_alignment_fasta(context, chain_alignments, align_fasta_path)
 
             context.yasara.Processors(1)
@@ -588,7 +591,19 @@ class Modeler:
                 raise ModelRunError("yasara exited with an error")
 
             if not os.path.isfile(output_yob_path):
-                raise ModelRunError("yasara generated no output yob")
+                chain_ids_after_failure = context.get_chain_ids()
+
+                if chain_ids_before_model != chain_ids_after_failure:
+                    raise ModelRunError("During modeling, yasara changed the chains {} to {}"
+                                        .format(chain_ids_before_model, chain_ids_after_failure))
+
+                for chain_id in chain_ids_before_model:
+                    sequence_after_failure = context.get_sequence(chain_id)
+                    if sequence_after_failure != sequences_before_model[chain_id]:
+                        raise ModelRunError("During modeling, yasara changed chain {} sequence {} to {}"
+                                            .format(chain_id, sequences_before_model[chain_id], sequence_after_failure))
+
+                raise ModelRunError("yasara generated no output yob, check the console for further details")
 
             model_path = os.path.join(work_dir_path, 'target.pdb')
             context.yasara.SavePDB(context.template_obj, model_path)
