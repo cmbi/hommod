@@ -31,7 +31,8 @@ class ModelingContext:
         if self.template_obj is None:
             raise ModelRunError("template object is not set")
 
-        return self.yasara.ListMol('obj %i and protein' % self.template_obj, 'MOL')
+        chain_ids = self.yasara.ListMol('obj %i and protein' % self.template_obj, 'MOL')
+        return list(filter(lambda chain_id: len(self.get_sequence(chain_id)) > 25, chain_ids))
 
     def delete_chain(self, chain_id):
         if self.template_obj is None:
