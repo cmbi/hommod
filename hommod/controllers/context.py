@@ -32,8 +32,7 @@ class ModelingContext:
             raise ModelRunError("template object is not set")
 
         chain_ids = self.yasara.ListMol('obj %i and protein' % self.template_obj, 'MOL')
-        return list(filter(lambda chain_id: self.is_valid_peptide(self.get_sequence(chain_id)),
-                           chain_ids))
+        return chain_ids
 
     def delete_chain(self, chain_id):
         if self.template_obj is None:
@@ -47,9 +46,6 @@ class ModelingContext:
             sequence += residue.amino_acid.letter
 
         return sequence
-
-    def is_valid_peptide(self, sequence):
-        return len(sequence) > 25 or 'X' not in sequence
 
     def get_residues(self, chain_id):
         if self.template_obj is None:
