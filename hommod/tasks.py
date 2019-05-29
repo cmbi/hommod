@@ -39,7 +39,7 @@ def create_model(target_sequence, target_species_id, require_resnum=None, chosen
         model_paths = model_storage.list_models(target_sequence, target_species_id,
                                                 require_resnum, chosen_template_id)
         if len(model_paths) > 0:
-            return select_best_model(model_paths)
+            return select_best_model(model_paths, target_sequence, require_resnum)
         else:
             ModelLogger.get_current().clear()
 
