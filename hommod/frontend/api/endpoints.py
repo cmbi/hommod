@@ -9,7 +9,6 @@ from flask import Blueprint, render_template, request, jsonify, Response
 from hommod.models.template import TemplateID
 from hommod.controllers.storage import model_storage
 from hommod.controllers.sequence import is_protein_sequence
-from hommod.controllers.method import select_best_model
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 

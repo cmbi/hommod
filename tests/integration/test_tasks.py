@@ -29,6 +29,7 @@ from hommod.services.dssp import dssp
 from hommod.services.uniprot import uniprot
 from hommod.models.template import TemplateID
 from hommod.controllers.storage import model_storage
+from hommod.controllers.method import select_best_model
 from hommod.services.helpers.cache import cache_manager as cm
 from hommod.models.error import ModelRunError
 
@@ -263,3 +264,16 @@ def test_create_model_gprotein():
 'HUMAN', 209, TemplateID('3AH8', 'A'))
 
     ok_(path is None)
+
+
+@with_setup(setup, end)
+def test_create_model_kinase():
+    sequence = "METVISSDSSPAVENEHPQETPESNNSVYTSFMKSHRCYDLIPTSSKLVVFDTSLQVKKAFFALVTNGVRAAPLWDSKKQSFVVLRALSCPLGMLTITDFINILHRYYKSALVQIYELEEHKIETWREVYLQDSFKPLVCISPNASLFDAVSSLIRNKIHRLPVIDPESGNTLYILTHKRILKF"
+    position = 65
+
+    from hommod.tasks import create_model
+    path = create_model(sequence, 'HUMAN', position, TemplateID('2V8Q', 'E'))
+
+    ok_(path is not None)
+
+    ok_(select_best_model([path], sequence, position) is not None)

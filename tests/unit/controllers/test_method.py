@@ -47,5 +47,5 @@ ATOM      3  CA  ALA A   3       0.000   0.000   0.000  1.00 20.00           C
 
     mock_extract_selected_targets.side_effect = extract_selected_targets
 
-    best = select_best_model(paths)
+    best = select_best_model(paths, 'ATATATATATAT', 2)
     ok_(best is not None)
