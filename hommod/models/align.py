@@ -14,6 +14,12 @@ class Alignment:
         # Alignments are assumed to have '-' for gaps.
         self.aligned_sequences = aligned_sequences
 
+        keys = list(self.aligned_sequences.keys())
+        for key in keys:
+            if len(self.aligned_sequences[key]) != len(self.aligned_sequences[keys[0]]):
+                raise ValueError("alignment sequence {} has different length than {}:\n{}\n{}"
+                                 .format(key, keys[0], self.aligned_sequences[key], self.aligned_sequences[keys[0]]))
+
     def __repr__(self):
         s = "\n"
         n = 100
