@@ -10,7 +10,8 @@ def parse_seqres_from_string(s):
                 sequences[chain_id] = []
 
             for code in line[19:].split():
-                sequences[chain_id].append(AminoAcid.from_three_letter_code(code))
+                if len(code) == 3 and code != 'HOH':
+                    sequences[chain_id].append(AminoAcid.from_three_letter_code(code))
 
     return sequences
 

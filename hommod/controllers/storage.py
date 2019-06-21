@@ -81,6 +81,9 @@ class ModelStorage:
         for chain_id in seqres_sequences:
             _log.debug(chain_id)
 
+            if len(seqres_sequences[chain_id]) <= 0:
+                continue
+
             full_to_model = clustal_aligner.align({'model': ''.join([aa.letter for aa in seqres_sequences[chain_id]]),
                                                    'full': sequence})
             _log.debug(str(full_to_model))
