@@ -28,7 +28,7 @@ class Alignment:
         for i in range(0, l, n):
             f = min(i + n, l)
             for k in self.aligned_sequences:
-                s += (m - len(k)) * ' ' + k + ': ' + self.aligned_sequences[k][i: f] + '\n'
+                s += (m - len(k)) * ' ' + k + ': ' + "%5i " % (i + 1) + self.aligned_sequences[k][i: f] + " %5i\n" % (f + 1)
             s += '\n'
 
         return s
