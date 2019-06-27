@@ -88,6 +88,9 @@ class ModelStorage:
                                                    'full': sequence})
             _log.debug(str(full_to_model))
 
+            if full_to_model.get_percentage_identity('model', 'full') < 99.9:
+                continue
+
             resnum = 0
             for i in range(len(full_to_model.aligned_sequences['full'])):
                 if full_to_model.aligned_sequences['full'][i].isalpha():
