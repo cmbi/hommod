@@ -50,45 +50,46 @@ class Modeler:
                                           main_domain_alignment, main_domain_alignment.template_id):
             if not os.path.isfile(tar_path):
 
-                context = self._prepare_context(main_domain_alignment.template_id.pdbid)
+                if self.yasara_dir is None:
+                    raise InitError("yasara dir is not set")
 
-                # If the template is the same as the target, do no modeling:
-                if main_domain_alignment.get_template_sequence() == context.get_sequence(main_domain_alignment.template_id.chain_id) and \
-                        main_domain_alignment.get_percentage_identity() >= 100.0:
+                with ModelingContext(self.yasara_dir) as context:
 
-                    main_domain_alignment.target_id = model_storage.get_sequence_id(main_target_sequence)
+                    self._prepare_template(context, main_domain_alignment.template_id.pdbid)
 
-                    tar_path = self._wrap_template(main_target_sequence, target_species_id,
-                                                   main_domain_alignment, main_domain_alignment.template_id)
-                    return tar_path
+                    # If the template is the same as the target, do no modeling:
+                    if main_domain_alignment.get_template_sequence() == context.get_sequence(main_domain_alignment.template_id.chain_id) and \
+                            main_domain_alignment.get_percentage_identity() >= 100.0:
+
+                        main_domain_alignment.target_id = model_storage.get_sequence_id(main_target_sequence)
+
+                        tar_path = self._wrap_template(main_target_sequence, target_species_id,
+                                                       main_domain_alignment, main_domain_alignment.template_id)
+                        return tar_path
 
 
-                context.set_main_target(main_target_sequence, target_species_id,
-                                     main_domain_alignment.template_id.chain_id)
+                    context.set_main_target(main_target_sequence, target_species_id,
+                                         main_domain_alignment.template_id.chain_id)
 
-                chain_alignments = self._make_alignments(main_target_sequence, target_species_id,
-                                                         main_domain_alignment, context, require_resnum)
+                    chain_alignments = self._make_alignments(main_target_sequence, target_species_id,
+                                                             main_domain_alignment, context, require_resnum)
 
-                # Delete chains that aren't in the alignment set:
-                for chain_id in context.get_chain_ids():
-                    if chain_id not in chain_alignments:
-                        context.delete_chain(chain_id)
+                    # Delete chains that aren't in the alignment set:
+                    for chain_id in context.get_chain_ids():
+                        if chain_id not in chain_alignments:
+                            context.delete_chain(chain_id)
 
-                _log.debug("final alignments: {}".format([(chain_id, chain_alignments[chain_id])
-                                                          for chain_id in context.get_chain_ids()]))
-                _log.debug("final template {} {}".format(context.template_pdbid,
-                                                         [(chain_id, context.get_sequence(chain_id))
-                                                          for chain_id in context.get_chain_ids()]))
+                    _log.debug("final alignments: {}".format([(chain_id, chain_alignments[chain_id])
+                                                              for chain_id in context.get_chain_ids()]))
+                    _log.debug("final template {} {}".format(context.template_pdbid,
+                                                             [(chain_id, context.get_sequence(chain_id))
+                                                              for chain_id in context.get_chain_ids()]))
 
-                tar_path = self._model_run(main_domain_alignment, chain_alignments, context)
+                    tar_path = self._model_run(main_domain_alignment, chain_alignments, context)
 
         return tar_path
 
-    def _prepare_context(self, template_pdbid):
-        if self.yasara_dir is None:
-            raise InitError("yasara dir is not set")
-
-        context = ModelingContext(self.yasara_dir)
+    def _prepare_template(self, context, template_pdbid):
 
         self._init_template(template_pdbid, context)
 

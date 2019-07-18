@@ -4,7 +4,7 @@ import platform
 import os
 
 
-class YasaraContext:
+class YasaraObject:
     def __init__(self, yasara_dir):
         sys.path.append(os.path.join(yasara_dir, 'pym'))
         sys.path.append(os.path.join(yasara_dir, 'plg'))
@@ -33,7 +33,7 @@ class YasaraContext:
         # Multiline command, send each line separately to catch all errors.
         return [self._execute(c) for c in command.split("\n")]
 
-    def __del__(self):
+    def Exit(self):
         self._com.sendmessage(self._com.EXECUTE, "Exit")
         os.waitpid(self._pid, 0)
 

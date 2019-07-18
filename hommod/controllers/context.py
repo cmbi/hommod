@@ -5,19 +5,25 @@ import os
 from hommod.models.error import ModelRunError, InitError
 from hommod.models.aminoacid import AminoAcid
 from hommod.models.residue import ModelingResidue
-from hommod.controllers.yasara import YasaraContext
+from hommod.controllers.yasara import YasaraObject
 
 
 class ModelingContext:
-
     def __init__(self, yasara_dir):
-        self.yasara = YasaraContext(yasara_dir)
+        self.yasara_dir = yasara_dir
 
         self.template_obj = None
         self.template_pdbid = None
         self.main_target_chain_id = None
         self.target_species_id = None
         self.target_sequences = {}
+
+    def __enter__(self):
+        self.yasara = YasaraObject(self.yasara_dir)
+        return self
+
+    def __exit__(self, type_, value, traceback):
+        self.yasara.Exit()
 
     def set_main_target(self, main_target_sequence, target_species_id, main_target_chain_id):
         self.target_species_id = target_species_id
