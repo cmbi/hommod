@@ -197,6 +197,13 @@ class TargetTemplateAlignment(Alignment):
     def get_target_sequence(self):
         return self.get_sequence('target')
 
+    def get_target_sequence_without_insertions(self):
+        sequence = ""
+        for i in range(len(self.aligned_sequences['target'])):
+            if self.aligned_sequences['template'][i].isalpha() and self.aligned_sequences['target'][i].isalpha():
+                sequence += self.aligned_sequences['target'][i]
+        return sequence
+
     def get_template_sequence(self):
         return self.get_sequence('template')
 
