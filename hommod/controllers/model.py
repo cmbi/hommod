@@ -606,7 +606,13 @@ class Modeler:
 
                 raise ModelRunError("yasara generated no output yob, check the console for further details")
 
-            if context.get_sequence(main_domain_alignment.template_id.chain_id) != main_domain_alignment.get_target_sequence_without_insertions():
+
+            _log.debug("after modeling {}".format([(chain_id, context.get_sequence(chain_id))
+                                                   for chain_id in context.get_chain_ids()]))
+            _log.debug("input target aligned sequence:\n{}".format(main_domain_alignment.get_target_sequence_without_insertions()))
+
+            if not any([context.get_sequence(chain_id) == main_domain_alignment.get_target_sequence_without_insertions()
+                        for chain_id in context.get_chain_ids()]):
                 raise ModelRunError("yasara generated a model that doesn't match the input alignment")
 
             model_path = os.path.join(work_dir_path, 'target.pdb')
