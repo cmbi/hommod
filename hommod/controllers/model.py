@@ -14,9 +14,9 @@ from hommod.controllers.blacklist import blacklister
 from hommod.models.align import TargetTemplateAlignment, Alignment, DomainAlignment
 from hommod.models.template import TemplateID
 from hommod.controllers.context import ModelingContext
+from hommod.controllers.uniprot import uniprot
 from hommod.models.error import TemplateError, ModelRunError, InitError
 from hommod.services.pdb import get_pdb_contents
-from hommod.services.uniprot import uniprot
 from hommod.controllers.storage import model_storage
 from hommod.controllers.sequence import is_amino_acid_char
 from hommod.controllers.log import ModelLogger
@@ -85,7 +85,7 @@ class Modeler:
                                                              [(chain_id, context.get_sequence(chain_id))
                                                               for chain_id in context.get_chain_ids()]))
 
-                    tar_path = self._model_run(main_domain_alignment, chain_alignments, context)
+                    tar_path = self._model_run(main_domain_alignment, chain_alignments, context, main_target_sequence, require_resnum)
 
         return tar_path
 
@@ -542,7 +542,7 @@ class Modeler:
             if os.path.isdir(work_dir_path):
                 shutil.rmtree(work_dir_path)
 
-    def _model_run(self, main_domain_alignment, chain_alignments, context):
+    def _model_run(self, main_domain_alignment, chain_alignments, context, main_target_sequence, require_resnum):
 
         model_name = model_storage.get_model_name(context.get_main_target_sequence(),
                                                   context.target_species_id,
@@ -613,7 +613,8 @@ class Modeler:
 
             if not any([context.get_sequence(chain_id) == main_domain_alignment.get_target_sequence_without_insertions()
                         for chain_id in context.get_chain_ids()]):
-                raise ModelRunError("yasara generated a model that doesn't match the input alignment")
+                if require_resnum is not None and not self._model_covers_residue(context, main_target_sequence, require_resnum):
+                    raise ModelRunError("yasara generated a model that doesn't match the input alignment")
 
             model_path = os.path.join(work_dir_path, 'target.pdb')
             context.yasara.SavePDB(context.template_obj, model_path)
@@ -644,6 +645,25 @@ class Modeler:
         finally:
             if os.path.isdir(work_dir_path):
                 shutil.rmtree(work_dir_path)
+
+    def _model_covers_residue(self, context, main_target_sequence, require_resnum):
+        for chain_id in context.get_chain_ids():
+            sequence = context.get_sequence(chain_id)
+
+            alignment = clustal_aligner.align({'model': sequence,
+                                               'target': main_target_sequence})
+            n = 0
+            target_alignment = alignment.aligned_sequences['target']
+            model_alignment = alignment.aligned_sequences['model']
+            for i in range(len(target_alignment)):
+                if target_alignment[i].isalpha():
+                    n += 1
+                    if n == require_resnum:
+                        if model_alignment[i] == target_alignment[i]:
+                            return True
+                        else:
+                            break
+        return False
 
     def _write_selected_targets(self, alignments_per_chain, path):
         with open(path, 'w') as f:
