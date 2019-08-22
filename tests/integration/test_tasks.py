@@ -15,7 +15,7 @@ from hommod.default_settings import (KMAD_EXE, BLASTP_EXE, MODEL_DIR, INTERPRO_U
                                      SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE,
                                      BLACKLIST_FILE_PATH, HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY,
                                      CELERY_RESULT_BACKEND, CELERY_BROKER_URL, YASARA_DIR,
-                                     CLUSTALW_EXE, UNIPROT_BLAST_DATABANK, UNIPROT_URL,
+                                     CLUSTALW_EXE, UNIPROT_BLAST_DATABANK, SPROT_FASTA, TREMBL_FASTA,
                                      CACHE_REDIS_HOST, CACHE_REDIS_PORT, CACHE_REDIS_DB,
                                      CACHE_EXPIRATION_TIME, CACHE_LOCK_TIMEOUT)
 from hommod.controllers.kmad import kmad_aligner
@@ -26,7 +26,7 @@ from hommod.controllers.domain import domain_aligner
 from hommod.controllers.blast import blaster
 from hommod.controllers.blacklist import blacklister
 from hommod.services.dssp import dssp
-from hommod.services.uniprot import uniprot
+from hommod.controllers.uniprot import uniprot
 from hommod.models.template import TemplateID
 from hommod.controllers.storage import model_storage
 from hommod.controllers.method import select_best_model
@@ -35,7 +35,7 @@ from hommod.models.error import ModelRunError
 
 
 def setup():
-    uniprot.url = UNIPROT_URL
+    uniprot.fasta_paths = [SPROT_FASTA, TREMBL_FASTA]
     interpro.url = INTERPRO_URL
     kmad_aligner.kmad_exe = KMAD_EXE
     clustal_aligner.clustalw_exe = CLUSTALW_EXE

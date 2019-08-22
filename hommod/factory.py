@@ -98,8 +98,8 @@ def create_celery_app(flask_app=None):  # pragma: no cover
     import hommod.tasks
 
     # Apply config settings
-    from hommod.services.uniprot import uniprot
-    uniprot.url = flask_app.config['UNIPROT_URL']
+    from hommod.controllers.uniprot import uniprot
+    uniprot.fasta_paths = [flask_app.config['SPROT_FASTA'], flask_app.config['TREMBL_FASTA']]
 
     from hommod.services.interpro import interpro
     interpro.url = flask_app.config['INTERPRO_URL']

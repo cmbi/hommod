@@ -30,7 +30,6 @@ MAX_MODEL_DAYS = 100
 
 # Services
 INTERPRO_URL = 'http://www.ebi.ac.uk/Tools/services/rest/iprscan5'
-UNIPROT_URL = 'http://www.uniprot.org/uniprot'
 
 # Directories and File Paths
 YASARA_DIR = '/deps/yasara/yasara'
@@ -50,6 +49,7 @@ UNIPROT_BLAST_DATABANK = '/data/blast/uniprot'
 
 # Fastas
 SPROT_FASTA = '/data/fasta/uniprot_sprot.fasta'
+TREMBL_FASTA = '/data/fasta/uniprot_trembl.fasta'
 
 # Domain alignment settings
 HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY = 80.0
