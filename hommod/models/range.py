@@ -4,7 +4,7 @@
 class SequenceRange:
     def __init__(self, start, end, sequence):
         if start >= end:
-            raise ValueError("start must be smaller than end")
+            raise ValueError("{} - {}: start must be smaller than end".format(start, end))
 
         self.sequence = sequence
         self.start = start
