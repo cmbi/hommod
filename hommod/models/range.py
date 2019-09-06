@@ -47,10 +47,13 @@ class SequenceRange:
         if self.sequence != other.sequence:
             raise ValueError("Not from the same Sequence")
 
-        return SequenceRange(max(self.start, other.start),
-                             min(self.end, other.end),
-                             self.sequence)
+        start = max(self.start, other.start)
+        end = min(self.end, other.end)
 
+        if start == end:
+            raise ValueError("No intersection between {} and {}".format(self, other))
+
+        return SequenceRange(start, end, self.sequence)
 
     def __sub__(self, value):
         return SequenceRange(self.start - value, self.end - value, self.sequence)
@@ -98,8 +101,8 @@ class SequenceRange:
             return False
 
         # given: start < end
-        return (self.end >= other.start and self.start <= other.end or
-                other.end >= self.start and other.start <= self.end)
+        return (self.end > other.start and self.start < other.end or
+                other.end > self.start and other.start < self.end)
 
     def encloses(self, other):
         if self.sequence != other.sequence:
