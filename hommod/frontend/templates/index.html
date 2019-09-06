@@ -94,7 +94,10 @@
       var obj = JSON.parse(document.cookie);
     }
     catch (e) {
-      return {jobs: []};
+      var obj = {jobs: []};
+      document.cookie == JSON.stringify(obj);
+
+      return obj;
     }
     if (obj.jobs === undefined)
       obj.jobs = [];
