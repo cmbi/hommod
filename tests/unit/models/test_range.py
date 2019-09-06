@@ -95,6 +95,13 @@ def test_overlaps_with():
     ok_(r1.overlaps_with(r2))
 
 
+def test_not_overlaps_with():
+    r1 = SequenceRange(0, 10, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+    r2 = SequenceRange(10, 20, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+
+    ok_(not r1.overlaps_with(r2))
+
+
 def test_encloses():
 
     r1 = SequenceRange(0, 20, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
