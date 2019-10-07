@@ -1,4 +1,4 @@
-from nose.tools import ok_, eq_
+from nose.tools import ok_, eq_, raises
 
 from hommod.models.range import SequenceRange
 
@@ -29,6 +29,14 @@ def test_intersection():
 
     eq_(i.start, 10)
     eq_(i.end, 15)
+
+
+@raises(ValueError)
+def test_no_intersection():
+    r1 = SequenceRange(1, 15, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+    r2 = SequenceRange(15, 30, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+
+    i = r1.get_intersection(r2)
 
 
 def test_subtraction():
