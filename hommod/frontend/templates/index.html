@@ -91,7 +91,8 @@
       return {jobs: []};
 
     try {
-      var obj = JSON.parse(document.cookie);
+      var strings = document.cookie.split(";");
+      var obj = JSON.parse(strings[strings.length - 1]);
     }
     catch (e) {
       var obj = {jobs: []};
@@ -147,6 +148,7 @@
                   response.status.toLowerCase() + "\">" + response.status + "</td>" +
                   "<td><a href=\"#\" onclick=\"delete_model_job('" + job_id +
                   "'); return false;\"><span class=\"glyphicon glyphicon-remove red-glyph\"></span></a></td></tr>";
+
         $("#model_table").html($("#model_table").html() + row);
       }
     );
@@ -389,6 +391,7 @@
         $("html,body").animate({scrollTop: 99999});
       }
       else
+      {
         $.post("{{ url_for('api.submit') }}", data)
         .done(function(result) {
 
@@ -396,7 +399,9 @@
           job.job_id = result.jobid;
 
           var obj = load_cookie_obj();
+
           obj.jobs.push(job);
+
           save_cookie_obj(obj);
 
           $("#input_sequence").val("");
@@ -408,6 +413,7 @@
           $("#panel_results").hide();
           update_job_list();
         });
+      }
     });
   }
 
