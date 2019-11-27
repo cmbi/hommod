@@ -87,23 +87,28 @@
 
   function load_cookie_obj()
   {
-    if (document.cookie == "")
-      return {jobs: []};
+    var strings = document.cookie.split(";");
+    for (var i = 0; i < strings.length; i++)
+    {
+      if (strings[i].charAt(0) != '_')
+      {
+        try {
+          var obj = JSON.parse(strings[i]);
+        }
+        catch (e) {
+          var obj = {jobs: []};
+          document.cookie == JSON.stringify(obj);
 
-    try {
-      var strings = document.cookie.split(";");
-      var obj = JSON.parse(strings[strings.length - 1]);
+          return obj;
+        }
+        if (obj.jobs === undefined)
+          obj.jobs = [];
+
+        return obj;
+      }
     }
-    catch (e) {
-      var obj = {jobs: []};
-      document.cookie == JSON.stringify(obj);
 
-      return obj;
-    }
-    if (obj.jobs === undefined)
-      obj.jobs = [];
-
-    return obj;
+    return {jobs: []};
   }
 
   function save_cookie_obj(obj)
