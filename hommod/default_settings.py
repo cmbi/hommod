@@ -19,6 +19,7 @@ CELERY_ACCEPT_CONTENT = ['pickle']
 CELERY_BROKER_URL = 'amqp://guest@hommod_rabbitmq_1'
 CELERY_DEFAULT_QUEUE = 'hommod'
 CELERYD_CONCURRENCY = 20
+CELERYD_PREFETCH_MULTIPLIER = 1
 CELERY_QUEUES = ( 
     Queue('hommod', Exchange('hommod'), routing_key='hommod'),
 )
