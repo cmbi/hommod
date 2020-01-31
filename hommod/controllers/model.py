@@ -109,6 +109,7 @@ class Modeler:
             pass
 
         self._delete_solvent_residues(context)
+        self._delete_exotic_residues(context)
         self._fix_template_errors(context)
 
         context.yasara.CleanObj(context.template_obj)
@@ -145,6 +146,9 @@ class Modeler:
         context.yasara.DelRes('HOH H2O DOD D2O TIP WAT SOL ACT ACM ACY ' +
                               'EDO EOH FLC FMT GOL I3M IPA MLI MOH PEO ' +
                               'PO4 SO3 SO4 _TE UNX ACE')
+
+    def _delete_exotic_residues(self, context):
+        context.yasara.DelRes('ARS')
 
     def _fix_template_errors(self, context):
         self._join_duplicant_chains(context)

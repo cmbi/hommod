@@ -5,6 +5,7 @@ import shutil
 
 from nose.tools import with_setup, eq_, ok_
 
+from hommod.controllers.context import ModelingContext
 from hommod.controllers.blast import blaster
 from hommod.services.dssp import dssp
 from hommod.controllers.blacklist import blacklister
@@ -339,3 +340,16 @@ def test_generate_error_archive():
                                                 TemplateID(context.template_pdbid,
                                                            context.main_target_chain_id))
     ok_(os.path.isfile(tar_path))
+
+
+@with_setup(setup, end)
+def test_correct_sequence():
+
+    expected_sequence = "SISRFGVNTENEDHLAKELEDLNKWGLNIFNVAGYSHNRPLTCIMYAIFQERDLLKTFRISSDTFITYMMTLEDHYHSDVAYHNSLHAADVAQSTHVLLSTPALDAVFTDLEILAAIFAAAIHDVDHPGVSNQFLINTNSELALMYNDESVLENHHLAVGFKLLQEEHCDIFMNLTKKQRQTLRKMVIDMVLATDMSKHMSLLADLKTMVETKKVTSSGVLLLDNYTDRIQVLRNMVHCADLSNPTKSLELYRQWTDRIMEEFFQQGDKERERGMEISPMCDKHTASVEKSQVGFIDYIVHPLWETWADLVQPDAQDILDTLEDNRNWYQSMIPQAPAPPLDEQ"
+
+    with ModelingContext(modeler.yasara_dir) as context:
+        modeler._prepare_template(context, "1RO6")
+
+        sequence = context.get_sequence('A')
+
+        eq_(expected_sequence, sequence)
