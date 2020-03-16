@@ -178,6 +178,7 @@ class Modeler:
         context.yasara.SwapRes('Protein and UNK and atom CA and atom CB', 'ALA')
         context.yasara.SwapRes('Protein and UNK and atom CA and not atom CB', 'GLY')
         context.yasara.SwapRes('Protein and CAS', 'CYS')
+        context.yasara.SwapRes('Protein and CAF', 'CYS')
 
     def _group_identical_chains(self, context):
 
