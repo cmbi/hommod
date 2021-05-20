@@ -45,5 +45,7 @@ services:
       - "/var/log/hommod:/var/log/hommod"
   redis:
     image: redis
+    volumes:
+      - '/srv/hommod/redis:/data'
   rabbitmq:
     image: rabbitmq
