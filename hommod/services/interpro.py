@@ -12,9 +12,10 @@ from hommod.models.error import InitError, ServiceError
 _log = logging.getLogger(__name__)
 
 class InterproService:
-    def __init__(self, url=None,
+    def __init__(self, url=None, email=None,
                  job_timeout=60*60*2, http_timeout=60, poll_interval=10):
         self.url = url
+        self.email = email
         self.http_timeout = http_timeout
         self.job_timout = job_timeout
         self.poll_interval = poll_interval
@@ -52,7 +53,7 @@ class InterproService:
 
     def _interpro_submit(self, sequence):
 
-        params = {'email': "hommod@cmbi.ru.nl",
+        params = {'email': self.email,
                   'sequence': sequence,
                   'goterms': True,
                   'pathways': False}

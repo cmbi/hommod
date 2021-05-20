@@ -103,6 +103,7 @@ def create_celery_app(flask_app=None):  # pragma: no cover
 
     from hommod.services.interpro import interpro
     interpro.url = flask_app.config['INTERPRO_URL']
+    interpro.email = flask_app.config['ADMIN_EMAIL']
 
     from hommod.controllers.kmad import kmad_aligner
     kmad_aligner.kmad_exe = flask_app.config['KMAD_EXE']
