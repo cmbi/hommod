@@ -87,7 +87,7 @@ class Modeler:
 
                     tar_path = self._model_run(main_domain_alignment, chain_alignments, context, main_target_sequence, require_resnum)
 
-        return tar_path
+            return tar_path
 
     def _prepare_template(self, context, template_pdbid):
 
