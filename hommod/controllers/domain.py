@@ -283,6 +283,7 @@ class DomainAligner:
         blast_hits = blaster.blastp(range_.get_sub_sequence(), self.template_blast_databank)
         _log.debug("{} blast hits to filter".format(len(blast_hits)))
 
+        count_template_hits = 0
         good_hits = []
         for hit_id in blast_hits:
             for alignment in blast_hits[hit_id]:
@@ -290,6 +291,8 @@ class DomainAligner:
                                              alignment.get_hit_chain_id())
                 if template_id is not None and hit_template_id != template_id:
                     continue
+
+                count_template_hits += 1
 
                 if template_id is None and blacklister.is_blacklisted(alignment.get_hit_accession_code()):
                     continue
@@ -318,6 +321,9 @@ class DomainAligner:
 
                 if alignment.get_percentage_identity() >= get_min_identity(alignment.count_aligned_residues()):
                     good_hits.append(alignment)
+
+        if count_template_hits == 0 and template_id is not None:
+            raise ValueError("0 hits found with template {}".format(template_id))
 
         return good_hits
 
