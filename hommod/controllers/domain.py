@@ -323,7 +323,8 @@ class DomainAligner:
                     good_hits.append(alignment)
 
         if count_template_hits == 0 and template_id is not None:
-            raise ValueError("0 hits found with template {}".format(template_id))
+            _log.warning("domain sequence {} has no suitable hits with {}".format(range_.get_sub_sequence(), template_id))
+            return []
 
         return good_hits
 
