@@ -42,6 +42,11 @@ class InterproService:
         if status == 'RUNNING':
             raise ServiceError("inteproscan job timed out")
         elif status in ['FAILURE', 'ERROR']:
+
+            response_text = self._interpro_result(job_id)
+            if InterproService._is_usable_output(response_text):
+                return self._parse_interpro_ranges(response_text)
+
             raise ServiceError(self._interpro_error(job_id))
         elif status != 'FINISHED':
             raise ServiceError("inteproscan job status = " + status)
@@ -143,6 +148,18 @@ class InterproService:
             return True
 
         return False
+
+    @staticmethod
+    def _is_usable_output(response_text):
+        try:
+            x = ET.fromstring(response_text)
+
+        except ET.ParseError:
+            return False
+
+        _log.debug("x.tag is {}".format(x.tag))
+
+        return x.tag == "{http://www.ebi.ac.uk/interpro/resources/schemas/interproscan5}protein-matches"
 
 
 interpro = InterproService()
