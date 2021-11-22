@@ -336,3 +336,28 @@ def test_create_model_6H0A():
     path = create_model(sequence, 'HUMAN', position, TemplateID('6H0A', 'A'))
 
     ok_(path is not None)
+
+@with_setup(setup, end)
+def test_create_model_3srg():
+    sequence = "MAKLIALTLLGMGLALFRNHQSSYQTRLNALREVQPVELPNCNLVKGIETGSEDLEILPNGLAFISSGLKYPGIKSFNPNSPGKILLMDLNEEDPTVLELGITGSKFDVSSFNPHGISTFTDEDNAMYLLVVNHPDAKSTVELFKFQEEEKSLLHLKTIRHKLLPNLNDIVAVGPEHFYGTNDHYFLDPYLQSWEMYLGLAWSYVVYYSPSEVRVVAEGFDFANGINISPDGKYVYIAELLAHKIHVYEKHANWTLTPLKSLDFNTLVDNISVDPETGDLWVGCHPNGMKIFFYDSENPPASEVLRIQNILTEEPKVTQVYAENGTVLQGSTVASVYKGKLLIGTVFHKALYCEL"
+
+    position = 224
+
+    from hommod.tasks import create_model
+
+    path = create_model(sequence, 'HUMAN', position, TemplateID('3SRG', 'A'))
+
+    ok_(path is not None)
+
+@with_setup(setup, end)
+def test_create_model_lysc():
+    sequence = "MKALIVLGLVLLSVTVQGKVFERCELARTLKRLGMDGYRGISLANWMCLAKWESGYNTRATNYNAGDRSTDYGIFQINSRYWCNDGKTPGAVNACHLSCSALLQDNIADAVACAKRVVRDPQGIRAWVAWRNRCQNRDVRQYVQGCGV"
+
+    position = 54
+
+    from hommod.tasks import create_model
+
+    path = create_model(sequence, 'HUMAN', position, TemplateID('1C7P', 'A'))
+
+    ok_(path is not None)
+
