@@ -1,6 +1,7 @@
 from nose.tools import ok_
 from mock import patch
 
+from hommod.controllers.clustal import clustal_aligner
 from hommod.controllers.method import select_best_model
 from hommod.models.align import Alignment
 from hommod.models.aminoacid import AminoAcid
@@ -17,7 +18,10 @@ def test_select_best_model(mock_extract_model,
                            mock_get_sequence_id_from_name,
                            mock_get_model_name_from_path):
 
-    target_id = 'target-id'
+    from hommod import default_settings as settings
+    clustal_aligner.clustalw_exe = settings.CLUSTALW_EXE
+
+    target_id = 'target'
 
     paths = ['0', '1', '2']
 
@@ -28,6 +32,7 @@ def test_select_best_model(mock_extract_model,
     ]
 
     pdb_str = """
+SEQRES   1 A  154  ALA THR ALA THR ALA THR ALA THR ALA THR ALA THR
 ATOM      1  CA  ALA A   1       0.000   0.000   0.000  1.00 20.00           C
 ATOM      2  CA  ALA A   2       0.000   0.000   0.000  1.00 20.00           C
 ATOM      3  CA  ALA A   3       0.000   0.000   0.000  1.00 20.00           C

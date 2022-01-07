@@ -11,6 +11,10 @@ def setup():
     domain_aligner.similar_ranges_min_overlap_percentage = settings.SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE
     domain_aligner.similar_ranges_max_length_difference_percentage = settings.SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE
     domain_aligner.forbidden_interpro_domains = settings.FORBIDDEN_INTERPRO_DOMAINS
+    domain_aligner.highly_homologous_percentage_identity = settings.HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY
+    domain_aligner.template_blast_databank = settings.TEMPLATE_BLAST_DATABANK
+    domain_aligner.min_percentage_coverage = settings.DOMAIN_MIN_PERCENTAGE_COVERAGE
+
 
 def teardown():
     pass
@@ -61,7 +65,7 @@ def test_find_shared_hits_ranges():
     r = domain_aligner._find_shared_hits_ranges(d)
 
     eq_(len(r), 1)
-    eq_(len(r.values()[0]), 3)
+    eq_(len(list(r.values())[0]), 3)
 
 
 def test_remove_enclosing():
@@ -110,7 +114,7 @@ def test_merge_similar_ranges():
         SequenceRange(1, 22, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
         SequenceRange(19, 30, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
         SequenceRange(0, 23, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
-        SequenceRange(2, 21, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        SequenceRange(1, 23, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     ])
 
     eq_(len(rs), 2)
