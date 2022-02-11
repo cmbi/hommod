@@ -13,24 +13,24 @@ CACHE_EXPIRATION_TIME = 60*60*24*30  # 30 days
 CACHE_LOCK_TIMEOUT = 60*60  # 1 hour
 
 # Celery
-CELERY_TASK_SERIALIZER = 'pickle'
-CELERY_RESULT_SERIALIZER='pickle'
-CELERY_ACCEPT_CONTENT = ['pickle']
-CELERY_BROKER_URL = 'amqp://guest@hommod_rabbitmq_1'
-CELERY_DEFAULT_QUEUE = 'hommod'
-CELERYD_CONCURRENCY = 20
-CELERYD_PREFETCH_MULTIPLIER = 1
-CELERY_QUEUES = ( 
+task_serializer = 'pickle'
+result_serializer ='pickle'
+accept_content = ['pickle']
+CELERY_broker_url = 'amqp://guest@hommod_rabbitmq_1'
+task_default_queue = 'hommod'
+worker_concurrency = 20
+worker_prefetch_multiplier = 1
+task_queues = ( 
     Queue('hommod', Exchange('hommod'), routing_key='hommod'),
 )
-CELERY_TRACK_STARTED = True
-CELERY_RESULT_BACKEND = 'redis://hommod_redis_1/1'
+task_track_started = True
+result_backend = 'redis://hommod_redis_1/1'
 
 # Time it takes for a model to get outdated:
 MAX_MODEL_DAYS = 100 
 
 # Services
-INTERPRO_URL = 'http://www.ebi.ac.uk/Tools/services/rest/iprscan5'
+INTERPRO_URL = 'https://www.ebi.ac.uk/Tools/services/rest/iprscan5'
 
 # Directories and File Paths
 YASARA_DIR = '/deps/yasara/yasara'
