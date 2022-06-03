@@ -3,6 +3,7 @@ import os
 from glob import glob
 import shutil
 import tempfile
+import logging
 
 from mock import patch
 from nose.tools import with_setup, ok_, raises
@@ -34,6 +35,9 @@ from hommod.services.helpers.cache import cache_manager as cm
 from hommod.models.error import ModelRunError
 
 
+_log = logging.getLogger(__name__)
+
+
 def setup():
     uniprot.fasta_paths = [SPROT_FASTA, TREMBL_FASTA]
     interpro.url = INTERPRO_URL
@@ -52,19 +56,14 @@ def setup():
     blaster.blastp_exe = BLASTP_EXE
     dssp.dssp_dir = DSSP_DIR
     blacklister.file_path = BLACKLIST_FILE_PATH
-    cm.redis_hostname = CACHE_REDIS_HOST
-    cm.redis_port = CACHE_REDIS_PORT
-    cm.redis_db = CACHE_REDIS_DB
-    cm.expiration_time = CACHE_EXPIRATION_TIME
-    cm.lock_timeout = CACHE_LOCK_TIMEOUT
+    cm.disable()
 
-    celery_app = Celery(__name__,
-                        backend=CELERY_RESULT_BACKEND,
-                        broker=CELERY_BROKER_URL)
+    celery_app = Celery(__name__)
     celery_app.conf.update({'TESTING': True, 'CELERY_ALWAYS_EAGER': True})
 
 
 def end():
+    cm.enable()
     shutil.rmtree(model_storage.model_dir)
 
 
@@ -361,3 +360,15 @@ def test_create_model_lysc():
 
     ok_(path is not None)
 
+
+@with_setup(setup, end)
+def test_create_model_shouldnot():
+    sequence = "MGPWGWKLRWTVALLLAAAGTAVGDRCERNEFQCQDGKCISYKWVCDGSAECQDGSDESQETCSPKTCSQDEFRCHDGKCISRQFVCDSDRDCLDGSDEASCPVLTCGPASFQCNSSTCIPQLWACDNDPDCEDGSDEWPQRCRGLYVFQGDSSPCSAFEFHCLSGECIHSSWRCDGGPDCKDKSDEENCAVATCRPDEFQCSDGNCIHGSRQCDREYDCKDMSDEVGCVNVTLCEGPNKFKCHSGECITLDKVCNMARDCRDWSDEPIKECGTNECLDNNGGCSHVCNDLKIGYECLCPDGFQLVAQRRCEDIDECQDPDTCSQLCVNLEGGYKCQCEEGFQLDPHTKACKAVGSIAYLFFTNRHEVRKMTLDRSEYTSLIPNLRNVVALDTEVASNRIYWSDLSQRMICSTQLDRAHGVSSYDTVISRDIQAPDGLAVDWIHSNIYWTDSVLGTVSVADTKGVKRKTLFRENGSKPRAIVVDPVHGFMYWTDWGTPAKIKKGGLNGVDIYSLVTENIQWPNGITLDLLSGRLYWVDSKLHSISSIDVNGGNRKTILEDEKRLAHPFSLAVFEDKVFWTDIINEAIFSANRLTGSDVNLLAENLLSPEDMVLFHNLTQPRGVNWCERTTLSNGGCQYLCLPAPQINPHSPKFTCACPDGMLLARDMRSCLTEAEAAVATQETSTVRLKVSSTAVRTQHTTTRPVPDTSRLPGATPGLTTVEIVTMSHQALGDVAGRGNEKKPSSVRALSIVLPIVLLVFLCLGVFLLWKNWRLKNINSINFDNPVYQKTTEDEVHICHNQDGYSYPSRQMVSLEDDVA"
+
+    position = 38
+
+    from hommod.tasks import create_model
+
+    path = create_model(sequence, 'HUMAN', position, TemplateID('5OY9', 'D'))
+
+    ok_(path is None)
