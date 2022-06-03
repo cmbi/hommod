@@ -15,7 +15,7 @@ from hommod.default_settings import (KMAD_EXE, BLASTP_EXE, MODEL_DIR, INTERPRO_U
                                      DSSP_DIR, SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE,
                                      SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE,
                                      BLACKLIST_FILE_PATH, HIGHLY_HOMOLOGOUS_PERCENTAGE_IDENTITY,
-                                     CELERY_RESULT_BACKEND, CELERY_BROKER_URL, YASARA_DIR,
+                                     YASARA_DIR,
                                      CLUSTALW_EXE, UNIPROT_BLAST_DATABANK, SPROT_FASTA, TREMBL_FASTA,
                                      CACHE_REDIS_HOST, CACHE_REDIS_PORT, CACHE_REDIS_DB,
                                      CACHE_EXPIRATION_TIME, CACHE_LOCK_TIMEOUT)
