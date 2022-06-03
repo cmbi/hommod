@@ -611,6 +611,9 @@ class Modeler:
 
                 raise ModelRunError("yasara generated no output yob, check the console for further details")
 
+            chain_ids_after_build = context.get_chain_ids()
+            if context.main_target_chain_id not in chain_ids_after_build:
+                raise ModelRunError(f"The chain {context.main_target_chain_id} is not in the final model output by yasara")
 
             _log.debug("after modeling {}".format([(chain_id, context.get_sequence(chain_id))
                                                    for chain_id in context.get_chain_ids()]))
