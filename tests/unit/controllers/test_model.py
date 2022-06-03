@@ -30,7 +30,7 @@ def test_selected_targets_format(mock_open):
             pass
 
         def extractfile(self, *args, **kwargs):
-            return open(path, 'r')
+            return open(path, 'rb')
 
     mock_open.return_value = FakeTarFile()
 
