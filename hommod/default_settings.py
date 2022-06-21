@@ -16,18 +16,18 @@ CACHE_LOCK_TIMEOUT = 60*60  # 1 hour
 task_serializer = 'pickle'
 result_serializer ='pickle'
 accept_content = ['pickle']
-CELERY_broker_url = 'amqp://guest@hommod_rabbitmq_1'
+broker_url = 'amqp://guest@hommod_rabbitmq_1'
 task_default_queue = 'hommod'
 worker_concurrency = 20
 worker_prefetch_multiplier = 1
-task_queues = ( 
+task_queues = (
     Queue('hommod', Exchange('hommod'), routing_key='hommod'),
 )
 task_track_started = True
 result_backend = 'redis://hommod_redis_1/1'
 
 # Time it takes for a model to get outdated:
-MAX_MODEL_DAYS = 100 
+MAX_MODEL_DAYS = 100
 
 # Services
 INTERPRO_URL = 'https://www.ebi.ac.uk/Tools/services/rest/iprscan5'
@@ -58,3 +58,5 @@ DOMAIN_MIN_PERCENTAGE_COVERAGE = 80.0
 SIMILAR_RANGES_MIN_OVERLAP_PERCENTAGE = 80.0
 SIMILAR_RANGES_MAX_LENGTH_DIFFERENCE_PERCENTAGE = 10.0
 FORBIDDEN_INTERPRO_DOMAINS = ['IPR003596']  # Ig variable domain like
+
+ADMIN_EMAIL = "coos.baakman@radboudumc.nl"

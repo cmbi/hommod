@@ -80,9 +80,10 @@ def create_celery_app(flask_app=None):  # pragma: no cover
         _log.info("Creating celery app with new flask app")
         flask_app = create_app()
 
-    celery = Celery(__name__,
-                    backend=flask_app.config['CELERY_RESULT_BACKEND'],
-                    broker=flask_app.config['CELERY_BROKER_URL'])
+    from hommod import default_settings
+
+    celery = Celery(__name__)
+    celery.config_from_object(default_settings)
     celery.conf.update(flask_app.config)
     TaskBase = celery.Task
 
