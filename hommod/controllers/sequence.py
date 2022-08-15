@@ -9,7 +9,7 @@ def is_nucleic_acid_sequence(s):
 def is_amino_acid_char(c):
     return c in ['A','C','D','E','F','G','H','I','K',
                  'L','M','N','P','Q','R','S','T','V',
-                 'W','Y']
+                 'W','Y', 'U', 'O']
 
 def is_nucleotide_char(c):
     return c in ['a', 't', 'c', 'u', 'g']
