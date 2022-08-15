@@ -494,7 +494,7 @@ class Modeler:
                     continue
                 if n > 0:
                     f.write('|')
-                f.write(chain_alignments[chain_id].target_alignment)
+                f.write(chain_alignments[chain_id].target_alignment.replace('U', 'C').replace('O', 'K'))  # yasara cannot handle amino acids U or O
                 n += 1
             f.write('\n')
 
@@ -547,6 +547,27 @@ class Modeler:
             if os.path.isdir(work_dir_path):
                 shutil.rmtree(work_dir_path)
 
+    def _get_chain_order(self, context):
+        chain_ids = context.get_chain_ids()
+
+        order = []
+        for chain_id in chain_ids:
+            if chain_id not in order:
+                order.append(chain_id)
+
+        return order
+
+    def _reset_chain_order(self, context, old_chain_order):
+        new_chain_order = self._get_chain_order(context)
+
+        r = list(range(len(old_chain_order)))
+        r.reverse()
+
+        for chain_index in r:
+            old_chain_id = old_chain_order[chain_index]
+            new_chain_id = new_chain_order[chain_index]
+            context.yasara.NameMol("mol %s" % new_chain_id, old_chain_id)
+
     def _model_run(self, main_domain_alignment, chain_alignments, context, main_target_sequence, require_resnum):
 
         model_name = model_storage.get_model_name(context.get_main_target_sequence(),
@@ -572,6 +593,7 @@ class Modeler:
 
             chain_ids_before_model = context.get_chain_ids()
             sequences_before_model = {chain_id: context.get_sequence(chain_id) for chain_id in chain_ids_before_model}
+            chain_order = self._get_chain_order(context)
 
             self._write_model_alignment_fasta(context, chain_alignments, align_fasta_path)
 
@@ -610,6 +632,8 @@ class Modeler:
                                             .format(chain_id, sequences_before_model[chain_id], sequence_after_failure))
 
                 raise ModelRunError("yasara generated no output yob, check the console for further details")
+            else:
+                self._reset_chain_order(context, chain_order)
 
             chain_ids_after_build = context.get_chain_ids()
             if context.main_target_chain_id not in chain_ids_after_build:
