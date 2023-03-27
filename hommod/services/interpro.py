@@ -32,7 +32,7 @@ class InterproService:
 
             status = self._interpro_status(job_id)
 
-            if status in ['RUNNING', 'PENDING', 'STARTED']:
+            if status in ['RUNNING', 'PENDING', 'STARTED', 'QUEUED']:
                 sleep(self.poll_interval)
             elif status == 'NOT_FOUND':
                 job_id = self._interpro_submit(sequence)
