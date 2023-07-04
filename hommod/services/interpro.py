@@ -114,7 +114,7 @@ class InterproService:
         ranges = []
 
         ns_map = {
-            'p': 'https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/schemas'
+            'p': 'http://www.ebi.ac.uk/interpro/resources/schemas/interproscan5'
         }
         root = ET.fromstring(xml_str)
         sequence_elem = root.find('./p:protein/p:sequence', namespaces=ns_map)
