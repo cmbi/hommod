@@ -113,9 +113,12 @@ class InterproService:
 
         ranges = []
 
-        ns_map = {
-            'p': 'http://www.ebi.ac.uk/interpro/resources/schemas/interproscan5'
-        }
+        ns_map = {}
+        if "/software/unix/" in xml_str:
+            ns_map["p"] = "https://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/schemas"
+        else:
+            ns_map["p"] = "http://www.ebi.ac.uk/interpro/resources/schemas/interproscan5"
+
         root = ET.fromstring(xml_str)
         sequence_elem = root.find('./p:protein/p:sequence', namespaces=ns_map)
         sequence = sequence_elem.text
