@@ -144,6 +144,10 @@ class YasaraObject:
         command = 'DelObj %s' % self._yasara_module.selstr(selection)
         self._run(command)
 
+    def NameMol(self, selection, name):
+        command = 'NameMol %s, %s' % (self._yasara_module.selstr(selection), name)
+        self._run(command)
+
     def DelMol(self, selection):
         command = 'DelMol %s' % self._yasara_module.selstr(selection)
         self._run(command)
