@@ -1,8 +1,7 @@
 watchdog==2.1.6
 amqp==5.0.9
-anyjson==0.3.3
 billiard==3.6.4.0
-celery==5.2.3
+celery==5.2.7
 configparser==5.2.0
 coverage==4.5.4
 dogpile.cache==1.1.4
