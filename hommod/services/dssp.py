@@ -14,9 +14,12 @@ class DsspService:
         try:
             dssp_str = self._get_dssp(template_id.pdbid)
         except:
+            _log.exception("getting dssp for {template_id.pdbid}")
             return False
 
         data = self._parse_dssp(dssp_str)
+
+        _log.debug(f"parsed {template_id.pdbid} chains {data.keys()}")
 
         return template_id.chain_id in data
 
@@ -54,7 +57,7 @@ class DsspService:
             amino_acid = line[13]
             secstr = line[16]
 
-            if not chain_id.isalpha():
+            if not chain_id.isalnum():
                 continue
 
             if chain_id not in data:
