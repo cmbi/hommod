@@ -144,6 +144,8 @@ class DomainAligner:
             # After iterating the sample ranges, prepare for the next round:
             sample_ranges = self._clean_search_space(checked_ranges, sample_ranges, ok_ranges_alignments)
 
+        _log.debug(f"got {len(best_ranges_alignments)} best ranges for modeling")
+
         return list(best_ranges_alignments.values())
 
     def _remove_enclosing(self, range_, ranges_alignments):
@@ -247,6 +249,8 @@ class DomainAligner:
                                 intersect_template_sequence_j == intersect_template_sequence_m:
                             sample_ranges.append(merged)
 
+        _log.debug(f"cleaned search space: -> {len(sample_ranges)} ranges")
+
         return sample_ranges
 
     def _get_template_sequence_in_target_range(self, alignment, target_range):
@@ -290,14 +294,17 @@ class DomainAligner:
                 hit_template_id = TemplateID(alignment.get_hit_accession_code(),
                                              alignment.get_hit_chain_id())
                 if template_id is not None and hit_template_id != template_id:
+                    _log.debug(f"skipping hit {hit_template_id}, because it's not the selected template {template_id}")
                     continue
 
                 count_template_hits += 1
 
                 if template_id is None and blacklister.is_blacklisted(alignment.get_hit_accession_code()):
+                    _log.debug(f"skipping hit {alignment.get_hit_accession_code()}, because it's blacklisted")
                     continue
 
                 if not dssp.has_secondary_structure(hit_template_id):
+                    _log.debug(f"skipping hit {hit_template_id}, because it has no secondary structure")
                     continue
 
                 # Replace the blast hit's alignment with the kmad alignment.
